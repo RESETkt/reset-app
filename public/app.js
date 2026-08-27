@@ -55,21 +55,25 @@ async function cautaPacienti(q) {
   `).join('');
 }
 
+function marcheazaActiv(index) {
+  document.querySelectorAll('.top-nav-btn').forEach((b, i) => b.classList.toggle('activ', i === index));
+}
+
 function aratapanel(nume) {
   ['fisa', 'calendar', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
   });
-  document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('activ'));
-  event?.target?.classList.add('activ');
+  const index = { calendar: 0, fisa: 1, statistici: 2 }[nume];
+  marcheazaActiv(index);
   if (nume === 'calendar') incarcaCalendarSaptamana();
   if (nume === 'statistici') incarcaStatistici();
 }
 
 function aratatFormularPacientNou() {
-  document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('activ'));
   ['fisa', 'calendar', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
+  marcheazaActiv(1);
 
   document.getElementById('panel-fisa').innerHTML = `
     <div class="card" style="max-width:420px">
@@ -141,11 +145,10 @@ async function salveazaPacientNou() {
 
 async function deschideFisa(id) {
   pacientCurent = id;
-  document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('activ'));
   ['fisa', 'calendar', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
-  document.querySelector('.top-nav-btn:nth-child(2)')?.classList.add('activ');
+  marcheazaActiv(1);
 
   const data = await apel(`/api/pacienti/${id}`);
   const p = data.pacient;
@@ -185,7 +188,7 @@ async function deschideFisa(id) {
 }
 
 const ORE_DISPONIBILE = ['07:30', '09:10', '10:50', '12:30', '14:30', '16:10', '17:50'];
-const ZILE_SAPTAMANA = ['Luni', 'Marti', 'Miercuri', 'Joi', 'Vineri', 'Sambata'];
+const ZILE_SAPTAMANA = ['Luni', 'Marti', 'Miercuri', 'Joi', 'Vineri'];
 
 let saptamanaCurenta = luniAlSaptamanii(new Date().toISOString().slice(0, 10));
 
@@ -214,8 +217,9 @@ function saptamanaAceasta() {
 }
 
 async function incarcaCalendarSaptamana() {
-  const zile = [0, 1, 2, 3, 4, 5].map(i => adaugaZile(saptamanaCurenta, i));
-  const rows = await apel(`/api/programari?de_la=${zile[0]}&pana_la=${zile[5]}`);
+  const astazi = new Date().toISOString().slice(0, 10);
+  const zile = [0, 1, 2, 3, 4].map(i => adaugaZile(saptamanaCurenta, i));
+  const rows = await apel(`/api/programari?de_la=${zile[0]}&pana_la=${zile[4]}`);
 
   const pePeriada = {};
   rows.forEach(r => {
@@ -229,6 +233,7 @@ async function incarcaCalendarSaptamana() {
   });
 
   const culoareStatus = { programat: '#9a988e', prezent: '#6bcf9b', absent: '#e08585', reprogramat: '#e0b85e' };
+  const bordura = '1px solid #3a3937';
 
   let html = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -239,28 +244,48 @@ async function incarcaCalendarSaptamana() {
       </div>
       <button class="btn" onclick="aratatFormularProgramareNoua()">+ Programare noua</button>
     </div>
-    <div class="card" style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse">
+    <div class="card" style="padding:0;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed">
         <tr>
-          <th style="text-align:left;padding:8px;font-size:12px;color:#9a988e;width:70px">Ora</th>
-          ${zile.map((z, i) => `<th style="text-align:left;padding:8px;font-size:12px;color:#9a988e;min-width:150px">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
+          <th style="text-align:left;padding:10px 8px;font-size:12px;color:#9a988e;width:64px;border:${bordura};background:#1e1e1d">Ora</th>
+          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#1e1e1d' : '#9a988e'};border:${bordura};background:${z === astazi ? '#ece9e2' : '#1e1e1d'}">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
         </tr>
         ${ORE_DISPONIBILE.map(ora => `
-          <tr style="border-top:1px solid #3a3937">
-            <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top">${ora}</td>
+          <tr>
+            <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top;border:${bordura}">${ora}</td>
             ${zile.map(z => {
               const grup = pePeriada[`${z}_${ora}`] || {};
               const kinetoNumele = Object.keys(grup);
-              if (kinetoNumele.length === 0) return `<td style="padding:8px;vertical-align:top"></td>`;
-              return `<td style="padding:8px;vertical-align:top">
+              const fundalZi = z === astazi ? 'background:#2c2b28' : '';
+              if (kinetoNumele.length === 0) return `<td style="padding:8px;vertical-align:top;border:${bordura};${fundalZi}"></td>`;
+              return `<td style="padding:8px;vertical-align:top;border:${bordura};${fundalZi}">
                 ${kinetoNumele.map(k => `
                   <div style="margin-bottom:6px">
                     <div style="font-size:11px;color:#9a988e;margin-bottom:2px">${k}</div>
-                    ${grup[k].map(p => `
-                      <div style="font-size:12px;padding:2px 6px;border-left:3px solid ${culoareStatus[p.status] || '#9a988e'};margin-bottom:2px;cursor:pointer" onclick="aratatActiuniProgramare('${p.id}','${p.nume} ${p.prenume}')">
-                        ${p.nume} ${p.prenume}
+                    ${grup[k].map(p => {
+                      const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
+                      return `
+                      <div class="pacient-chip" style="border-left:3px solid ${culoareStatus[p.status] || '#9a988e'};margin-bottom:2px;padding:2px 6px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+                          <span style="font-size:12px">${p.nume} ${p.prenume}</span>
+                          <div style="display:flex;align-items:center;gap:2px">
+                            <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:1px;background:#1e1e1d;color:#ece9e2;border:1px solid #45443f;border-radius:4px">
+                              <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
+                              <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>Prezent</option>
+                              <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>Absent</option>
+                            </select>
+                            <span style="font-size:10px;cursor:pointer;color:#9a988e" onclick="reprogrameazaPrompt('${p.id}')" title="Reprogrameaza">&#8635;</span>
+                          </div>
+                        </div>
+                        <div class="pacient-tooltip">
+                          <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
+                          <div>Diagnostic: ${p.diagnostic || '-'}</div>
+                          <div>Sedinte efectuate: ${p.sedinte_efectuate ?? '-'}</div>
+                          <div>Sedinte ramase: ${ramase}</div>
+                        </div>
                       </div>
-                    `).join('')}
+                    `;
+                    }).join('')}
                   </div>
                 `).join('')}
               </td>`;
@@ -272,13 +297,6 @@ async function incarcaCalendarSaptamana() {
   `;
 
   document.getElementById('panel-calendar').innerHTML = html;
-}
-
-function aratatActiuniProgramare(id, numePacient) {
-  const alegere = prompt(`${numePacient} - scrie: p pentru prezent, a pentru absent, r pentru reprogramare`);
-  if (alegere === 'p') marcheaza(id, 'prezent');
-  else if (alegere === 'a') marcheaza(id, 'absent');
-  else if (alegere === 'r') reprogrameazaPrompt(id);
 }
 
 async function aratatFormularProgramareNoua() {
@@ -302,7 +320,7 @@ async function aratatFormularProgramareNoua() {
         </select>
 
         <label>Data</label>
-        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${saptamanaCurenta}">
+        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${new Date().toISOString().slice(0,10)}">
 
         <label>Ora</label>
         <select id="prog-ora" style="width:100%;margin-bottom:14px">

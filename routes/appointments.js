@@ -11,10 +11,16 @@ router.get('/', async (req, res) => {
   const start = de_la || new Date().toISOString().slice(0, 10);
   const end = pana_la || start;
   const { rows } = await pool.query(
-    `SELECT p.*, pac.nume, pac.prenume, u.nume AS kineto_nume
+    `SELECT p.*, pac.nume, pac.prenume, pac.diagnostic, u.nume AS kineto_nume,
+            ab.total_sedinte, ab.sedinte_efectuate
      FROM programari p
      JOIN pacienti pac ON pac.id = p.pacient_id
      LEFT JOIN utilizatori u ON u.id = p.kineto_id
+     LEFT JOIN LATERAL (
+       SELECT total_sedinte, sedinte_efectuate FROM abonamente
+       WHERE pacient_id = p.pacient_id AND activ = true
+       ORDER BY creat_la DESC LIMIT 1
+     ) ab ON true
      WHERE p.data_ora::date BETWEEN $1 AND $2
      ORDER BY p.data_ora`,
     [start, end]

@@ -7,4 +7,10 @@ const pool = new Pool({
     : false
 });
 
+// Fortam fusul orar Romania pe fiecare conexiune, ca orele introduse
+// (ex 07:30) sa fie salvate si afisate exact asa, fara deplasare.
+pool.on('connect', (client) => {
+  client.query("SET TIME ZONE 'Europe/Bucharest'");
+});
+
 module.exports = pool;
