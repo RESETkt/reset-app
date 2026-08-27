@@ -7,7 +7,7 @@ function pregatesteCanvas(id) {
   canvas.height = canvas.clientHeight;
   ctx.lineWidth = 2;
   ctx.lineCap = 'round';
-  ctx.strokeStyle = '#232320';
+  ctx.strokeStyle = '#ece9e2';
 
   let deseneaza = false;
 
@@ -76,51 +76,4 @@ async function trimiteGDPR() {
   if (canvasEsteGol('canvas-gdpr')) { alert('Semneaza inainte de a confirma.'); return; }
   const semnatura_svg = document.getElementById('canvas-gdpr').toDataURL();
   const r = await fetch(`/api/gdpr/${dateCheckin.pacient.id}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ semnatura_svg })
-  });
-  if (!r.ok) { const d = await r.json(); alert(d.eroare); return; }
-  aratatConfirmare();
-}
-
-function aratatConfirmare() {
-  ascundeToate();
-  document.getElementById('pas-confirmare').style.display = 'block';
-  document.getElementById('salut-nume').textContent = `Bine ai venit, ${dateCheckin.pacient.prenume}`;
-
-  if (dateCheckin.programare) {
-    const ora = new Date(dateCheckin.programare.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('detalii-programare').textContent = `Programare confirmata, azi ${ora}`;
-  } else {
-    document.getElementById('detalii-programare').textContent = 'Nu am gasit o programare azi pentru acest numar.';
-  }
-
-  const ab = dateCheckin.abonament;
-  document.getElementById('sedinte-ramase').textContent = ab
-    ? `${ab.total_sedinte - ab.sedinte_efectuate} / ${ab.total_sedinte}`
-    : '-';
-
-  pregatesteCanvas('canvas-sedinta');
-}
-
-async function trimiteConfirmareSedinta() {
-  if (!dateCheckin.programare) { alert('Nu exista o programare azi de confirmat.'); return; }
-  if (canvasEsteGol('canvas-sedinta')) { alert('Semneaza inainte de a confirma.'); return; }
-
-  const semnatura_svg = document.getElementById('canvas-sedinta').toDataURL();
-  await fetch(`/api/checkin/${dateCheckin.programare.id}/confirma`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ semnatura_svg })
-  });
-
-  ascundeToate();
-  document.getElementById('pas-gata').style.display = 'block';
-  setTimeout(() => {
-    dateCheckin = null;
-    document.getElementById('telefon').value = '';
-    ascundeToate();
-    document.getElementById('pas-cautare').style.display = 'block';
-  }, 4000);
-}
+    method:

@@ -7,18 +7,18 @@
 <link rel="icon" href="favicon.png">
 <style>
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, sans-serif; background: #f4f3ef; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-top: 90px; }
-  .card { background: #fff; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-  input { width: 100%; padding: 10px; border: 1px solid #d8d6cc; border-radius: 8px; font-size: 15px; margin-bottom: 10px; }
-  button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #232320; color: #fff; font-size: 15px; cursor: pointer; }
-  button.secundar { background: #fff; border: 1px solid #d8d6cc; color: #232320; margin-top: 8px; }
-  h2 { font-size: 16px; text-align: center; margin: 0 0 4px; }
-  .sub { font-size: 13px; color: #7a7970; text-align: center; margin-bottom: 16px; }
-  .metric { background: #f4f3ef; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 16px; }
-  .metric .label { font-size: 12px; color: #7a7970; }
-  .metric .value { font-size: 26px; font-weight: 600; margin-top: 4px; }
-  canvas { border: 1px dashed #ccc; border-radius: 8px; width: 100%; height: 140px; touch-action: none; }
-  .gdpr-text { font-size: 12px; color: #7a7970; line-height: 1.5; margin-bottom: 10px; }
+  body { font-family: -apple-system, sans-serif; background: #1e1e1d; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-top: 90px; }
+  .card { background: #262624; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); color: #ece9e2; }
+  input { width: 100%; padding: 10px; border: 1px solid #45443f; border-radius: 8px; font-size: 15px; margin-bottom: 10px; background: #1e1e1d; color: #ece9e2; }
+  button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #ece9e2; color: #1e1e1d; font-size: 15px; cursor: pointer; font-weight: 500; }
+  button.secundar { background: #1e1e1d; border: 1px solid #45443f; color: #ece9e2; margin-top: 8px; }
+  h2 { font-size: 16px; text-align: center; margin: 0 0 4px; color: #ece9e2; }
+  .sub { font-size: 13px; color: #9a988e; text-align: center; margin-bottom: 16px; }
+  .metric { background: #1e1e1d; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 16px; }
+  .metric .label { font-size: 12px; color: #9a988e; }
+  .metric .value { font-size: 26px; font-weight: 600; margin-top: 4px; color: #ece9e2; }
+  canvas { border: 1px dashed #45443f; border-radius: 8px; width: 100%; height: 140px; touch-action: none; background: #1e1e1d; }
+  .gdpr-text { font-size: 12px; color: #9a988e; line-height: 1.5; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -48,20 +48,3 @@
   <h2 id="salut-nume"></h2>
   <div class="sub" id="detalii-programare"></div>
   <div class="metric">
-    <div class="label">Sedinte ramase din abonament</div>
-    <div class="value" id="sedinte-ramase">-</div>
-  </div>
-  <div class="sub" style="margin-bottom:6px">Semneaza pentru confirmarea sedintei de azi</div>
-  <canvas id="canvas-sedinta"></canvas>
-  <button onclick="trimiteConfirmareSedinta()">Confirma</button>
-  <button class="secundar" onclick="stergeCanvas('canvas-sedinta')">Sterge semnatura</button>
-</div>
-
-<div class="card" id="pas-gata" style="display:none">
-  <h2>Multumim!</h2>
-  <div class="sub">Programarea a fost confirmata. Te asteptam la ora stabilita.</div>
-</div>
-
-<script src="tablet.js"></script>
-</body>
-</html>
