@@ -187,23 +187,30 @@ async function deschideFisa(id) {
   `;
 }
 
+function dataLocala(d) {
+  const an = d.getFullYear();
+  const luna = String(d.getMonth() + 1).padStart(2, '0');
+  const zi = String(d.getDate()).padStart(2, '0');
+  return `${an}-${luna}-${zi}`;
+}
+
 const ORE_DISPONIBILE = ['07:30', '09:10', '10:50', '12:30', '14:30', '16:10', '17:50'];
 const ZILE_SAPTAMANA = ['Luni', 'Marti', 'Miercuri', 'Joi', 'Vineri'];
 
-let saptamanaCurenta = luniAlSaptamanii(new Date().toISOString().slice(0, 10));
+let saptamanaCurenta = luniAlSaptamanii(dataLocala(new Date()));
 
 function luniAlSaptamanii(dataISO) {
   const d = new Date(dataISO + 'T00:00:00');
   const zi = d.getDay();
   const diff = zi === 0 ? -6 : 1 - zi;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
+  return dataLocala(d);
 }
 
 function adaugaZile(dataISO, nrZile) {
   const d = new Date(dataISO + 'T00:00:00');
   d.setDate(d.getDate() + nrZile);
-  return d.toISOString().slice(0, 10);
+  return dataLocala(d);
 }
 
 function schimbaSaptamana(directie) {
@@ -212,12 +219,12 @@ function schimbaSaptamana(directie) {
 }
 
 function saptamanaAceasta() {
-  saptamanaCurenta = luniAlSaptamanii(new Date().toISOString().slice(0, 10));
+  saptamanaCurenta = luniAlSaptamanii(dataLocala(new Date()));
   incarcaCalendarSaptamana();
 }
 
 async function incarcaCalendarSaptamana() {
-  const astazi = new Date().toISOString().slice(0, 10);
+  const astazi = dataLocala(new Date());
   const zile = [0, 1, 2, 3, 4].map(i => adaugaZile(saptamanaCurenta, i));
   const rows = await apel(`/api/programari?de_la=${zile[0]}&pana_la=${zile[4]}`);
 
@@ -271,7 +278,7 @@ async function incarcaCalendarSaptamana() {
                           <div style="display:flex;align-items:center;gap:2px">
                             <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:1px;background:#1e1e1d;color:#ece9e2;border:1px solid #45443f;border-radius:4px">
                               <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
-                              <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>Prezent</option>
+                              <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>Efectuat</option>
                               <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>Absent</option>
                             </select>
                             <span style="font-size:10px;cursor:pointer;color:#9a988e" onclick="reprogrameazaPrompt('${p.id}')" title="Reprogrameaza">&#8635;</span>
@@ -320,7 +327,7 @@ async function aratatFormularProgramareNoua() {
         </select>
 
         <label>Data</label>
-        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${new Date().toISOString().slice(0,10)}">
+        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}">
 
         <label>Ora</label>
         <select id="prog-ora" style="width:100%;margin-bottom:14px">

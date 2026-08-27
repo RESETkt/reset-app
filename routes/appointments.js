@@ -29,7 +29,17 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { pacient_id, kineto_id, abonament_id, data_ora } = req.body;
+  const { pacient_id, kineto_id, data_ora } = req.body;
+  let abonament_id = req.body.abonament_id || null;
+
+  if (!abonament_id) {
+    const activ = await pool.query(
+      `SELECT id FROM abonamente WHERE pacient_id = $1 AND activ = true ORDER BY creat_la DESC LIMIT 1`,
+      [pacient_id]
+    );
+    abonament_id = activ.rows[0]?.id || null;
+  }
+
   const { rows } = await pool.query(
     `INSERT INTO programari (pacient_id, kineto_id, abonament_id, data_ora) VALUES ($1,$2,$3,$4) RETURNING *`,
     [pacient_id, kineto_id, abonament_id, data_ora]
