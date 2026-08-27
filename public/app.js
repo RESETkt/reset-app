@@ -65,6 +65,81 @@ function aratapanel(nume) {
   if (nume === 'statistici') incarcaStatistici();
 }
 
+function aratatFormularPacientNou() {
+  ['fisa', 'calendar', 'statistici'].forEach(p => {
+    document.getElementById(`panel-${p}`).style.display = 'none';
+  });
+  document.querySelectorAll('.top-nav .btn').forEach(b => b.classList.remove('activ'));
+
+  document.getElementById('panel-fisa').style.display = 'block';
+  document.getElementById('panel-fisa').innerHTML = `
+    <div class="card" style="max-width:420px">
+      <h2>Pacient nou</h2>
+      <label>Nume</label>
+      <input id="nou-nume" style="width:100%;margin-bottom:10px">
+      <label>Prenume</label>
+      <input id="nou-prenume" style="width:100%;margin-bottom:10px">
+      <label>CNP</label>
+      <input id="nou-cnp" style="width:100%;margin-bottom:10px">
+      <label>Telefon</label>
+      <input id="nou-telefon" style="width:100%;margin-bottom:10px" placeholder="07xxxxxxxx">
+      <label>Email</label>
+      <input id="nou-email" style="width:100%;margin-bottom:10px">
+      <label>Diagnostic</label>
+      <input id="nou-diagnostic" style="width:100%;margin-bottom:14px">
+
+      <label>Abonament (optional, il poti adauga si mai tarziu)</label>
+      <select id="nou-abonament" style="width:100%;margin-bottom:14px">
+        <option value="">Fara abonament</option>
+        <option value="8">8 sedinte</option>
+        <option value="12">12 sedinte</option>
+        <option value="individual">Sedinta individuala</option>
+      </select>
+
+      <button class="btn" style="width:100%" onclick="salveazaPacientNou()">Salveaza pacient</button>
+      <div id="eroare-pacient-nou" style="color:#b23b3b;font-size:12px;margin-top:8px"></div>
+    </div>
+  `;
+}
+
+async function salveazaPacientNou() {
+  const nume = document.getElementById('nou-nume').value.trim();
+  const prenume = document.getElementById('nou-prenume').value.trim();
+  const cnp = document.getElementById('nou-cnp').value.trim();
+  const telefon = document.getElementById('nou-telefon').value.trim();
+  const email = document.getElementById('nou-email').value.trim();
+  const diagnostic = document.getElementById('nou-diagnostic').value.trim();
+  const tipAbonament = document.getElementById('nou-abonament').value;
+
+  const eroareEl = document.getElementById('eroare-pacient-nou');
+  eroareEl.textContent = '';
+
+  if (!nume || !prenume) {
+    eroareEl.textContent = 'Numele si prenumele sunt obligatorii.';
+    return;
+  }
+
+  const pacient = await apel('/api/pacienti', {
+    method: 'POST',
+    body: JSON.stringify({ nume, prenume, cnp: cnp || null, telefon, email, diagnostic })
+  });
+
+  if (pacient.eroare) {
+    eroareEl.textContent = pacient.eroare;
+    return;
+  }
+
+  if (tipAbonament) {
+    await apel('/api/abonamente', {
+      method: 'POST',
+      body: JSON.stringify({ pacient_id: pacient.id, tip: tipAbonament })
+    });
+  }
+
+  cautaPacienti('');
+  deschideFisa(pacient.id);
+}
+
 async function deschideFisa(id) {
   pacientCurent = id;
   const data = await apel(`/api/pacienti/${id}`);
