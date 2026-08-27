@@ -10,6 +10,7 @@ const subscriptionsRoutes = require('./routes/subscriptions');
 const consentRoutes = require('./routes/consent');
 const statsRoutes = require('./routes/stats');
 const checkinRoutes = require('./routes/checkin');
+const usersRoutes = require('./routes/users');
 const { porneteReminderele } = require('./services/reminders');
 
 const app = express();
@@ -23,6 +24,7 @@ app.use('/api/abonamente', subscriptionsRoutes);
 app.use('/api/gdpr', consentRoutes);
 app.use('/api/statistici', statsRoutes);
 app.use('/api/checkin', checkinRoutes);
+app.use('/api/utilizatori', usersRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
