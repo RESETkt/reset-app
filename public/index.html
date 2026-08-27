@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<title>Reset - dashboard kineto</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="login" class="card" style="max-width:340px;margin:80px auto;">
+  <div style="text-align:center;margin-bottom:16px">
+    <img src="logo-icon.png" alt="Reset" style="height:56px">
+  </div>
+  <h2 style="text-align:center">Autentificare</h2>
+  <label>Email</label>
+  <input id="login-email" type="email" style="width:100%;margin-bottom:10px">
+  <label>Parola</label>
+  <input id="login-parola" type="password" style="width:100%;margin-bottom:14px">
+  <button class="btn" style="width:100%" onclick="login()">Intra in cont</button>
+  <div id="login-eroare" style="color:#b23b3b;font-size:12px;margin-top:8px"></div>
+</div>
+
+<div id="app" class="app" style="display:none">
+  <div class="sidebar">
+    <div style="margin-bottom:16px"><img src="logo-icon.png" alt="Reset" style="height:36px"></div>
+    <input id="cautare" placeholder="Cauta pacient" oninput="cautaPacienti(this.value)">
+    <div id="lista-pacienti"></div>
+  </div>
+  <div class="main">
+    <div class="top-nav">
+      <button class="btn activ" onclick="aratapanel('fisa')">Fisa pacient</button>
+      <button class="btn" onclick="aratapanel('calendar')">Programari azi</button>
+      <button class="btn" onclick="aratapanel('statistici')">Statistici</button>
+    </div>
+
+    <div id="panel-fisa"></div>
+    <div id="panel-calendar" style="display:none"></div>
+    <div id="panel-statistici" style="display:none"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

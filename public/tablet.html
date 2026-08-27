@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reset - check-in</title>
+<link rel="icon" href="favicon.png">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, sans-serif; background: #f4f3ef; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-top: 90px; }
+  .card { background: #fff; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  input { width: 100%; padding: 10px; border: 1px solid #d8d6cc; border-radius: 8px; font-size: 15px; margin-bottom: 10px; }
+  button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #232320; color: #fff; font-size: 15px; cursor: pointer; }
+  button.secundar { background: #fff; border: 1px solid #d8d6cc; color: #232320; margin-top: 8px; }
+  h2 { font-size: 16px; text-align: center; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: #7a7970; text-align: center; margin-bottom: 16px; }
+  .metric { background: #f4f3ef; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 16px; }
+  .metric .label { font-size: 12px; color: #7a7970; }
+  .metric .value { font-size: 26px; font-weight: 600; margin-top: 4px; }
+  canvas { border: 1px dashed #ccc; border-radius: 8px; width: 100%; height: 140px; touch-action: none; }
+  .gdpr-text { font-size: 12px; color: #7a7970; line-height: 1.5; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div style="position:fixed;top:24px;left:50%;transform:translateX(-50%)">
+  <img src="logo-icon.png" alt="Reset" style="height:64px">
+</div>
+
+<div class="card" id="pas-cautare">
+  <h2>Bine ai venit</h2>
+  <div class="sub">Introdu numarul de telefon pentru a continua</div>
+  <input id="telefon" placeholder="07xx xxx xxx" type="tel">
+  <button onclick="cautaProgramare()">Continua</button>
+  <div id="eroare-cautare" style="color:#b23b3b;font-size:12px;margin-top:8px;text-align:center"></div>
+</div>
+
+<div class="card" id="pas-gdpr" style="display:none">
+  <h2>Prima ta vizita</h2>
+  <div class="sub">Te rugam sa semnezi consimtamantul GDPR</div>
+  <div class="gdpr-text" id="gdpr-text"></div>
+  <canvas id="canvas-gdpr"></canvas>
+  <button onclick="trimiteGDPR()">Confirma</button>
+  <button class="secundar" onclick="stergeCanvas('canvas-gdpr')">Sterge semnatura</button>
+</div>
+
+<div class="card" id="pas-confirmare" style="display:none">
+  <h2 id="salut-nume"></h2>
+  <div class="sub" id="detalii-programare"></div>
+  <div class="metric">
+    <div class="label">Sedinte ramase din abonament</div>
+    <div class="value" id="sedinte-ramase">-</div>
+  </div>
+  <div class="sub" style="margin-bottom:6px">Semneaza pentru confirmarea sedintei de azi</div>
+  <canvas id="canvas-sedinta"></canvas>
+  <button onclick="trimiteConfirmareSedinta()">Confirma</button>
+  <button class="secundar" onclick="stergeCanvas('canvas-sedinta')">Sterge semnatura</button>
+</div>
+
+<div class="card" id="pas-gata" style="display:none">
+  <h2>Multumim!</h2>
+  <div class="sub">Programarea a fost confirmata. Te asteptam la ora stabilita.</div>
+</div>
+
+<script src="tablet.js"></script>
+</body>
+</html>

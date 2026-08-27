@@ -1,0 +1,28 @@
+databases:
+  - name: reset-db
+    plan: free
+    databaseName: reset
+    user: reset
+
+services:
+  - type: web
+    name: reset-app
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reset-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SMS_SENDER
+        value: RESET
+      - key: BREVO_EMAIL_SENDER
+        sync: false
+      - key: BREVO_EMAIL_SENDER_NAME
+        value: Reset Kineto
