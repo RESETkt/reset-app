@@ -202,7 +202,7 @@ async function incarcaCalendar() {
   `;
 }
 
-const ORE_DISPONIBILE = ['07:30', '09:10', '10:50', '12:30', '14:00', '16:10', '17:50'];
+const ORE_DISPONIBILE = ['07:30', '09:10', '10:50', '12:30', '14:30', '16:10', '17:50'];
 
 async function aratatFormularProgramareNoua() {
   const pacienti = await apel('/api/pacienti');
