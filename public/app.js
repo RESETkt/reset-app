@@ -25,7 +25,7 @@ function aratatApp() {
   document.getElementById('login').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
   cautaPacienti('');
-  aratapanel('fisa');
+  aratapanel('calendar');
 }
 
 async function apel(cale, optiuni = {}) {
@@ -59,19 +59,18 @@ function aratapanel(nume) {
   ['fisa', 'calendar', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
   });
-  document.querySelectorAll('.top-nav .btn').forEach(b => b.classList.remove('activ'));
+  document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('activ'));
   event?.target?.classList.add('activ');
-  if (nume === 'calendar') incarcaCalendar();
+  if (nume === 'calendar') incarcaCalendarSaptamana();
   if (nume === 'statistici') incarcaStatistici();
 }
 
 function aratatFormularPacientNou() {
+  document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('activ'));
   ['fisa', 'calendar', 'statistici'].forEach(p => {
-    document.getElementById(`panel-${p}`).style.display = 'none';
+    document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
-  document.querySelectorAll('.top-nav .btn').forEach(b => b.classList.remove('activ'));
 
-  document.getElementById('panel-fisa').style.display = 'block';
   document.getElementById('panel-fisa').innerHTML = `
     <div class="card" style="max-width:420px">
       <h2>Pacient nou</h2>
@@ -97,7 +96,7 @@ function aratatFormularPacientNou() {
       </select>
 
       <button class="btn" style="width:100%" onclick="salveazaPacientNou()">Salveaza pacient</button>
-      <div id="eroare-pacient-nou" style="color:#b23b3b;font-size:12px;margin-top:8px"></div>
+      <div id="eroare-pacient-nou" style="color:#e08585;font-size:12px;margin-top:8px"></div>
     </div>
   `;
 }
@@ -142,6 +141,12 @@ async function salveazaPacientNou() {
 
 async function deschideFisa(id) {
   pacientCurent = id;
+  document.querySelectorAll('.top-nav-btn').forEach(b => b.classList.remove('activ'));
+  ['fisa', 'calendar', 'statistici'].forEach(p => {
+    document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
+  });
+  document.querySelector('.top-nav-btn:nth-child(2)')?.classList.add('activ');
+
   const data = await apel(`/api/pacienti/${id}`);
   const p = data.pacient;
   const ab = data.abonament;
@@ -152,9 +157,9 @@ async function deschideFisa(id) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
           <div style="font-size:16px;font-weight:600">${p.nume} ${p.prenume}</div>
-          <div style="font-size:13px;color:#7a7970;margin-top:2px">Diagnostic: ${p.diagnostic || '-'}</div>
+          <div style="font-size:13px;color:#9a988e;margin-top:2px">Diagnostic: ${p.diagnostic || '-'}</div>
         </div>
-        ${ab ? `<span class="badge">Abonament ${ab.tip} sedinte</span>` : '<span class="badge" style="background:#f5e5d8;color:#8a5a1c">Fara abonament</span>'}
+        ${ab ? `<span class="badge">Abonament ${ab.tip} sedinte</span>` : '<span class="badge" style="background:#3a2f1f;color:#e0b85e">Fara abonament</span>'}
       </div>
 
       <div class="grid-3" style="margin-top:16px">
@@ -164,13 +169,13 @@ async function deschideFisa(id) {
       </div>
 
       ${data.ultima_sedinta ? `
-      <div style="border-top:1px solid #e3e1d9;margin-top:16px;padding-top:12px">
+      <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
         <div style="font-weight:500;font-size:13px;margin-bottom:6px">Ultima sedinta (${new Date(data.ultima_sedinta.data_ora).toLocaleDateString('ro-RO')})</div>
-        <div style="font-size:13px;color:#555">Exercitii: ${data.ultima_sedinta.exercitii || '-'}</div>
-        <div style="font-size:13px;color:#555">Observatii: ${data.ultima_sedinta.observatii || '-'}</div>
+        <div style="font-size:13px;color:#c9c7bd">Exercitii: ${data.ultima_sedinta.exercitii || '-'}</div>
+        <div style="font-size:13px;color:#c9c7bd">Observatii: ${data.ultima_sedinta.observatii || '-'}</div>
       </div>` : ''}
 
-      <div style="border-top:1px solid #e3e1d9;margin-top:16px;padding-top:12px">
+      <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
         <div style="font-weight:500;font-size:13px;margin-bottom:8px">Contact</div>
         <div style="font-size:13px">Telefon: ${p.telefon || '-'}</div>
         <div style="font-size:13px">Email: ${p.email || '-'}</div>
@@ -179,62 +184,142 @@ async function deschideFisa(id) {
   `;
 }
 
-async function incarcaCalendar() {
-  const azi = new Date().toISOString().slice(0, 10);
-  const rows = await apel(`/api/programari?de_la=${azi}&pana_la=${azi}`);
-  document.getElementById('continut-calendar').innerHTML = `
-    <div class="card">
-      <h2>Programari azi</h2>
-      ${rows.map(r => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee">
-          <div>
-            <div style="font-size:13px;font-weight:500">${r.nume} ${r.prenume}</div>
-            <div style="font-size:12px;color:#7a7970">${new Date(r.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })} - ${r.kineto_nume || 'nealocat'} - ${r.status}</div>
-          </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn prezent" onclick="marcheaza('${r.id}','prezent')">Prezent</button>
-            <button class="btn absent" onclick="marcheaza('${r.id}','absent')">Absent</button>
-            <button class="btn" onclick="reprogrameazaPrompt('${r.id}')">Reprogrameaza</button>
-          </div>
-        </div>
-      `).join('') || '<div style="font-size:13px;color:#7a7970">Nicio programare azi.</div>'}
-    </div>
-  `;
+const ORE_DISPONIBILE = ['07:30', '09:10', '10:50', '12:30', '14:30', '16:10', '17:50'];
+const ZILE_SAPTAMANA = ['Luni', 'Marti', 'Miercuri', 'Joi', 'Vineri', 'Sambata'];
+
+let saptamanaCurenta = luniAlSaptamanii(new Date().toISOString().slice(0, 10));
+
+function luniAlSaptamanii(dataISO) {
+  const d = new Date(dataISO + 'T00:00:00');
+  const zi = d.getDay();
+  const diff = zi === 0 ? -6 : 1 - zi;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
 }
 
-const ORE_DISPONIBILE = ['07:30', '09:10', '10:50', '12:30', '14:30', '16:10', '17:50'];
+function adaugaZile(dataISO, nrZile) {
+  const d = new Date(dataISO + 'T00:00:00');
+  d.setDate(d.getDate() + nrZile);
+  return d.toISOString().slice(0, 10);
+}
+
+function schimbaSaptamana(directie) {
+  saptamanaCurenta = adaugaZile(saptamanaCurenta, directie * 7);
+  incarcaCalendarSaptamana();
+}
+
+function saptamanaAceasta() {
+  saptamanaCurenta = luniAlSaptamanii(new Date().toISOString().slice(0, 10));
+  incarcaCalendarSaptamana();
+}
+
+async function incarcaCalendarSaptamana() {
+  const zile = [0, 1, 2, 3, 4, 5].map(i => adaugaZile(saptamanaCurenta, i));
+  const rows = await apel(`/api/programari?de_la=${zile[0]}&pana_la=${zile[5]}`);
+
+  const pePeriada = {};
+  rows.forEach(r => {
+    const dataR = r.data_ora.slice(0, 10);
+    const oraR = new Date(r.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+    const cheie = `${dataR}_${oraR}`;
+    if (!pePeriada[cheie]) pePeriada[cheie] = {};
+    const numeKineto = r.kineto_nume || 'Nealocat';
+    if (!pePeriada[cheie][numeKineto]) pePeriada[cheie][numeKineto] = [];
+    pePeriada[cheie][numeKineto].push(r);
+  });
+
+  const culoareStatus = { programat: '#9a988e', prezent: '#6bcf9b', absent: '#e08585', reprogramat: '#e0b85e' };
+
+  let html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="schimbaSaptamana(-1)">&larr; Saptamana trecuta</button>
+        <button class="btn" onclick="saptamanaAceasta()">Azi</button>
+        <button class="btn" onclick="schimbaSaptamana(1)">Saptamana urmatoare &rarr;</button>
+      </div>
+      <button class="btn" onclick="aratatFormularProgramareNoua()">+ Programare noua</button>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <tr>
+          <th style="text-align:left;padding:8px;font-size:12px;color:#9a988e;width:70px">Ora</th>
+          ${zile.map((z, i) => `<th style="text-align:left;padding:8px;font-size:12px;color:#9a988e;min-width:150px">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
+        </tr>
+        ${ORE_DISPONIBILE.map(ora => `
+          <tr style="border-top:1px solid #3a3937">
+            <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top">${ora}</td>
+            ${zile.map(z => {
+              const grup = pePeriada[`${z}_${ora}`] || {};
+              const kinetoNumele = Object.keys(grup);
+              if (kinetoNumele.length === 0) return `<td style="padding:8px;vertical-align:top"></td>`;
+              return `<td style="padding:8px;vertical-align:top">
+                ${kinetoNumele.map(k => `
+                  <div style="margin-bottom:6px">
+                    <div style="font-size:11px;color:#9a988e;margin-bottom:2px">${k}</div>
+                    ${grup[k].map(p => `
+                      <div style="font-size:12px;padding:2px 6px;border-left:3px solid ${culoareStatus[p.status] || '#9a988e'};margin-bottom:2px;cursor:pointer" onclick="aratatActiuniProgramare('${p.id}','${p.nume} ${p.prenume}')">
+                        ${p.nume} ${p.prenume}
+                      </div>
+                    `).join('')}
+                  </div>
+                `).join('')}
+              </td>`;
+            }).join('')}
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+  `;
+
+  document.getElementById('panel-calendar').innerHTML = html;
+}
+
+function aratatActiuniProgramare(id, numePacient) {
+  const alegere = prompt(`${numePacient} - scrie: p pentru prezent, a pentru absent, r pentru reprogramare`);
+  if (alegere === 'p') marcheaza(id, 'prezent');
+  else if (alegere === 'a') marcheaza(id, 'absent');
+  else if (alegere === 'r') reprogrameazaPrompt(id);
+}
 
 async function aratatFormularProgramareNoua() {
   const pacienti = await apel('/api/pacienti');
   const kinetoUtilizatori = await apel('/api/utilizatori');
 
-  document.getElementById('continut-calendar').innerHTML = `
-    <div class="card" style="max-width:420px">
-      <h2>Programare noua</h2>
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:420px;width:90%">
+        <h2>Programare noua</h2>
 
-      <label>Pacient</label>
-      <select id="prog-pacient" style="width:100%;margin-bottom:10px">
-        ${pacienti.map(p => `<option value="${p.id}">${p.nume} ${p.prenume}</option>`).join('')}
-      </select>
+        <label>Pacient</label>
+        <select id="prog-pacient" style="width:100%;margin-bottom:10px">
+          ${pacienti.map(p => `<option value="${p.id}">${p.nume} ${p.prenume}</option>`).join('')}
+        </select>
 
-      <label>Kineto</label>
-      <select id="prog-kineto" style="width:100%;margin-bottom:10px">
-        <option value="">Nealocat</option>
-        ${kinetoUtilizatori.map(u => `<option value="${u.id}">${u.nume}</option>`).join('')}
-      </select>
+        <label>Kineto</label>
+        <select id="prog-kineto" style="width:100%;margin-bottom:10px">
+          <option value="">Nealocat</option>
+          ${kinetoUtilizatori.map(u => `<option value="${u.id}">${u.nume}</option>`).join('')}
+        </select>
 
-      <label>Data</label>
-      <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${new Date().toISOString().slice(0,10)}">
+        <label>Data</label>
+        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${saptamanaCurenta}">
 
-      <label>Ora</label>
-      <select id="prog-ora" style="width:100%;margin-bottom:14px">
-        ${ORE_DISPONIBILE.map(o => `<option value="${o}">${o}</option>`).join('')}
-      </select>
+        <label>Ora</label>
+        <select id="prog-ora" style="width:100%;margin-bottom:14px">
+          ${ORE_DISPONIBILE.map(o => `<option value="${o}">${o}</option>`).join('')}
+        </select>
 
-      <button class="btn" style="width:100%" onclick="salveazaProgramareNoua()">Salveaza programarea</button>
-      <div id="eroare-programare-noua" style="color:#b23b3b;font-size:12px;margin-top:8px"></div>
+        <button class="btn" style="width:100%" onclick="salveazaProgramareNoua()">Salveaza programarea</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+        <div id="eroare-programare-noua" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
     </div>
   `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function inchideModalProgramare() {
+  document.getElementById('modal-container').innerHTML = '';
 }
 
 async function salveazaProgramareNoua() {
@@ -261,7 +346,8 @@ async function salveazaProgramareNoua() {
     return;
   }
 
-  incarcaCalendar();
+  inchideModalProgramare();
+  incarcaCalendarSaptamana();
 }
 
 async function marcheaza(id, status) {
@@ -272,14 +358,14 @@ async function marcheaza(id, status) {
   } else {
     await apel(`/api/programari/${id}/absent`, { method: 'PATCH' });
   }
-  incarcaCalendar();
+  incarcaCalendarSaptamana();
 }
 
 async function reprogrameazaPrompt(id) {
   const dataNoua = prompt('Noua data si ora (YYYY-MM-DD HH:MM):');
   if (!dataNoua) return;
   await apel(`/api/programari/${id}/reprogrameaza`, { method: 'PATCH', body: JSON.stringify({ data_ora_noua: dataNoua }) });
-  incarcaCalendar();
+  incarcaCalendarSaptamana();
 }
 
 async function incarcaStatistici() {
@@ -301,7 +387,7 @@ async function incarcaStatistici() {
     </div>
     <div class="card">
       <h2>Incasari dupa metoda (luna aceasta)</h2>
-      ${s.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${m.total} lei</div>`).join('') || '<div style="font-size:13px;color:#7a7970">Fara plati inregistrate.</div>'}
+      ${s.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${m.total} lei</div>`).join('') || '<div style="font-size:13px;color:#9a988e">Fara plati inregistrate.</div>'}
     </div>
   `;
 }

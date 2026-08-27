@@ -24,25 +24,22 @@
 <div id="app" class="app" style="display:none">
   <div class="sidebar">
     <div style="margin-bottom:16px"><img src="logo-icon.png" alt="Reset" style="height:36px"></div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+      <button class="btn top-nav-btn activ" onclick="aratapanel('calendar')">Programari</button>
+      <button class="btn top-nav-btn" onclick="aratapanel('fisa')">Fisa pacient</button>
+      <button class="btn top-nav-btn" onclick="aratapanel('statistici')">Statistici</button>
+    </div>
     <button class="btn" style="width:100%;margin-bottom:12px" onclick="aratatFormularPacientNou()">+ Pacient nou</button>
     <input id="cautare" placeholder="Cauta pacient" oninput="cautaPacienti(this.value)">
     <div id="lista-pacienti"></div>
   </div>
   <div class="main">
-    <div class="top-nav">
-      <button class="btn activ" onclick="aratapanel('fisa')">Fisa pacient</button>
-      <button class="btn" onclick="aratapanel('calendar')">Programari azi</button>
-      <button class="btn" onclick="aratapanel('statistici')">Statistici</button>
-    </div>
-
-    <div id="panel-fisa"></div>
-    <div id="panel-calendar" style="display:none">
-      <div style="margin-bottom:12px"><button class="btn" onclick="aratatFormularProgramareNoua()">+ Programare noua</button></div>
-      <div id="continut-calendar"></div>
-    </div>
+    <div id="panel-calendar"></div>
+    <div id="panel-fisa" style="display:none"></div>
     <div id="panel-statistici" style="display:none"></div>
   </div>
 </div>
+<div id="modal-container"></div>
 
 <script src="app.js"></script>
 </body>
