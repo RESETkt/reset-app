@@ -12,7 +12,7 @@ body {
 .patient-row:hover, .patient-row.activ { background: #33322e; }
 .patient-row .nume { font-size: 13px; font-weight: 500; }
 .patient-row .info { font-size: 11px; color: #9a988e; }
-.main { padding: 24px; }
+.main { padding: 24px; min-width: 0; }
 .card { background: #262624; border: 1px solid #3a3937; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
