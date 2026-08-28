@@ -235,7 +235,7 @@ async function deschideFisa(id) {
       <div class="grid-3" style="margin-top:16px">
         <div class="metric"><div class="label">Efectuate</div><div class="value">${ab ? ab.sedinte_efectuate : 0}</div></div>
         <div class="metric"><div class="label">Ramase</div><div class="value">${ramase}</div></div>
-        <div class="metric"><div class="label">GDPR</div><div class="value" style="font-size:14px">${data.gdpr_semnat ? 'Semnat' : 'Nesemnat'}</div></div>
+        <div class="metric" style="cursor:pointer" onclick="aratatModalGDPR('${id}', ${data.gdpr_semnat}, '${data.gdpr_data || ''}')"><div class="label">GDPR</div><div class="value" style="font-size:14px;text-decoration:underline">${data.gdpr_semnat ? 'Semnat' : 'Nesemnat'}</div></div>
       </div>
 
       ${data.ultima_sedinta ? `
@@ -275,6 +275,105 @@ async function deschideFisa(id) {
       `).join('')}
     </div>
   `;
+}
+
+async function aratatModalGDPR(pacientId, dejaSemnat, dataSemnare) {
+  if (dejaSemnat) {
+    const html = `
+      <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+        <div class="card" style="max-width:400px;width:90%">
+          <h2>GDPR</h2>
+          <div style="font-size:13px;color:#c9c7bd">Consimtamantul a fost deja semnat pe ${dataSemnare ? new Date(dataSemnare).toLocaleDateString('ro-RO') : '-'}.</div>
+          <button class="btn secundar" style="width:100%;margin-top:14px" onclick="inchideModalProgramare()">Inchide</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('modal-container').innerHTML = html;
+    return;
+  }
+
+  const gdprText = await apel('/api/gdpr/text');
+
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:420px;width:90%">
+        <h2>Consimtamant GDPR</h2>
+        <div style="font-size:13px;color:#c9c7bd;margin-bottom:14px;line-height:1.5">${gdprText.text}</div>
+        <label>Semnatura</label>
+        <canvas id="canvas-gdpr-dashboard" style="border:1px dashed #45443f;border-radius:8px;width:100%;height:140px;touch-action:none;background:#1e1e1d"></canvas>
+        <button class="btn" style="width:100%;margin-top:10px" onclick="trimiteSemnaturaGDPR('${pacientId}')">Confirma semnatura</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="stergeCanvasGDPR()">Sterge semnatura</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+        <div id="eroare-gdpr" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+  pregatesteCanvasGDPR();
+}
+
+function pregatesteCanvasGDPR() {
+  const canvas = document.getElementById('canvas-gdpr-dashboard');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#ece9e2';
+
+  let deseneaza = false;
+  const pozitie = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const punct = e.touches ? e.touches[0] : e;
+    return { x: punct.clientX - rect.left, y: punct.clientY - rect.top };
+  };
+  const start = (e) => { deseneaza = true; const p = pozitie(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  const muta = (e) => { if (!deseneaza) return; const p = pozitie(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
+  const stop = () => { deseneaza = false; };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', muta);
+  window.addEventListener('mouseup', stop);
+  canvas.addEventListener('touchstart', start);
+  canvas.addEventListener('touchmove', muta);
+  canvas.addEventListener('touchend', stop);
+}
+
+function stergeCanvasGDPR() {
+  const canvas = document.getElementById('canvas-gdpr-dashboard');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function canvasGDPREsteGol() {
+  const canvas = document.getElementById('canvas-gdpr-dashboard');
+  const ctx = canvas.getContext('2d');
+  const date = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  return !date.some((valoare, i) => i % 4 === 3 && valoare !== 0);
+}
+
+async function trimiteSemnaturaGDPR(pacientId) {
+  const eroareEl = document.getElementById('eroare-gdpr');
+  eroareEl.textContent = '';
+
+  if (canvasGDPREsteGol()) {
+    eroareEl.textContent = 'Semneaza inainte de a confirma.';
+    return;
+  }
+
+  const semnatura_svg = document.getElementById('canvas-gdpr-dashboard').toDataURL();
+  const rezultat = await apel(`/api/gdpr/${pacientId}`, {
+    method: 'POST',
+    body: JSON.stringify({ semnatura_svg })
+  });
+
+  if (rezultat.eroare) {
+    eroareEl.textContent = rezultat.eroare;
+    return;
+  }
+
+  inchideModalProgramare();
+  deschideFisa(pacientId);
 }
 
 function aratatFormularEditarePacient(id) {

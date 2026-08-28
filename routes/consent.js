@@ -3,7 +3,7 @@ const pool = require('../db/pool');
 
 const router = express.Router();
 
-const TEXT_GDPR = `Sunt de acord cu prelucrarea datelor mele cu caracter personal (nume, prenume, CNP, telefon, email) de catre Reset, in scopul gestionarii programarilor si a fisei mele de kinetoterapie, conform Regulamentului GDPR.`;
+const TEXT_GDPR = `Aici va fi GDPR`;
 
 // Fara autentificare cu token de staff - se apeleaza direct de pe tableta la prima vizita
 router.get('/text', (req, res) => {

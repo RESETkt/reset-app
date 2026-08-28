@@ -48,9 +48,7 @@ router.get('/:id', async (req, res) => {
     pacient: pacient.rows[0],
     abonament: abonament.rows[0] || null,
     ultima_sedinta: ultimaSedinta.rows[0] || null,
-    gdpr_semnat: consimtamant.rows.length > 0,
-    plati: plati.rows
-  });
+    gdpr_semnat: consimtamant.rows.length > 0, gdpr_data: consimtamant.rows[0]?.data_semnare || null, plati: plati.rows });
 });
 
 // Adauga o plata noua pentru un pacient - abonament nou, sedinta, sau orice suma
