@@ -72,6 +72,14 @@ CREATE TABLE IF NOT EXISTS log_remindere (
   trimis_la timestamptz DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS orar_kineto (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ora text NOT NULL,
+  culoar int NOT NULL CHECK (culoar IN (0,1,2)),
+  kineto_id uuid REFERENCES utilizatori(id) ON DELETE SET NULL,
+  UNIQUE (ora, culoar)
+);
+
 CREATE INDEX IF NOT EXISTS idx_programari_data ON programari(data_ora);
 CREATE INDEX IF NOT EXISTS idx_programari_pacient ON programari(pacient_id);
 CREATE INDEX IF NOT EXISTS idx_abonamente_pacient ON abonamente(pacient_id);
