@@ -21,12 +21,7 @@ async function login() {
   aratatApp();
 }
 
-function aratatApp() {
-  document.getElementById('login').style.display = 'none';
-  document.getElementById('app').style.display = 'grid';
-  cautaPacienti('');
-  aratapanel('calendar');
-}
+ function aratatApp() { document.getElementById('login').style.display = 'none'; document.getElementById('app').style.display = 'grid'; cautaPacienti(''); marcheazaActiv(0); incarcaCalendarSaptamana(); }
 
 async function apel(cale, optiuni = {}) {
   const r = await fetch(cale, {
