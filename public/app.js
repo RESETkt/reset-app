@@ -306,8 +306,10 @@ async function incarcaCalendarSaptamana() {
   document.getElementById('panel-calendar').innerHTML = html;
 }
 
+let pacientiProgramareCache = [];
+
 async function aratatFormularProgramareNoua() {
-  const pacienti = await apel('/api/pacienti');
+  pacientiProgramareCache = await apel('/api/pacienti');
   const kinetoUtilizatori = await apel('/api/utilizatori');
 
   const html = `
@@ -316,9 +318,9 @@ async function aratatFormularProgramareNoua() {
         <h2>Programare noua</h2>
 
         <label>Pacient</label>
-        <select id="prog-pacient" style="width:100%;margin-bottom:10px">
-          ${pacienti.map(p => `<option value="${p.id}">${p.nume} ${p.prenume}</option>`).join('')}
-        </select>
+        <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." style="width:100%;margin-bottom:4px" oninput="filtreazaPacientiProgramare(this.value)" autocomplete="off">
+        <input type="hidden" id="prog-pacient-id">
+        <div id="prog-pacient-rezultate" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
 
         <label>Kineto</label>
         <select id="prog-kineto" style="width:100%;margin-bottom:10px">
@@ -343,20 +345,51 @@ async function aratatFormularProgramareNoua() {
   document.getElementById('modal-container').innerHTML = html;
 }
 
+function filtreazaPacientiProgramare(text) {
+  const rezultateEl = document.getElementById('prog-pacient-rezultate');
+  document.getElementById('prog-pacient-id').value = '';
+
+  if (!text.trim()) {
+    rezultateEl.innerHTML = '';
+    return;
+  }
+
+  const cautare = text.toLowerCase();
+  const gasiti = pacientiProgramareCache.filter(p =>
+    `${p.nume} ${p.prenume}`.toLowerCase().includes(cautare)
+  ).slice(0, 8);
+
+  rezultateEl.innerHTML = gasiti.map(p => `
+    <div style="padding:8px;border-radius:6px;cursor:pointer;font-size:13px" onmouseover="this.style.background='#3a3937'" onmouseout="this.style.background='transparent'" onclick="selecteazaPacientProgramare('${p.id}','${p.nume} ${p.prenume}')">
+      ${p.nume} ${p.prenume}
+    </div>
+  `).join('') || '<div style="padding:8px;font-size:13px;color:#9a988e">Niciun pacient gasit.</div>';
+}
+
+function selecteazaPacientProgramare(id, nume) {
+  document.getElementById('prog-pacient-id').value = id;
+  document.getElementById('prog-pacient-cautare').value = nume;
+  document.getElementById('prog-pacient-rezultate').innerHTML = '';
+}
+
 function inchideModalProgramare() {
   document.getElementById('modal-container').innerHTML = '';
 }
 
 async function salveazaProgramareNoua() {
-  const pacient_id = document.getElementById('prog-pacient').value;
+  const pacient_id = document.getElementById('prog-pacient-id').value;
   const kineto_id = document.getElementById('prog-kineto').value || null;
   const data = document.getElementById('prog-data').value;
   const ora = document.getElementById('prog-ora').value;
   const eroareEl = document.getElementById('eroare-programare-noua');
   eroareEl.textContent = '';
 
-  if (!pacient_id || !data || !ora) {
-    eroareEl.textContent = 'Completeaza pacientul, data si ora.';
+  if (!pacient_id) {
+    eroareEl.textContent = 'Cauta si selecteaza un pacient din lista.';
+    return;
+  }
+  if (!data || !ora) {
+    eroareEl.textContent = 'Completeaza data si ora.';
     return;
   }
 
