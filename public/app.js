@@ -21,7 +21,13 @@ async function login() {
   aratatApp();
 }
 
- function aratatApp() { document.getElementById('login').style.display = 'none'; document.getElementById('app').style.display = 'grid'; cautaPacienti(''); marcheazaActiv(0); incarcaCalendarSaptamana(); }
+function aratatApp() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'grid';
+  cautaPacienti('');
+  marcheazaActiv(0);
+  incarcaCalendarSaptamana();
+}
 
 async function apel(cale, optiuni = {}) {
   const r = await fetch(cale, {
@@ -55,17 +61,82 @@ function marcheazaActiv(index) {
 }
 
 function aratapanel(nume) {
-  ['fisa', 'calendar', 'statistici'].forEach(p => {
+  ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
   });
-  const index = { calendar: 0, fisa: 1, statistici: 2 }[nume];
+  const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume];
   marcheazaActiv(index);
   if (nume === 'calendar') incarcaCalendarSaptamana();
   if (nume === 'statistici') incarcaStatistici();
+  if (nume === 'echipa') incarcaEchipa();
+}
+
+async function incarcaEchipa() {
+  const echipa = await apel('/api/utilizatori');
+  document.getElementById('panel-echipa').innerHTML = `
+    <div class="card" style="max-width:480px">
+      <h2>Adauga kineto nou</h2>
+      <label>Nume</label>
+      <input id="echipa-nume" style="width:100%;margin-bottom:10px">
+      <label>Email (folosit la login)</label>
+      <input id="echipa-email" type="email" style="width:100%;margin-bottom:10px">
+      <label>Parola</label>
+      <input id="echipa-parola" type="password" style="width:100%;margin-bottom:14px">
+      <button class="btn" style="width:100%" onclick="adaugaKineto()">Adauga in echipa</button>
+      <div id="eroare-echipa" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+    </div>
+    <div class="card" style="max-width:480px">
+      <h2>Echipa curenta</h2>
+      ${echipa.map(u => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #3a3937">
+          <div>
+            <div style="font-size:13px;font-weight:500">${u.nume}</div>
+            <div style="font-size:11px;color:#9a988e">${u.email} - ${u.rol}</div>
+          </div>
+          <button class="btn secundar" onclick="stergeKineto('${u.id}','${u.nume}')">Sterge</button>
+        </div>
+      `).join('') || '<div style="font-size:13px;color:#9a988e">Niciun membru inca.</div>'}
+    </div>
+  `;
+}
+
+async function adaugaKineto() {
+  const nume = document.getElementById('echipa-nume').value.trim();
+  const email = document.getElementById('echipa-email').value.trim();
+  const parola = document.getElementById('echipa-parola').value;
+  const eroareEl = document.getElementById('eroare-echipa');
+  eroareEl.textContent = '';
+
+  if (!nume || !email || !parola) {
+    eroareEl.textContent = 'Completeaza nume, email si parola.';
+    return;
+  }
+
+  const rezultat = await apel('/api/utilizatori', {
+    method: 'POST',
+    body: JSON.stringify({ nume, email, parola })
+  });
+
+  if (rezultat.eroare) {
+    eroareEl.textContent = rezultat.eroare;
+    return;
+  }
+
+  incarcaEchipa();
+}
+
+async function stergeKineto(id, nume) {
+  if (!confirm(`Sigur vrei sa stergi \"${nume}\" din echipa? Programarile lui vechi raman, dar devin nealocate.`)) return;
+  const rezultat = await apel(`/api/utilizatori/${id}`, { method: 'DELETE' });
+  if (rezultat.eroare) {
+    alert(rezultat.eroare);
+    return;
+  }
+  incarcaEchipa();
 }
 
 function aratatFormularPacientNou() {
-  ['fisa', 'calendar', 'statistici'].forEach(p => {
+  ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
   marcheazaActiv(1);
@@ -140,7 +211,7 @@ async function salveazaPacientNou() {
 
 async function deschideFisa(id) {
   pacientCurent = id;
-  ['fisa', 'calendar', 'statistici'].forEach(p => {
+  ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
   marcheazaActiv(1);

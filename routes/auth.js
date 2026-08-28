@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../db/pool');
-const { creeazaToken } = require('../services/auth');
+const { creeazaToken, ceareAutentificare, ceareAdmin } = require('../services/auth');
 
 const router = express.Router();
 
@@ -15,9 +15,9 @@ router.post('/login', async (req, res) => {
   res.json({ token: creeazaToken(user), nume: user.nume, rol: user.rol });
 });
 
-// Folosit o singura data la setup, ca sa creezi primul cont de admin.
-// Sterge sau protejeaza ruta asta dupa ce ai creat conturile initiale.
-router.post('/inregistreaza', async (req, res) => {
+// Protejata: doar un admin deja autentificat poate crea conturi noi de aici.
+// Pentru gestionarea echipei, foloseste sectiunea "Echipa" din aplicatie.
+router.post('/inregistreaza', ceareAutentificare, ceareAdmin, async (req, res) => {
   const { nume, email, parola, rol } = req.body;
   const hash = await bcrypt.hash(parola, 10);
   const { rows } = await pool.query(
