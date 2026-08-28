@@ -573,44 +573,49 @@ async function incarcaCalendarSaptamana() {
       </div>
       <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
     </div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+    <div class="card" style="padding:0;overflow-x:auto">
+      <table style="border-collapse:collapse;table-layout:fixed">
         <tr>
           <th style="text-align:left;padding:10px 8px;font-size:12px;color:#9a988e;width:64px;border:${bordura};background:#1e1e1d">Ora</th>
-          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#1e1e1d' : '#9a988e'};border:${bordura};background:${z === astazi ? '#ece9e2' : '#1e1e1d'}">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
+          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#1e1e1d' : '#9a988e'};border:${bordura};background:${z === astazi ? '#ece9e2' : '#1e1e1d'};width:210px">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
         </tr>
         ${ORE_DISPONIBILE.map(ora => `
           <tr>
             <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top;border:${bordura}">${ora}</td>
             ${zile.map(z => {
               const grup = pePeriada[`${z}_${ora}`] || {};
-              const toatePacientii = Object.values(grup).flat();
+              const kinetoNumele = Object.keys(grup);
+              const lanuri = [0, 1, 2].map(i => kinetoNumele[i] ? grup[kinetoNumele[i]] : []);
               const fundalZi = z === astazi ? 'background:#2c2b28' : '';
               return `<td style="padding:0;vertical-align:top;border:${bordura};${fundalZi}">
-                <div class="cell-wrapper" style="position:relative;padding:8px;min-height:40px">
+                <div class="cell-wrapper" style="position:relative;padding:6px;min-height:40px">
                   <span class="cell-add-btn" onclick="aratatFormularProgramareNoua('${z}','${ora}')" title="Adauga programare">+</span>
-                  <div style="display:flex;flex-wrap:wrap;gap:4px">
-                    ${toatePacientii.map(p => {
-                      const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
-                      return `
-                      <div class="pacient-chip" style="border:1px solid ${culoareStatus[p.status] || '#9a988e'};border-radius:4px;padding:2px 4px;width:60px">
-                        <div style="font-size:12px;text-align:center;cursor:pointer" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</div>
-                        <select onchange="marcheaza('${p.id}', this.value)" style="font-size:9px;width:100%;padding:0;background:#1e1e1d;color:#ece9e2;border:1px solid #45443f;border-radius:3px">
-                          <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
-                          <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>Efectuat</option>
-                          <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>Absent</option>
-                        </select>
-                        <div class="pacient-tooltip">
-                          <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
-                          <div>Kineto: ${p.kineto_nume || 'Nealocat'}</div>
-                          <div>Diagnostic: ${p.diagnostic || '-'}</div>
-                          <div>Sedinte efectuate: ${p.sedinte_efectuate ?? '-'}</div>
-                          <div>Sedinte ramase: ${ramase}</div>
+                  ${lanuri.map(lane => `
+                    <div style="display:flex;gap:4px;margin-bottom:4px">
+                      ${[0, 1, 2].map(i => {
+                        const p = lane[i];
+                        if (!p) return `<div style="width:60px;height:34px;border:1px dashed #3a3937;border-radius:4px"></div>`;
+                        const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
+                        return `
+                        <div class="pacient-chip" style="border:1px solid ${culoareStatus[p.status] || '#9a988e'};border-radius:4px;padding:2px 4px;width:60px">
+                          <div style="font-size:12px;text-align:center;cursor:pointer" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</div>
+                          <select onchange="marcheaza('${p.id}', this.value)" style="font-size:11px;width:100%;padding:0;text-align:center;background:#1e1e1d;color:#ece9e2;border:1px solid #45443f;border-radius:3px">
+                            <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
+                            <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
+                            <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>&#10007;</option>
+                          </select>
+                          <div class="pacient-tooltip">
+                            <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
+                            <div>Kineto: ${p.kineto_nume || 'Nealocat'}</div>
+                            <div>Diagnostic: ${p.diagnostic || '-'}</div>
+                            <div>Sedinte efectuate: ${p.sedinte_efectuate ?? '-'}</div>
+                            <div>Sedinte ramase: ${ramase}</div>
+                          </div>
                         </div>
-                      </div>
-                    `;
-                    }).join('')}
-                  </div>
+                      `;
+                      }).join('')}
+                    </div>
+                  `).join('')}
                 </div>
               </td>`;
             }).join('')}
