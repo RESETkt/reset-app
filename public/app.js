@@ -1,8 +1,6 @@
 let token = localStorage.getItem('reset_token');
 let pacientCurent = null;
 
-if (token) aratatApp();
-
 async function login() {
   const email = document.getElementById('login-email').value;
   const parola = document.getElementById('login-parola').value;
@@ -809,3 +807,4 @@ function blocheazaSume() {
   sumeDeblocate = false;
   incarcaStatistici();
 }
+if (token) aratatApp();
