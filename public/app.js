@@ -610,9 +610,9 @@ async function incarcaCalendarSaptamana() {
 function randPacientRand(p, culoareStatus) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
   return `
-    <div class="pacient-chip" style="display:flex;align-items:center;gap:3px;width:82px">
-      <span style="font-size:12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
-      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:#1e1e1d;color:${culoareStatus[p.status] || '#ece9e2'};border:none;width:16px">
+    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid #3a3937;border-radius:4px;padding:1px 3px;width:82px">
+      <span style="font-size:12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
+      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:transparent;color:${culoareStatus[p.status] || '#ece9e2'};border:none;width:14px;flex-shrink:0">
         <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
         <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
         <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>&#10007;</option>
