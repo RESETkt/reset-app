@@ -61,7 +61,7 @@ function marcheazaActiv(index) {
   document.querySelectorAll('.top-nav-btn').forEach((b, i) => b.classList.toggle('activ', i === index));
 }
 
-let statisticiDeblocate = false; function aratapanel(nume) { ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => { document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none'; }); const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume]; marcheazaActiv(index); if (nume === 'calendar') incarcaCalendarSaptamana(); if (nume === 'echipa') incarcaEchipa(); if (nume === 'statistici') { if (statisticiDeblocate) incarcaStatistici(); else aratatParolaStatistici(); } } function aratatParolaStatistici() { document.getElementById('panel-statistici').innerHTML = ` <div class="card" style="max-width:340px"> <h2>Statistici protejate</h2> <label>Parola</label> <input id="parola-statistici" type="password" style="width:100%;margin-bottom:14px" onkeydown="if(event.key==='Enter') verificaParolaStatistici()"> <button class="btn" style="width:100%" onclick="verificaParolaStatistici()">Deblocheaza</button> <div id="eroare-parola-statistici" style="color:#e08585;font-size:12px;margin-top:8px"></div> </div> `; } function verificaParolaStatistici() { const parola = document.getElementById('parola-statistici').value; if (parola === 'Reset2020cash') { statisticiDeblocate = true; incarcaStatistici(); } else { document.getElementById('eroare-parola-statistici').textContent = 'Parola gresita.'; } }
+function aratapanel(nume) { ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => { document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none'; }); const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume]; marcheazaActiv(index); if (nume === 'calendar') incarcaCalendarSaptamana(); if (nume === 'echipa') incarcaEchipa(); if (nume === 'statistici') incarcaStatistici(); }
 
 async function incarcaEchipa() {
   const echipa = await apel('/api/utilizatori');
@@ -739,6 +739,8 @@ async function reprogrameazaPrompt(id) {
   incarcaCalendarSaptamana();
 }
 
+let sumeDeblocate = false;
+
 async function incarcaStatistici() {
   const s = await apel('/api/statistici');
   document.getElementById('panel-statistici').innerHTML = `
@@ -746,19 +748,41 @@ async function incarcaStatistici() {
       <h2>Saptamana aceasta</h2>
       <div class="grid-2">
         <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_saptamana}</div></div>
-        <div class="metric"><div class="label">Incasari</div><div class="value">${s.incasari_saptamana} lei</div></div>
+        <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_saptamana + ' lei' : '••• lei'}</div></div>
       </div>
     </div>
     <div class="card">
       <h2>Luna aceasta</h2>
       <div class="grid-2">
         <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
-        <div class="metric"><div class="label">Incasari</div><div class="value">${s.incasari_luna} lei</div></div>
+        <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_luna + ' lei' : '••• lei'}</div></div>
       </div>
     </div>
     <div class="card">
-      <h2>Incasari dupa metoda (luna aceasta)</h2>
-      ${s.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${m.total} lei</div>`).join('') || '<div style="font-size:13px;color:#9a988e">Fara plati inregistrate.</div>'}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">Incasari dupa metoda (luna aceasta)</h2>
+        <button class="btn" onclick="${sumeDeblocate ? 'blocheazaSume()' : 'cereParolaSume()'}">${sumeDeblocate ? 'Blocheaza sumele' : 'Arata sumele'}</button>
+      </div>
+      ${sumeDeblocate
+        ? (s.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${m.total} lei</div>`).join('') || '<div style="font-size:13px;color:#9a988e">Fara plati inregistrate.</div>')
+        : '<div style="font-size:13px;color:#9a988e">Sumele sunt ascunse. Apasa "Arata sumele" pentru a le vedea.</div>'}
+      <div id="eroare-parola-sume" style="color:#e08585;font-size:12px;margin-top:8px"></div>
     </div>
   `;
+}
+
+function cereParolaSume() {
+  const parola = prompt('Introdu parola pentru a vedea sumele incasate:');
+  if (parola === null) return;
+  if (parola === 'Reset2020cash') {
+    sumeDeblocate = true;
+    incarcaStatistici();
+  } else {
+    alert('Parola gresita.');
+  }
+}
+
+function blocheazaSume() {
+  sumeDeblocate = false;
+  incarcaStatistici();
 }
