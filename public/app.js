@@ -591,20 +591,19 @@ async function incarcaCalendarSaptamana() {
                 ${kinetoNumele.map(k => `
                   <div style="margin-bottom:6px">
                     <div style="font-size:11px;color:#9a988e;margin-bottom:2px">${k}</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px">
                     ${grup[k].map(p => {
                       const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
                       return `
-                      <div class="pacient-chip" style="border-left:3px solid ${culoareStatus[p.status] || '#9a988e'};margin-bottom:2px;padding:2px 6px">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+                      <div class="pacient-chip" style="border-left:3px solid ${culoareStatus[p.status] || '#9a988e'};padding:2px 6px">
+                        <div style="display:flex;align-items:center;gap:4px">
                           <span style="font-size:12px">${p.prenume}</span>
-                          <div style="display:flex;align-items:center;gap:2px">
-                            <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:1px;background:#1e1e1d;color:#ece9e2;border:1px solid #45443f;border-radius:4px">
-                              <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
-                              <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>Efectuat</option>
-                              <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>Absent</option>
-                            </select>
-                            <span style="font-size:10px;cursor:pointer;color:#9a988e" onclick="reprogrameazaPrompt('${p.id}')" title="Reprogrameaza">&#8635;</span>
-                          </div>
+                          <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:1px;background:#1e1e1d;color:#ece9e2;border:1px solid #45443f;border-radius:4px">
+                            <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
+                            <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>Efectuat</option>
+                            <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>Absent</option>
+                          </select>
+                          <span style="font-size:10px;cursor:pointer;color:#9a988e" onclick="reprogrameazaPrompt('${p.id}')" title="Reprogrameaza">&#8635;</span>
                         </div>
                         <div class="pacient-tooltip">
                           <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
@@ -615,6 +614,7 @@ async function incarcaCalendarSaptamana() {
                       </div>
                     `;
                     }).join('')}
+                    </div>
                   </div>
                 `).join('')}
               </td>`;
