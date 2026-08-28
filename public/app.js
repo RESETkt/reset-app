@@ -60,7 +60,17 @@ function marcheazaActiv(index) {
   document.querySelectorAll('.top-nav-btn').forEach((b, i) => b.classList.toggle('activ', i === index));
 }
 
-function aratapanel(nume) { sessionStorage.setItem('tabActiv', nume)['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => { document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none'; }); const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume]; marcheazaActiv(index); if (nume === 'calendar') incarcaCalendarSaptamana(); if (nume === 'echipa') incarcaEchipa(); if (nume === 'statistici') incarcaStatistici(); }
+function aratapanel(nume) {
+  sessionStorage.setItem('tabActiv', nume);
+  ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
+    document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
+  });
+  const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume];
+  marcheazaActiv(index);
+  if (nume === 'calendar') incarcaCalendarSaptamana();
+  if (nume === 'echipa') incarcaEchipa();
+  if (nume === 'statistici') incarcaStatistici();
+}
 
 async function incarcaEchipa() {
   const echipa = await apel('/api/utilizatori');
@@ -137,7 +147,7 @@ function aratatFormularPacientNou() {
       <h2>Pacient nou</h2>
       <label>Prenume</label>
       <input id="nou-prenume" style="width:100%;margin-bottom:10px">
-<label>Nume</label>
+      <label>Nume</label>
       <input id="nou-nume" style="width:100%;margin-bottom:10px">
       <label>CNP</label>
       <input id="nou-cnp" style="width:100%;margin-bottom:10px">
@@ -375,7 +385,7 @@ function aratatFormularEditarePacient(id) {
           <h2>Editeaza pacient</h2>
           <label>Prenume</label>
           <input id="edit-prenume" value="${p.prenume}" style="width:100%;margin-bottom:10px">
-<label>Nume</label>
+          <label>Nume</label>
           <input id="edit-nume" value="${p.nume}" style="width:100%;margin-bottom:10px">
           <label>Telefon</label>
           <input id="edit-telefon" value="${p.telefon || ''}" style="width:100%;margin-bottom:10px">
