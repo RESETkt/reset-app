@@ -571,11 +571,11 @@ async function incarcaCalendarSaptamana() {
       </div>
       <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
     </div>
-    <div class="card" style="padding:0">
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+    <div class="card" style="padding:0;overflow-x:auto">
+      <table style="border-collapse:collapse;table-layout:fixed">
         <tr>
           <th style="text-align:left;padding:10px 8px;font-size:12px;color:#9a988e;width:70px;border:${bordura};background:#1e1e1d">Ora</th>
-          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#1e1e1d' : '#9a988e'};border:${bordura};background:${z === astazi ? '#ece9e2' : '#1e1e1d'}">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
+          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#1e1e1d' : '#9a988e'};border:${bordura};background:${z === astazi ? '#ece9e2' : '#1e1e1d'};width:270px">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
         </tr>
         ${ORE_DISPONIBILE.map(ora => `
           <tr>
@@ -587,9 +587,15 @@ async function incarcaCalendarSaptamana() {
             </td>
             ${zile.map(z => {
               const toate = pePeriada[`${z}_${ora}`] || [];
+              const randuri = [];
+              for (let i = 0; i < toate.length; i += 3) randuri.push(toate.slice(i, i + 3));
               const fundalZi = z === astazi ? 'background:#2c2b28' : '';
               return `<td style="padding:6px 8px;vertical-align:top;border:${bordura};${fundalZi}">
-                ${toate.map(p => randPacientRand(p, culoareStatus)).join('')}
+                ${randuri.map((rand, idx) => `
+                  <div style="display:flex;gap:6px;padding:4px 0;${idx < randuri.length - 1 ? 'border-bottom:1px solid #3a3937' : ''}">
+                    ${rand.map(p => randPacientRand(p, culoareStatus)).join('')}
+                  </div>
+                `).join('')}
               </td>`;
             }).join('')}
           </tr>
@@ -604,9 +610,9 @@ async function incarcaCalendarSaptamana() {
 function randPacientRand(p, culoareStatus) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
   return `
-    <div class="pacient-chip" style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:3px 0">
-      <span style="font-size:13px;cursor:pointer" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
-      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:11px;padding:1px 4px;background:#1e1e1d;color:${culoareStatus[p.status] || '#ece9e2'};border:1px solid #45443f;border-radius:3px">
+    <div class="pacient-chip" style="display:flex;align-items:center;gap:3px;width:82px">
+      <span style="font-size:12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
+      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:#1e1e1d;color:${culoareStatus[p.status] || '#ece9e2'};border:none;width:16px">
         <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
         <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
         <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>&#10007;</option>
