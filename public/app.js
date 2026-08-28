@@ -25,8 +25,7 @@ function aratatApp() {
   document.getElementById('login').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
   cautaPacienti('');
-  marcheazaActiv(0);
-  incarcaCalendarSaptamana();
+  aratapanel(sessionStorage.getItem('tabActiv') || 'calendar');
 }
 
 async function apel(cale, optiuni = {}) {
@@ -61,7 +60,7 @@ function marcheazaActiv(index) {
   document.querySelectorAll('.top-nav-btn').forEach((b, i) => b.classList.toggle('activ', i === index));
 }
 
-function aratapanel(nume) { ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => { document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none'; }); const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume]; marcheazaActiv(index); if (nume === 'calendar') incarcaCalendarSaptamana(); if (nume === 'echipa') incarcaEchipa(); if (nume === 'statistici') incarcaStatistici(); }
+function aratapanel(nume) { sessionStorage.setItem('tabActiv', nume)['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => { document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none'; }); const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume]; marcheazaActiv(index); if (nume === 'calendar') incarcaCalendarSaptamana(); if (nume === 'echipa') incarcaEchipa(); if (nume === 'statistici') incarcaStatistici(); }
 
 async function incarcaEchipa() {
   const echipa = await apel('/api/utilizatori');
@@ -136,10 +135,10 @@ function aratatFormularPacientNou() {
   document.getElementById('panel-fisa').innerHTML = `
     <div class="card" style="max-width:420px">
       <h2>Pacient nou</h2>
-      <label>Nume</label>
-      <input id="nou-nume" style="width:100%;margin-bottom:10px">
       <label>Prenume</label>
       <input id="nou-prenume" style="width:100%;margin-bottom:10px">
+<label>Nume</label>
+      <input id="nou-nume" style="width:100%;margin-bottom:10px">
       <label>CNP</label>
       <input id="nou-cnp" style="width:100%;margin-bottom:10px">
       <label>Telefon</label>
@@ -374,10 +373,10 @@ function aratatFormularEditarePacient(id) {
       <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
         <div class="card" style="max-width:400px;width:90%">
           <h2>Editeaza pacient</h2>
-          <label>Nume</label>
-          <input id="edit-nume" value="${p.nume}" style="width:100%;margin-bottom:10px">
           <label>Prenume</label>
           <input id="edit-prenume" value="${p.prenume}" style="width:100%;margin-bottom:10px">
+<label>Nume</label>
+          <input id="edit-nume" value="${p.nume}" style="width:100%;margin-bottom:10px">
           <label>Telefon</label>
           <input id="edit-telefon" value="${p.telefon || ''}" style="width:100%;margin-bottom:10px">
           <label>Email</label>
