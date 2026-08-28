@@ -571,7 +571,7 @@ async function incarcaCalendarSaptamana() {
       </div>
       <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
     </div>
-    <div class="card" style="padding:0;overflow-x:auto">
+    <div class="card" style="padding:0">
       <table style="border-collapse:collapse;table-layout:fixed">
         <tr>
           <th style="text-align:left;padding:10px 8px;font-size:12px;color:#9a988e;width:70px;border:${bordura};background:#1e1e1d">Ora</th>
