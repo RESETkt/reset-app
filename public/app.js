@@ -461,10 +461,14 @@ async function aratatFormularPlataNoua(pacientId) {
         </select>
 
         <label>Motiv</label>
-        <select id="plata-motiv-select" style="width:100%;margin-bottom:6px" onchange="document.getElementById('plata-motiv-liber').style.display = this.value === 'altceva' ? 'block' : 'none'">
+        <select id="plata-motiv-select" style="width:100%;margin-bottom:6px" onchange="schimbaMotivPlata(this.value)">
           <option value="Abonament nou">Abonament nou</option>
           <option value="Sedinta individuala">Sedinta individuala</option>
           <option value="altceva">Altceva (scriu eu)</option>
+        </select>
+        <select id="plata-tip-abonament" style="width:100%;margin-bottom:10px">
+          <option value="8">8 sedinte</option>
+          <option value="12">12 sedinte</option>
         </select>
         <input id="plata-motiv-liber" placeholder="Descrie motivul" style="width:100%;margin-bottom:10px;display:none">
 
@@ -480,12 +484,17 @@ async function aratatFormularPlataNoua(pacientId) {
   document.getElementById('modal-container').innerHTML = html;
 }
 
+function schimbaMotivPlata(valoare) {
+  document.getElementById('plata-motiv-liber').style.display = valoare === 'altceva' ? 'block' : 'none';
+  document.getElementById('plata-tip-abonament').style.display = valoare === 'Abonament nou' ? 'block' : 'none';
+}
+
 async function salveazaPlataNoua(pacientId) {
   const suma = document.getElementById('plata-suma').value;
   const metoda = document.getElementById('plata-metoda').value;
   const tip_plata = document.getElementById('plata-tip').value;
   const motivSelect = document.getElementById('plata-motiv-select').value;
-  const motiv = motivSelect === 'altceva' ? document.getElementById('plata-motiv-liber').value.trim() : motivSelect;
+  let motiv = motivSelect === 'altceva' ? document.getElementById('plata-motiv-liber').value.trim() : motivSelect;
   const data = document.getElementById('plata-data').value;
   const eroareEl = document.getElementById('eroare-plata-noua');
   eroareEl.textContent = '';
@@ -493,6 +502,15 @@ async function salveazaPlataNoua(pacientId) {
   if (!suma || Number(suma) <= 0) {
     eroareEl.textContent = 'Introdu o suma valida.';
     return;
+  }
+
+  if (motivSelect === 'Abonament nou') {
+    const tipAbonament = document.getElementById('plata-tip-abonament').value;
+    await apel('/api/abonamente', {
+      method: 'POST',
+      body: JSON.stringify({ pacient_id: pacientId, tip: tipAbonament })
+    });
+    motiv = `Abonament nou (${tipAbonament} sedinte)`;
   }
 
   const rezultat = await apel(`/api/pacienti/${pacientId}/plati`, {
@@ -610,7 +628,9 @@ async function incarcaCalendarSaptamana() {
 function randPacientRand(p, culoareStatus) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
   return `
-    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:1px;border:1px solid #3a3937;border-radius:4px;padding:1px 3px"> <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span> <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:transparent;color:${culoareStatus[p.status] || '#ece9e2'};border:none;width:14px;flex-shrink:0">
+    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:1px;border:1px solid #3a3937;border-radius:4px;padding:1px 3px">
+      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
+      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:transparent;color:${culoareStatus[p.status] || '#ece9e2'};border:none;width:14px;flex-shrink:0">
         <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
         <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
         <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>&#10007;</option>

@@ -9,6 +9,7 @@ const TOTAL_SEDINTE = { '8': 8, '12': 12, individual: 1 };
 
 router.post('/', async (req, res) => {
   const { pacient_id, tip } = req.body;
+  await pool.query(`UPDATE abonamente SET activ = false WHERE pacient_id = $1`, [pacient_id]);
   const { rows } = await pool.query(
     `INSERT INTO abonamente (pacient_id, tip, total_sedinte) VALUES ($1,$2,$3) RETURNING *`,
     [pacient_id, tip, TOTAL_SEDINTE[tip] || 1]

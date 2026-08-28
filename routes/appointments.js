@@ -54,7 +54,7 @@ router.patch('/:id/prezent', async (req, res) => {
   try {
     await client.query('BEGIN');
     const prog = await client.query(
-      `UPDATE programari SET status='prezent', exercitii=$1, observatii=$2 WHERE id=$3 RETURNING *`,
+      `UPDATE programari SET status='prezent', exercitii=$1, observatii=$2, prezent_marcat_la=now() WHERE id=$3 RETURNING *`,
       [exercitii, observatii, req.params.id]
     );
     if (prog.rows[0]?.abonament_id) {

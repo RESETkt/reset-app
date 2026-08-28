@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS programari (
   exercitii text,
   observatii text,
   semnatura_confirmare text,
-  confirmat_la timestamptz
+  confirmat_la timestamptz,
+  prezent_marcat_la timestamptz
 );
 
 CREATE TABLE IF NOT EXISTS log_remindere (
