@@ -462,13 +462,7 @@ async function aratatFormularPlataNoua(pacientId) {
 
         <label>Motiv</label>
         <select id="plata-motiv-select" style="width:100%;margin-bottom:6px" onchange="schimbaMotivPlata(this.value)">
-          <option value="Abonament nou">Abonament nou</option>
-          <option value="Sedinta individuala">Sedinta individuala</option>
-          <option value="altceva">Altceva (scriu eu)</option>
-        </select>
-        <select id="plata-tip-abonament" style="width:100%;margin-bottom:10px">
-          <option value="8">8 sedinte</option>
-          <option value="12">12 sedinte</option>
+          <option value="8">Abonament 8 sedinte</option> <option value="12">Abonament 12 sedinte</option> <option value="individual">Sedinta individuala</option> <option value="altceva">Altceva (scriu eu)</option>
         </select>
         <input id="plata-motiv-liber" placeholder="Descrie motivul" style="width:100%;margin-bottom:10px;display:none">
 
@@ -486,7 +480,6 @@ async function aratatFormularPlataNoua(pacientId) {
 
 function schimbaMotivPlata(valoare) {
   document.getElementById('plata-motiv-liber').style.display = valoare === 'altceva' ? 'block' : 'none';
-  document.getElementById('plata-tip-abonament').style.display = valoare === 'Abonament nou' ? 'block' : 'none';
 }
 
 async function salveazaPlataNoua(pacientId) {
@@ -494,7 +487,6 @@ async function salveazaPlataNoua(pacientId) {
   const metoda = document.getElementById('plata-metoda').value;
   const tip_plata = document.getElementById('plata-tip').value;
   const motivSelect = document.getElementById('plata-motiv-select').value;
-  let motiv = motivSelect === 'altceva' ? document.getElementById('plata-motiv-liber').value.trim() : motivSelect;
   const data = document.getElementById('plata-data').value;
   const eroareEl = document.getElementById('eroare-plata-noua');
   eroareEl.textContent = '';
@@ -504,13 +496,17 @@ async function salveazaPlataNoua(pacientId) {
     return;
   }
 
-  if (motivSelect === 'Abonament nou') {
-    const tipAbonament = document.getElementById('plata-tip-abonament').value;
+  const NUME_MOTIV = { '8': 'Abonament 8 sedinte', '12': 'Abonament 12 sedinte', individual: 'Sedinta individuala' };
+  let motiv;
+
+  if (motivSelect === 'altceva') {
+    motiv = document.getElementById('plata-motiv-liber').value.trim();
+  } else {
     await apel('/api/abonamente', {
       method: 'POST',
-      body: JSON.stringify({ pacient_id: pacientId, tip: tipAbonament })
+      body: JSON.stringify({ pacient_id: pacientId, tip: motivSelect })
     });
-    motiv = `Abonament nou (${tipAbonament} sedinte)`;
+    motiv = NUME_MOTIV[motivSelect];
   }
 
   const rezultat = await apel(`/api/pacienti/${pacientId}/plati`, {
