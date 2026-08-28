@@ -5,16 +5,17 @@ const { ceareAutentificare } = require('../services/auth');
 const router = express.Router();
 router.use(ceareAutentificare);
 
-// Lista pacienti (cautare optionala prin ?q=)
+// Lista pacienti (cautare optionala prin ?q=, sau ?arhivati=1 pentru cei arhivati)
 router.get('/', async (req, res) => {
-  const { q } = req.query;
+  const { q, arhivati } = req.query;
+  const activFiltru = arhivati === '1' ? false : true;
   const { rows } = q
     ? await pool.query(
         `SELECT id, nume, prenume, telefon, email, diagnostic FROM pacienti
-         WHERE nume ILIKE $1 OR prenume ILIKE $1 ORDER BY nume`,
-        [`%${q}%`]
+         WHERE activ = $2 AND (nume ILIKE $1 OR prenume ILIKE $1) ORDER BY nume`,
+        [`%${q}%`, activFiltru]
       )
-    : await pool.query('SELECT id, nume, prenume, telefon, email, diagnostic FROM pacienti ORDER BY nume');
+    : await pool.query('SELECT id, nume, prenume, telefon, email, diagnostic FROM pacienti WHERE activ = $1 ORDER BY nume', [activFiltru]);
   res.json(rows);
 });
 
@@ -83,6 +84,22 @@ router.put('/:id', async (req, res) => {
     [nume, prenume, telefon, email, diagnostic, req.params.id]
   );
   res.json(rows[0]);
+});
+
+router.patch('/:id/arhiveaza', async (req, res) => {
+  const { rows } = await pool.query(`UPDATE pacienti SET activ = false WHERE id = $1 RETURNING *`, [req.params.id]);
+  res.json(rows[0]);
+});
+
+router.patch('/:id/reactiveaza', async (req, res) => {
+  const { rows } = await pool.query(`UPDATE pacienti SET activ = true WHERE id = $1 RETURNING *`, [req.params.id]);
+  res.json(rows[0]);
+});
+
+// Stergere definitiva - sterge automat si programarile, platile, abonamentele lui (cascade in baza de date)
+router.delete('/:id', async (req, res) => {
+  await pool.query(`DELETE FROM pacienti WHERE id = $1`, [req.params.id]);
+  res.json({ sters: true });
 });
 
 module.exports = router;

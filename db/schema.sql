@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS pacienti (
   telefon text,
   email text,
   diagnostic text,
+  activ boolean NOT NULL DEFAULT true,
   creat_la timestamptz DEFAULT now()
 );
 

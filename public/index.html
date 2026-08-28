@@ -36,6 +36,10 @@
     <button class="btn" style="width:100%;margin-bottom:12px" onclick="aratatFormularPacientNou()">+ Pacient nou</button>
     <input id="cautare" placeholder="Cauta pacient" oninput="cautaPacienti(this.value)">
     <div id="lista-pacienti"></div>
+    <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:#9a988e;cursor:pointer">
+      <input type="checkbox" id="toggle-arhivati" onchange="cautaPacienti(document.getElementById('cautare').value)" style="width:auto">
+      Arata pacientii arhivati
+    </label>
   </div>
   <div class="main">
     <div id="panel-calendar"></div>

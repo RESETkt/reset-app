@@ -46,14 +46,15 @@ async function apel(cale, optiuni = {}) {
 }
 
 async function cautaPacienti(q) {
-  const rows = await apel(`/api/pacienti?q=${encodeURIComponent(q)}`);
+  const arhivati = document.getElementById('toggle-arhivati')?.checked ? '1' : '0';
+  const rows = await apel(`/api/pacienti?q=${encodeURIComponent(q)}&arhivati=${arhivati}`);
   const lista = document.getElementById('lista-pacienti');
   lista.innerHTML = rows.map(p => `
     <div class="patient-row" onclick="deschideFisa('${p.id}')">
       <div class="nume">${p.nume} ${p.prenume}</div>
       <div class="info">${p.diagnostic || 'fara diagnostic'}</div>
     </div>
-  `).join('');
+  `).join('') || '<div style="font-size:12px;color:#9a988e;padding:8px">Niciun pacient gasit.</div>';
 }
 
 function marcheazaActiv(index) {
@@ -225,7 +226,7 @@ async function deschideFisa(id) {
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="font-size:16px;font-weight:600">${p.nume} ${p.prenume}</div>
+          <div style="font-size:16px;font-weight:600">${p.nume} ${p.prenume} ${!p.activ ? '<span style="color:#e0b85e;font-size:12px">(arhivat)</span>' : ''}</div>
           <div style="font-size:13px;color:#9a988e;margin-top:2px">Diagnostic: ${p.diagnostic || '-'}</div>
         </div>
         ${ab ? `<span class="badge">Abonament ${ab.tip} sedinte</span>` : '<span class="badge" style="background:#3a2f1f;color:#e0b85e">Fara abonament</span>'}
@@ -249,6 +250,14 @@ async function deschideFisa(id) {
         <div style="font-size:13px">Telefon: ${p.telefon || '-'}</div>
         <div style="font-size:13px">Email: ${p.email || '-'}</div>
       </div>
+
+      <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="aratatFormularEditarePacient('${id}')">Editeaza</button>
+        ${p.activ
+          ? `<button class="btn secundar" onclick="arhiveazaPacient('${id}')">Arhiveaza</button>`
+          : `<button class="btn" onclick="reactiveazaPacient('${id}')">Reactiveaza</button>`}
+        <button class="btn secundar" style="color:#e08585" onclick="stergePacientDefinitiv('${id}','${p.nume} ${p.prenume}')">Sterge definitiv</button>
+      </div>
     </div>
 
     <div class="card">
@@ -266,6 +275,69 @@ async function deschideFisa(id) {
       `).join('')}
     </div>
   `;
+}
+
+function aratatFormularEditarePacient(id) {
+  apel(`/api/pacienti/${id}`).then(data => {
+    const p = data.pacient;
+    const html = `
+      <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+        <div class="card" style="max-width:400px;width:90%">
+          <h2>Editeaza pacient</h2>
+          <label>Nume</label>
+          <input id="edit-nume" value="${p.nume}" style="width:100%;margin-bottom:10px">
+          <label>Prenume</label>
+          <input id="edit-prenume" value="${p.prenume}" style="width:100%;margin-bottom:10px">
+          <label>Telefon</label>
+          <input id="edit-telefon" value="${p.telefon || ''}" style="width:100%;margin-bottom:10px">
+          <label>Email</label>
+          <input id="edit-email" value="${p.email || ''}" style="width:100%;margin-bottom:10px">
+          <label>Diagnostic</label>
+          <input id="edit-diagnostic" value="${p.diagnostic || ''}" style="width:100%;margin-bottom:14px">
+          <button class="btn" style="width:100%" onclick="salveazaEditarePacient('${id}')">Salveaza</button>
+          <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('modal-container').innerHTML = html;
+  });
+}
+
+async function salveazaEditarePacient(id) {
+  const nume = document.getElementById('edit-nume').value.trim();
+  const prenume = document.getElementById('edit-prenume').value.trim();
+  const telefon = document.getElementById('edit-telefon').value.trim();
+  const email = document.getElementById('edit-email').value.trim();
+  const diagnostic = document.getElementById('edit-diagnostic').value.trim();
+
+  await apel(`/api/pacienti/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ nume, prenume, telefon, email, diagnostic })
+  });
+
+  inchideModalProgramare();
+  cautaPacienti(document.getElementById('cautare').value);
+  deschideFisa(id);
+}
+
+async function arhiveazaPacient(id) {
+  if (!confirm('Arhivezi acest pacient? Nu va mai aparea in lista activa, dar tot istoricul lui ramane salvat.')) return;
+  await apel(`/api/pacienti/${id}/arhiveaza`, { method: 'PATCH' });
+  cautaPacienti(document.getElementById('cautare').value);
+  deschideFisa(id);
+}
+
+async function reactiveazaPacient(id) {
+  await apel(`/api/pacienti/${id}/reactiveaza`, { method: 'PATCH' });
+  cautaPacienti(document.getElementById('cautare').value);
+  deschideFisa(id);
+}
+
+async function stergePacientDefinitiv(id, nume) {
+  if (!confirm(`ATENTIE: stergi definitiv pe "${nume}" - se sterg si toate programarile, platile si abonamentele lui. Nu se mai poate recupera. Esti sigur?`)) return;
+  await apel(`/api/pacienti/${id}`, { method: 'DELETE' });
+  cautaPacienti(document.getElementById('cautare').value);
+  document.getElementById('panel-fisa').innerHTML = '<div class="card">Pacient sters.</div>';
 }
 
 async function aratatFormularPlataNoua(pacientId) {
