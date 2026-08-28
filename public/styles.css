@@ -52,21 +52,12 @@ th, td { text-align: left; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 .pacient-chip:hover .pacient-tooltip { display: block; }
-.cell-add-btn {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  line-height: 16px;
-  text-align: center;
-  border-radius: 4px;
-  background: #ece9e2;
-  color: #1e1e1d;
-  font-size: 13px;
-  font-weight: 700;
+.ora-cell { position: relative; }
+.ora-add-btn {
+  visibility: hidden;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9a988e;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s;
 }
-.cell-wrapper:hover .cell-add-btn { opacity: 1; }
+.ora-cell:hover .ora-add-btn { visibility: visible; }

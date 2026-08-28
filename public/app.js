@@ -549,12 +549,6 @@ async function incarcaCalendarSaptamana() {
   const astazi = dataLocala(new Date());
   const zile = [0, 1, 2, 3, 4].map(i => adaugaZile(saptamanaCurenta, i));
   const rows = await apel(`/api/programari?de_la=${zile[0]}&pana_la=${zile[4]}`);
-  const orarKineto = await apel('/api/orar-kineto');
-  const kinetoUtilizatori = await apel('/api/utilizatori');
-
-  const orarLookup = {};
-  ORE_DISPONIBILE.forEach(o => { orarLookup[o] = [null, null, null]; });
-  orarKineto.forEach(a => { orarLookup[a.ora][a.culoar] = { id: a.kineto_id, nume: a.kineto_nume }; });
 
   const pePeriada = {};
   rows.forEach(r => {
@@ -577,57 +571,29 @@ async function incarcaCalendarSaptamana() {
       </div>
       <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
     </div>
-    <div class="card" style="padding:0;overflow-x:auto">
-      <table style="border-collapse:collapse;table-layout:fixed">
+    <div class="card" style="padding:0">
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed">
         <tr>
-          <th style="text-align:left;padding:10px 8px;font-size:12px;color:#9a988e;width:64px;border:${bordura};background:#1e1e1d">Ora</th>
-          <th style="text-align:left;padding:10px 8px;font-size:12px;color:#9a988e;width:90px;border:${bordura};background:#1e1e1d">Kineto</th>
-          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#1e1e1d' : '#9a988e'};border:${bordura};background:${z === astazi ? '#ece9e2' : '#1e1e1d'};width:210px">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
+          <th style="text-align:left;padding:10px 8px;font-size:12px;color:#9a988e;width:70px;border:${bordura};background:#1e1e1d">Ora</th>
+          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#1e1e1d' : '#9a988e'};border:${bordura};background:${z === astazi ? '#ece9e2' : '#1e1e1d'}">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
         </tr>
-        ${ORE_DISPONIBILE.map(ora => {
-          const culoare3 = orarLookup[ora];
-          return `
+        ${ORE_DISPONIBILE.map(ora => `
           <tr>
-            <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top;border:${bordura}">${ora}</td>
-            <td style="padding:6px;vertical-align:top;border:${bordura}">
-              ${[0, 1, 2].map(c => `
-                <select onchange="salveazaCuloarKineto('${ora}', ${c}, this.value)" style="width:100%;font-size:11px;padding:3px;margin-bottom:4px;background:#1e1e1d;color:#ece9e2;border:1px solid #45443f;border-radius:4px">
-                  <option value="">Nealocat</option>
-                  ${kinetoUtilizatori.map(u => `<option value="${u.id}" ${culoare3[c]?.id === u.id ? 'selected' : ''}>${u.nume}</option>`).join('')}
-                </select>
-              `).join('')}
+            <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top;border:${bordura}">
+              <div class="ora-cell">
+                ${ora}
+                <div class="ora-add-btn" onclick="aratatFormularProgramareNoua(null,'${ora}')">+ adauga</div>
+              </div>
             </td>
             ${zile.map(z => {
               const toate = pePeriada[`${z}_${ora}`] || [];
-              const lanuri = [0, 1, 2].map(c => {
-                const kinetoId = culoare3[c]?.id;
-                return kinetoId ? toate.filter(p => p.kineto_id === kinetoId) : [];
-              });
-              const nealocati = toate.filter(p => !culoare3.some(c => c?.id === p.kineto_id));
               const fundalZi = z === astazi ? 'background:#2c2b28' : '';
-              return `<td style="padding:0;vertical-align:top;border:${bordura};${fundalZi}">
-                <div class="cell-wrapper" style="position:relative;padding:6px;min-height:40px">
-                  <span class="cell-add-btn" onclick="aratatFormularProgramareNoua('${z}','${ora}')" title="Adauga programare">+</span>
-                  ${lanuri.map(lane => `
-                    <div style="display:flex;gap:4px;margin-bottom:4px">
-                      ${[0, 1, 2].map(i => {
-                        const p = lane[i];
-                        if (!p) return `<div style="width:60px;height:34px;border:1px dashed #3a3937;border-radius:4px"></div>`;
-                        return randPacientChip(p, culoareStatus);
-                      }).join('')}
-                    </div>
-                  `).join('')}
-                  ${nealocati.length > 0 ? `
-                    <div style="display:flex;flex-wrap:wrap;gap:4px;border-top:1px dashed #3a3937;padding-top:4px;margin-top:4px">
-                      ${nealocati.map(p => randPacientChip(p, culoareStatus)).join('')}
-                    </div>
-                  ` : ''}
-                </div>
+              return `<td style="padding:6px 8px;vertical-align:top;border:${bordura};${fundalZi}">
+                ${toate.map(p => randPacientRand(p, culoareStatus)).join('')}
               </td>`;
             }).join('')}
           </tr>
-        `;
-        }).join('')}
+        `).join('')}
       </table>
     </div>
   `;
@@ -635,12 +601,12 @@ async function incarcaCalendarSaptamana() {
   document.getElementById('panel-calendar').innerHTML = html;
 }
 
-function randPacientChip(p, culoareStatus) {
+function randPacientRand(p, culoareStatus) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
   return `
-    <div class="pacient-chip" style="border:1px solid ${culoareStatus[p.status] || '#9a988e'};border-radius:4px;padding:2px 4px;width:60px">
-      <div style="font-size:12px;text-align:center;cursor:pointer" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</div>
-      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:11px;width:100%;padding:0;text-align:center;background:#1e1e1d;color:#ece9e2;border:1px solid #45443f;border-radius:3px">
+    <div class="pacient-chip" style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:3px 0">
+      <span style="font-size:13px;cursor:pointer" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
+      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:11px;padding:1px 4px;background:#1e1e1d;color:${culoareStatus[p.status] || '#ece9e2'};border:1px solid #45443f;border-radius:3px">
         <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
         <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
         <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>&#10007;</option>
@@ -654,14 +620,6 @@ function randPacientChip(p, culoareStatus) {
       </div>
     </div>
   `;
-}
-
-async function salveazaCuloarKineto(ora, culoar, kinetoId) {
-  await apel(`/api/orar-kineto/${encodeURIComponent(ora)}/${culoar}`, {
-    method: 'PUT',
-    body: JSON.stringify({ kineto_id: kinetoId || null })
-  });
-  incarcaCalendarSaptamana();
 }
 
 let pacientiProgramareCache = [];
