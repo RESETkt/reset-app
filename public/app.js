@@ -61,16 +61,7 @@ function marcheazaActiv(index) {
   document.querySelectorAll('.top-nav-btn').forEach((b, i) => b.classList.toggle('activ', i === index));
 }
 
-function aratapanel(nume) {
-  ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
-    document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
-  });
-  const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume];
-  marcheazaActiv(index);
-  if (nume === 'calendar') incarcaCalendarSaptamana();
-  if (nume === 'statistici') incarcaStatistici();
-  if (nume === 'echipa') incarcaEchipa();
-}
+let statisticiDeblocate = false; function aratapanel(nume) { ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => { document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none'; }); const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume]; marcheazaActiv(index); if (nume === 'calendar') incarcaCalendarSaptamana(); if (nume === 'echipa') incarcaEchipa(); if (nume === 'statistici') { if (statisticiDeblocate) incarcaStatistici(); else aratatParolaStatistici(); } } function aratatParolaStatistici() { document.getElementById('panel-statistici').innerHTML = ` <div class="card" style="max-width:340px"> <h2>Statistici protejate</h2> <label>Parola</label> <input id="parola-statistici" type="password" style="width:100%;margin-bottom:14px" onkeydown="if(event.key==='Enter') verificaParolaStatistici()"> <button class="btn" style="width:100%" onclick="verificaParolaStatistici()">Deblocheaza</button> <div id="eroare-parola-statistici" style="color:#e08585;font-size:12px;margin-top:8px"></div> </div> `; } function verificaParolaStatistici() { const parola = document.getElementById('parola-statistici').value; if (parola === 'Reset2020cash') { statisticiDeblocate = true; incarcaStatistici(); } else { document.getElementById('eroare-parola-statistici').textContent = 'Parola gresita.'; } }
 
 async function incarcaEchipa() {
   const echipa = await apel('/api/utilizatori');
