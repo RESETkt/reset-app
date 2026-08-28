@@ -571,7 +571,7 @@ async function incarcaCalendarSaptamana() {
         <button class="btn" onclick="saptamanaAceasta()">Azi</button>
         <button class="btn" onclick="schimbaSaptamana(1)">Saptamana urmatoare &rarr;</button>
       </div>
-      <button class="btn" onclick="aratatFormularProgramareNoua()">+ Programare noua</button>
+      <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <table style="width:100%;border-collapse:collapse;table-layout:fixed">
@@ -584,17 +584,13 @@ async function incarcaCalendarSaptamana() {
             <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top;border:${bordura}">${ora}</td>
             ${zile.map(z => {
               const grup = pePeriada[`${z}_${ora}`] || {};
-              const kinetoNumele = Object.keys(grup);
+              const toatePacientii = Object.values(grup).flat();
               const fundalZi = z === astazi ? 'background:#2c2b28' : '';
-              if (kinetoNumele.length === 0) return `<td style="padding:8px;vertical-align:top;border:${bordura};${fundalZi}"></td>`;
-              return `<td style="padding:8px;vertical-align:top;border:${bordura};${fundalZi}">
-                ${kinetoNumele.map(k => `
-                  <div style="margin-bottom:6px">
-                    <div style="font-size:11px;color:#9a988e;margin-bottom:2px">${k}</div>
-                    <div style="display:flex;gap:4px">
-                    ${[0, 1, 2].map(i => {
-                      const p = grup[k][i];
-                      if (!p) return `<div style="width:60px;height:34px;border:1px dashed #3a3937;border-radius:4px"></div>`;
+              return `<td style="padding:0;vertical-align:top;border:${bordura};${fundalZi}">
+                <div class="cell-wrapper" style="position:relative;padding:8px;min-height:40px">
+                  <span class="cell-add-btn" onclick="aratatFormularProgramareNoua('${z}','${ora}')" title="Adauga programare">+</span>
+                  <div style="display:flex;flex-wrap:wrap;gap:4px">
+                    ${toatePacientii.map(p => {
                       const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
                       return `
                       <div class="pacient-chip" style="border:1px solid ${culoareStatus[p.status] || '#9a988e'};border-radius:4px;padding:2px 4px;width:60px">
@@ -606,6 +602,7 @@ async function incarcaCalendarSaptamana() {
                         </select>
                         <div class="pacient-tooltip">
                           <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
+                          <div>Kineto: ${p.kineto_nume || 'Nealocat'}</div>
                           <div>Diagnostic: ${p.diagnostic || '-'}</div>
                           <div>Sedinte efectuate: ${p.sedinte_efectuate ?? '-'}</div>
                           <div>Sedinte ramase: ${ramase}</div>
@@ -613,9 +610,8 @@ async function incarcaCalendarSaptamana() {
                       </div>
                     `;
                     }).join('')}
-                    </div>
                   </div>
-                `).join('')}
+                </div>
               </td>`;
             }).join('')}
           </tr>
@@ -629,7 +625,7 @@ async function incarcaCalendarSaptamana() {
 
 let pacientiProgramareCache = [];
 
-async function aratatFormularProgramareNoua() {
+async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
   pacientiProgramareCache = await apel('/api/pacienti');
   const kinetoUtilizatori = await apel('/api/utilizatori');
 
@@ -650,11 +646,11 @@ async function aratatFormularProgramareNoua() {
         </select>
 
         <label>Data</label>
-        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}">
+        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataPresetata || dataLocala(new Date())}">
 
         <label>Ora</label>
         <select id="prog-ora" style="width:100%;margin-bottom:14px">
-          ${ORE_DISPONIBILE.map(o => `<option value="${o}">${o}</option>`).join('')}
+          ${ORE_DISPONIBILE.map(o => `<option value="${o}" ${o === oraPresetata ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
 
         <button class="btn" style="width:100%" onclick="salveazaProgramareNoua()">Salveaza programarea</button>
