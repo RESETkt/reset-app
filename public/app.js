@@ -250,7 +250,92 @@ async function deschideFisa(id) {
         <div style="font-size:13px">Email: ${p.email || '-'}</div>
       </div>
     </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">Plati</h2>
+        <button class="btn" onclick="aratatFormularPlataNoua('${id}')">+ Plata noua</button>
+      </div>
+      ${data.plati.length === 0 ? '<div style="font-size:13px;color:#9a988e">Nicio plata inregistrata.</div>' : data.plati.map(pl => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #3a3937">
+          <div>
+            <div style="font-size:13px;font-weight:500">${Number(pl.suma).toFixed(0)} lei - ${pl.metoda === 'cash' ? 'Cash' : 'Card'} (${pl.tip_plata === 'integral' ? 'integral' : 'in rate'})</div>
+            <div style="font-size:11px;color:#9a988e">${pl.motiv || 'fara motiv specificat'} - ${new Date(pl.data_plata).toLocaleDateString('ro-RO')}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
   `;
+}
+
+async function aratatFormularPlataNoua(pacientId) {
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:380px;width:90%">
+        <h2>Plata noua</h2>
+
+        <label>Suma (lei)</label>
+        <input id="plata-suma" type="number" step="1" style="width:100%;margin-bottom:10px">
+
+        <label>Metoda</label>
+        <select id="plata-metoda" style="width:100%;margin-bottom:10px">
+          <option value="cash">Cash</option>
+          <option value="card">Card</option>
+        </select>
+
+        <label>Tip</label>
+        <select id="plata-tip" style="width:100%;margin-bottom:10px">
+          <option value="integral">Integral</option>
+          <option value="rate">In rate</option>
+        </select>
+
+        <label>Motiv</label>
+        <select id="plata-motiv-select" style="width:100%;margin-bottom:6px" onchange="document.getElementById('plata-motiv-liber').style.display = this.value === 'altceva' ? 'block' : 'none'">
+          <option value="Abonament nou">Abonament nou</option>
+          <option value="Sedinta individuala">Sedinta individuala</option>
+          <option value="altceva">Altceva (scriu eu)</option>
+        </select>
+        <input id="plata-motiv-liber" placeholder="Descrie motivul" style="width:100%;margin-bottom:10px;display:none">
+
+        <label>Data platii</label>
+        <input id="plata-data" type="date" style="width:100%;margin-bottom:14px" value="${dataLocala(new Date())}">
+
+        <button class="btn" style="width:100%" onclick="salveazaPlataNoua('${pacientId}')">Salveaza plata</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+        <div id="eroare-plata-noua" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function salveazaPlataNoua(pacientId) {
+  const suma = document.getElementById('plata-suma').value;
+  const metoda = document.getElementById('plata-metoda').value;
+  const tip_plata = document.getElementById('plata-tip').value;
+  const motivSelect = document.getElementById('plata-motiv-select').value;
+  const motiv = motivSelect === 'altceva' ? document.getElementById('plata-motiv-liber').value.trim() : motivSelect;
+  const data = document.getElementById('plata-data').value;
+  const eroareEl = document.getElementById('eroare-plata-noua');
+  eroareEl.textContent = '';
+
+  if (!suma || Number(suma) <= 0) {
+    eroareEl.textContent = 'Introdu o suma valida.';
+    return;
+  }
+
+  const rezultat = await apel(`/api/pacienti/${pacientId}/plati`, {
+    method: 'POST',
+    body: JSON.stringify({ suma, metoda, tip_plata, motiv, data_plata: data })
+  });
+
+  if (rezultat.eroare) {
+    eroareEl.textContent = rezultat.eroare;
+    return;
+  }
+
+  inchideModalProgramare();
+  deschideFisa(pacientId);
 }
 
 function dataLocala(d) {

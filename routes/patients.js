@@ -37,13 +37,33 @@ router.get('/:id', async (req, res) => {
     `SELECT id, data_semnare FROM consimtaminte_gdpr WHERE pacient_id = $1 LIMIT 1`,
     [id]
   );
+  const plati = await pool.query(
+    `SELECT id, suma, metoda, tip_plata, motiv, data_plata FROM plati
+     WHERE pacient_id = $1 ORDER BY data_plata DESC`,
+    [id]
+  );
 
   res.json({
     pacient: pacient.rows[0],
     abonament: abonament.rows[0] || null,
     ultima_sedinta: ultimaSedinta.rows[0] || null,
-    gdpr_semnat: consimtamant.rows.length > 0
+    gdpr_semnat: consimtamant.rows.length > 0,
+    plati: plati.rows
   });
+});
+
+// Adauga o plata noua pentru un pacient - abonament nou, sedinta, sau orice suma
+router.post('/:id/plati', async (req, res) => {
+  const { suma, metoda, tip_plata, motiv, data_plata } = req.body;
+  if (!suma || !metoda || !tip_plata) {
+    return res.status(400).json({ eroare: 'Suma, metoda si tipul de plata sunt obligatorii.' });
+  }
+  const { rows } = await pool.query(
+    `INSERT INTO plati (pacient_id, suma, metoda, tip_plata, motiv, data_plata)
+     VALUES ($1,$2,$3,$4,$5, COALESCE($6, now())) RETURNING *`,
+    [req.params.id, suma, metoda, tip_plata, motiv || null, data_plata || null]
+  );
+  res.status(201).json(rows[0]);
 });
 
 router.post('/', async (req, res) => {

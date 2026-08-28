@@ -40,10 +40,12 @@ CREATE TABLE IF NOT EXISTS abonamente (
 
 CREATE TABLE IF NOT EXISTS plati (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  abonament_id uuid REFERENCES abonamente(id) ON DELETE CASCADE,
+  pacient_id uuid REFERENCES pacienti(id) ON DELETE CASCADE,
+  abonament_id uuid REFERENCES abonamente(id) ON DELETE SET NULL,
   suma numeric(10,2) NOT NULL,
   metoda text NOT NULL CHECK (metoda IN ('cash','card')),
   tip_plata text NOT NULL CHECK (tip_plata IN ('integral','rate')),
+  motiv text,
   data_plata timestamptz DEFAULT now()
 );
 
