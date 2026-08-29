@@ -646,14 +646,11 @@ async function incarcaCalendarSaptamana() {
 function randPacientRand(p, culoareStatus) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
   const culoareStatusDeschis = { programat: '#8a8880', prezent: '#1f8a5a', absent: '#c14343', reprogramat: '#b8860b' };
+  const urmatorulStatus = p.status === 'prezent' ? 'absent' : 'prezent';
   return `
-    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:1px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 3px;background:#f6f5f1">
-      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#2b2a26" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Click pentru editare">${p.prenume}</span>
-      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:transparent;color:${culoareStatusDeschis[p.status] || '#5a5850'};border:none;width:14px;flex-shrink:0">
-        <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
-        <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
-        <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>&#10007;</option>
-      </select>
+    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 3px;background:#f6f5f1">
+      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoareStatusDeschis[p.status] || '#2b2a26'};font-weight:600" onclick="marcheaza('${p.id}', '${urmatorulStatus}')" title="Click pentru a marca prezent/absent">${p.prenume}</span>
+      <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
       <div class="pacient-tooltip">
         <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
         <div>Kineto: ${p.kineto_nume || 'Nealocat'}</div>
