@@ -47,17 +47,19 @@ router.post('/', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
-// Marcheaza prezenta: incrementeaza sedintele efectuate din abonament si salveaza exercitii/observatii
+// Marcheaza prezenta: incrementeaza sedintele efectuate din abonament (o singura data) si salveaza exercitii/observatii
 router.patch('/:id/prezent', async (req, res) => {
   const { exercitii, observatii } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const existent = await client.query(`SELECT status, abonament_id FROM programari WHERE id = $1`, [req.params.id]);
+    const eraDejaPrezent = existent.rows[0]?.status === 'prezent';
     const prog = await client.query(
       `UPDATE programari SET status='prezent', exercitii=$1, observatii=$2, prezent_marcat_la=now() WHERE id=$3 RETURNING *`,
       [exercitii, observatii, req.params.id]
     );
-    if (prog.rows[0]?.abonament_id) {
+    if (!eraDejaPrezent && prog.rows[0]?.abonament_id) {
       await client.query(
         `UPDATE abonamente SET sedinte_efectuate = sedinte_efectuate + 1 WHERE id = $1`,
         [prog.rows[0].abonament_id]
@@ -88,7 +90,11 @@ router.patch('/:id/reprogrameaza', async (req, res) => {
     [data_ora_noua, req.params.id]
   );
   res.json(rows[0]);
-router.delete('/:id', async (req, res) => { await pool.query(`DELETE FROM programari WHERE id = $1`, [req.params.id]); res.json({ sters: true }); });
+});
+
+router.delete('/:id', async (req, res) => {
+  await pool.query(`DELETE FROM programari WHERE id = $1`, [req.params.id]);
+  res.json({ sters: true });
 });
 
 // Semnatura de pe tableta la intrarea in sedinta (nu e GDPR, doar confirmare prezenta)

@@ -19,6 +19,11 @@
   .metric .value { font-size: 26px; font-weight: 600; margin-top: 4px; color: #ece9e2; }
   canvas { border: 1px dashed #45443f; border-radius: 8px; width: 100%; height: 140px; touch-action: none; background: #1e1e1d; }
   .gdpr-text { font-size: 12px; color: #9a988e; line-height: 1.5; margin-bottom: 10px; }
+  .afisaj-telefon { font-size: 26px; text-align: center; letter-spacing: 3px; padding: 12px; background: #1e1e1d; border-radius: 8px; margin-bottom: 10px; min-height: 24px; border: 1px solid #45443f; }
+  .tastatura { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .tastatura button { padding: 16px; font-size: 20px; }
+  .sugestii { margin-bottom: 10px; }
+  .sugestie-btn { display: inline-block; width: auto; padding: 8px 14px; margin: 3px; background: #1f3634; border: 1px solid #2d5049; border-radius: 20px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -28,9 +33,24 @@
 </div>
 
 <div class="card" id="pas-cautare">
-  <h2>Bine ai venit</h2>
-  <div class="sub">Introdu numarul de telefon pentru a continua</div>
-  <input id="telefon" placeholder="07xx xxx xxx" type="tel">
+  <h2>Hai, ca bine a fi</h2>
+  <div class="sub">Introdu numarul de telefon</div>
+  <div class="afisaj-telefon" id="afisaj-telefon">&nbsp;</div>
+  <div class="sugestii" id="sugestii-telefon"></div>
+  <div class="tastatura">
+    <button onclick="apasaCifra('1')">1</button>
+    <button onclick="apasaCifra('2')">2</button>
+    <button onclick="apasaCifra('3')">3</button>
+    <button onclick="apasaCifra('4')">4</button>
+    <button onclick="apasaCifra('5')">5</button>
+    <button onclick="apasaCifra('6')">6</button>
+    <button onclick="apasaCifra('7')">7</button>
+    <button onclick="apasaCifra('8')">8</button>
+    <button onclick="apasaCifra('9')">9</button>
+    <button class="secundar" onclick="stergeCifra()">&larr;</button>
+    <button onclick="apasaCifra('0')">0</button>
+    <button class="secundar" onclick="golesteTelefon()">Sterge tot</button>
+  </div>
   <button onclick="cautaProgramare()">Continua</button>
   <div id="eroare-cautare" style="color:#b23b3b;font-size:12px;margin-top:8px;text-align:center"></div>
 </div>
@@ -48,3 +68,20 @@
   <h2 id="salut-nume"></h2>
   <div class="sub" id="detalii-programare"></div>
   <div class="metric">
+    <div class="label">Sedinte ramase din abonament</div>
+    <div class="value" id="sedinte-ramase">-</div>
+  </div>
+  <div class="sub" style="margin-bottom:6px">Semneaza pentru confirmarea sedintei de azi</div>
+  <canvas id="canvas-sedinta"></canvas>
+  <button onclick="trimiteConfirmareSedinta()">Confirma</button>
+  <button class="secundar" onclick="stergeCanvas('canvas-sedinta')">Sterge semnatura</button>
+</div>
+
+<div class="card" id="pas-gata" style="display:none">
+  <h2>Multumim!</h2>
+  <div class="sub">Programarea a fost confirmata. Te asteptam la ora stabilita.</div>
+</div>
+
+<script src="tablet.js"></script>
+</body>
+</html>
