@@ -30,6 +30,7 @@ body {
 .top-nav button.activ { background: #ece9e2; color: #1e1e1d; }
 .top-nav-btn { width: 100%; text-align: left; }
 .top-nav-btn.activ { background: #ece9e2; color: #1e1e1d; }
+.logout-btn { cursor: pointer; color: #9a988e; font-size: 20px; line-height: 1; padding: 4px; border-radius: 6px; } .logout-btn:hover { color: #ece9e2; background: #33322e; }
 h2 { font-size: 15px; margin: 0 0 12px; color: #ece9e2; }
 label { display: block; font-size: 12px; color: #9a988e; margin-bottom: 4px; }
 input, select { padding: 7px; border: 1px solid #45443f; border-radius: 6px; font-size: 13px; background: #1e1e1d; color: #ece9e2; }

@@ -808,4 +808,5 @@ function blocheazaSume() {
   sumeDeblocate = false;
   incarcaStatistici();
 }
+function delogare() { localStorage.removeItem('reset_token'); sessionStorage.removeItem('tabActiv'); location.reload(); }
 if (token) aratatApp();
