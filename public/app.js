@@ -22,7 +22,6 @@ async function login() {
 function aratatApp() {
   document.getElementById('login').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
-  cautaPacienti('');
   aratapanel(sessionStorage.getItem('tabActiv') || 'calendar');
 }
 
@@ -43,9 +42,10 @@ async function apel(cale, optiuni = {}) {
 }
 
 async function cautaPacienti(q) {
+  const lista = document.getElementById('lista-pacienti');
+  if (!lista) return;
   const arhivati = document.getElementById('toggle-arhivati')?.checked ? '1' : '0';
   const rows = await apel(`/api/pacienti?q=${encodeURIComponent(q)}&arhivati=${arhivati}`);
-  const lista = document.getElementById('lista-pacienti');
   lista.innerHTML = rows.map(p => `
     <div class="patient-row" onclick="deschideFisa('${p.id}')">
       <div class="nume">${p.nume} ${p.prenume}</div>
@@ -68,6 +68,22 @@ function aratapanel(nume) {
   if (nume === 'calendar') incarcaCalendarSaptamana();
   if (nume === 'echipa') incarcaEchipa();
   if (nume === 'statistici') incarcaStatistici();
+  if (nume === 'fisa') aratatListaPacienti();
+}
+
+function aratatListaPacienti() {
+  document.getElementById('panel-fisa').innerHTML = `
+    <div class="card" style="max-width:460px">
+      <h2>Pacienti</h2>
+      <input id="cautare" placeholder="Cauta pacient" oninput="cautaPacienti(this.value)" style="width:100%;margin-bottom:10px" autofocus>
+      <div id="lista-pacienti"></div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:#9a988e;cursor:pointer">
+        <input type="checkbox" id="toggle-arhivati" onchange="cautaPacienti(document.getElementById('cautare')?.value || '')" style="width:auto">
+        Arata pacientii arhivati
+      </label>
+    </div>
+  `;
+  cautaPacienti('');
 }
 
 async function incarcaEchipa() {
@@ -221,6 +237,9 @@ async function deschideFisa(id) {
   const ramase = ab ? ab.total_sedinte - ab.sedinte_efectuate : '-';
 
   document.getElementById('panel-fisa').innerHTML = `
+    <div style="margin-bottom:12px">
+      <span style="font-size:12px;color:#9a988e;cursor:pointer" onclick="aratatListaPacienti()">&larr; Toti pacientii</span>
+    </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
@@ -414,27 +433,27 @@ async function salveazaEditarePacient(id) {
   });
 
   inchideModalProgramare();
-  cautaPacienti(document.getElementById('cautare').value);
+  cautaPacienti(document.getElementById('cautare')?.value || '');
   deschideFisa(id);
 }
 
 async function arhiveazaPacient(id) {
   if (!confirm('Arhivezi acest pacient? Nu va mai aparea in lista activa, dar tot istoricul lui ramane salvat.')) return;
   await apel(`/api/pacienti/${id}/arhiveaza`, { method: 'PATCH' });
-  cautaPacienti(document.getElementById('cautare').value);
+  cautaPacienti(document.getElementById('cautare')?.value || '');
   deschideFisa(id);
 }
 
 async function reactiveazaPacient(id) {
   await apel(`/api/pacienti/${id}/reactiveaza`, { method: 'PATCH' });
-  cautaPacienti(document.getElementById('cautare').value);
+  cautaPacienti(document.getElementById('cautare')?.value || '');
   deschideFisa(id);
 }
 
 async function stergePacientDefinitiv(id, nume) {
   if (!confirm(`ATENTIE: stergi definitiv pe "${nume}" - se sterg si toate programarile, platile si abonamentele lui. Nu se mai poate recupera. Esti sigur?`)) return;
   await apel(`/api/pacienti/${id}`, { method: 'DELETE' });
-  cautaPacienti(document.getElementById('cautare').value);
+  cautaPacienti(document.getElementById('cautare')?.value || '');
   document.getElementById('panel-fisa').innerHTML = '<div class="card">Pacient sters.</div>';
 }
 
