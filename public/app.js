@@ -581,6 +581,15 @@ function saptamanaAceasta() {
   incarcaCalendarSaptamana();
 }
 
+const LUNI_RO = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+
+function schimbaLuna(directie) {
+  const d = new Date(saptamanaCurenta + 'T00:00:00');
+  d.setMonth(d.getMonth() + directie, 1);
+  saptamanaCurenta = luniAlSaptamanii(dataLocala(d));
+  incarcaCalendarSaptamana();
+}
+
 async function incarcaCalendarSaptamana() {
   const astazi = dataLocala(new Date());
   const zile = [0, 1, 2, 3, 4].map(i => adaugaZile(saptamanaCurenta, i));
@@ -597,13 +606,21 @@ async function incarcaCalendarSaptamana() {
 
   const culoareStatus = { programat: '#9a988e', prezent: '#6bcf9b', absent: '#e08585', reprogramat: '#e0b85e' };
   const bordura = '1px solid #3a3937';
+  const dataCurenta = new Date(saptamanaCurenta + 'T00:00:00');
 
   let html = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="schimbaSaptamana(-1)">&larr; Saptamana trecuta</button>
-        <button class="btn" onclick="saptamanaAceasta()">Azi</button>
-        <button class="btn" onclick="schimbaSaptamana(1)">Saptamana urmatoare &rarr;</button>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="schimbaSaptamana(-1)">&larr; Saptamana trecuta</button>
+          <button class="btn" onclick="saptamanaAceasta()">Azi</button>
+          <button class="btn" onclick="schimbaSaptamana(1)">Saptamana urmatoare &rarr;</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9a988e">
+          <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(-1)" title="Luna anterioara">&larr;</span>
+          <span style="min-width:90px;text-align:center">${LUNI_RO[dataCurenta.getMonth()]} ${dataCurenta.getFullYear()}</span>
+          <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(1)" title="Luna urmatoare">&rarr;</span>
+        </div>
       </div>
       <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
     </div>
