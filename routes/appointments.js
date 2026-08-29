@@ -88,6 +88,7 @@ router.patch('/:id/reprogrameaza', async (req, res) => {
     [data_ora_noua, req.params.id]
   );
   res.json(rows[0]);
+router.delete('/:id', async (req, res) => { await pool.query(`DELETE FROM programari WHERE id = $1`, [req.params.id]); res.json({ sters: true }); });
 });
 
 // Semnatura de pe tableta la intrarea in sedinta (nu e GDPR, doar confirmare prezenta)

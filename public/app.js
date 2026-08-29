@@ -624,7 +624,7 @@ function randPacientRand(p, culoareStatus) {
   const culoareStatusDeschis = { programat: '#8a8880', prezent: '#1f8a5a', absent: '#c14343', reprogramat: '#b8860b' };
   return `
     <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:1px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 3px;background:#f6f5f1">
-      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#2b2a26" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
+      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#2b2a26" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Click pentru editare">${p.prenume}</span>
       <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:transparent;color:${culoareStatusDeschis[p.status] || '#5a5850'};border:none;width:14px;flex-shrink:0">
         <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
         <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
@@ -754,13 +754,42 @@ async function marcheaza(id, status) {
   incarcaCalendarSaptamana();
 }
 
-async function reprogrameazaPrompt(id) {
-  const dataNoua = prompt('Noua data si ora (YYYY-MM-DD HH:MM):');
-  if (!dataNoua) return;
-  await apel(`/api/programari/${id}/reprogrameaza`, { method: 'PATCH', body: JSON.stringify({ data_ora_noua: dataNoua }) });
+function aratatMeniuProgramare(id, prenume) {
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:360px;width:90%">
+        <h2>Programare - ${prenume}</h2>
+        <label>Data noua</label>
+        <input id="reprog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}">
+        <label>Ora noua</label>
+        <select id="reprog-ora" style="width:100%;margin-bottom:14px">
+          ${ORE_DISPONIBILE.map(o => `<option value="${o}">${o}</option>`).join('')}
+        </select>
+        <button class="btn" style="width:100%" onclick="salveazaReprogramare('${id}')">Reprogrameaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px;color:#e08585" onclick="stergeProgramare('${id}')">Sterge programarea</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Inchide</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function salveazaReprogramare(id) {
+  const data = document.getElementById('reprog-data').value;
+  const ora = document.getElementById('reprog-ora').value;
+  if (!data || !ora) return;
+  const data_ora_noua = `${data} ${ora}:00`;
+  await apel(`/api/programari/${id}/reprogrameaza`, { method: 'PATCH', body: JSON.stringify({ data_ora_noua }) });
+  inchideModalProgramare();
   incarcaCalendarSaptamana();
 }
 
+async function stergeProgramare(id) {
+  if (!confirm('Sigur stergi aceasta programare?')) return;
+  await apel(`/api/programari/${id}`, { method: 'DELETE' });
+  inchideModalProgramare();
+  incarcaCalendarSaptamana();
+}
 let sumeDeblocate = false;
 
 async function incarcaStatistici() {
