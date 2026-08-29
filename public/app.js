@@ -653,7 +653,7 @@ async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
         <h2>Programare noua</h2>
 
         <label>Pacient</label>
-        <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." style="width:100%;margin-bottom:4px" oninput="filtreazaPacientiProgramare(this.value)" autocomplete="off">
+        <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." style="width:100%;margin-bottom:4px" oninput="filtreazaPacientiProgramare(this.value)" onfocus="filtreazaPacientiProgramare(this.value)" autocomplete="off">
         <input type="hidden" id="prog-pacient-id">
         <div id="prog-pacient-rezultate" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
 
@@ -679,20 +679,15 @@ async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
   `;
   document.getElementById('modal-container').innerHTML = html;
 }
-
 function filtreazaPacientiProgramare(text) {
   const rezultateEl = document.getElementById('prog-pacient-rezultate');
   document.getElementById('prog-pacient-id').value = '';
 
-  if (!text.trim()) {
-    rezultateEl.innerHTML = '';
-    return;
-  }
-
-  const cautare = text.toLowerCase();
-  const gasiti = pacientiProgramareCache.filter(p =>
-    `${p.nume} ${p.prenume}`.toLowerCase().includes(cautare)
-  ).slice(0, 8);
+  const cautare = text.toLowerCase().trim();
+  const gasiti = (cautare
+    ? pacientiProgramareCache.filter(p => `${p.nume} ${p.prenume}`.toLowerCase().includes(cautare))
+    : pacientiProgramareCache
+  ).slice(0, 20);
 
   rezultateEl.innerHTML = gasiti.map(p => `
     <div style="padding:8px;border-radius:6px;cursor:pointer;font-size:13px" onmouseover="this.style.background='#3a3937'" onmouseout="this.style.background='transparent'" onclick="selecteazaPacientProgramare('${p.id}','${p.nume} ${p.prenume}')">
