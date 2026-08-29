@@ -251,6 +251,7 @@ async function deschideFisa(id) {
 
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="aratatFormularEditarePacient('${id}')">Editeaza</button>
+        <button class="btn secundar" onclick="aratatConfirmareAbonamentNou('${id}')">Abonament nou (reseteaza sedintele)</button>
         ${p.activ
           ? `<button class="btn secundar" onclick="arhiveazaPacient('${id}')">Arhiveaza</button>`
           : `<button class="btn" onclick="reactiveazaPacient('${id}')">Reactiveaza</button>`}
@@ -437,6 +438,36 @@ async function stergePacientDefinitiv(id, nume) {
   document.getElementById('panel-fisa').innerHTML = '<div class="card">Pacient sters.</div>';
 }
 
+function aratatConfirmareAbonamentNou(pacientId) {
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:380px;width:90%">
+        <h2>Abonament nou</h2>
+        <div style="font-size:13px;color:#c9c7bd;margin-bottom:14px">Atentie: aceasta actiune inchide abonamentul curent si porneste unul nou, cu sedintele efectuate resetate la 0. Foloseste doar cand pacientul chiar incepe un abonament nou (nu la o plata obisnuita in mijlocul abonamentului).</div>
+        <label>Tip abonament nou</label>
+        <select id="abonament-nou-tip" style="width:100%;margin-bottom:14px">
+          <option value="8">8 sedinte</option>
+          <option value="12">12 sedinte</option>
+          <option value="individual">Sedinta individuala</option>
+        </select>
+        <button class="btn" style="width:100%" onclick="confirmaAbonamentNou('${pacientId}')">Da, porneste abonament nou</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function confirmaAbonamentNou(pacientId) {
+  const tip = document.getElementById('abonament-nou-tip').value;
+  await apel('/api/abonamente', {
+    method: 'POST',
+    body: JSON.stringify({ pacient_id: pacientId, tip })
+  });
+  inchideModalProgramare();
+  deschideFisa(pacientId);
+}
+
 async function aratatFormularPlataNoua(pacientId) {
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
@@ -498,17 +529,7 @@ async function salveazaPlataNoua(pacientId) {
   }
 
   const NUME_MOTIV = { '8': 'Abonament 8 sedinte', '12': 'Abonament 12 sedinte', individual: 'Sedinta individuala' };
-  let motiv;
-
-  if (motivSelect === 'altceva') {
-    motiv = document.getElementById('plata-motiv-liber').value.trim();
-  } else {
-    await apel('/api/abonamente', {
-      method: 'POST',
-      body: JSON.stringify({ pacient_id: pacientId, tip: motivSelect })
-    });
-    motiv = NUME_MOTIV[motivSelect];
-  }
+  const motiv = motivSelect === 'altceva' ? document.getElementById('plata-motiv-liber').value.trim() : NUME_MOTIV[motivSelect];
 
   const rezultat = await apel(`/api/pacienti/${pacientId}/plati`, {
     method: 'POST',
