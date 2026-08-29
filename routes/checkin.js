@@ -60,18 +60,6 @@ router.post('/:programareId/confirma', async (req, res) => {
 });
 
 // Sugestii live pe masura ce se tasteaza telefonul - doar pacienti programati azi
-router.get('/sugestii', async (req, res) => {
-  const { prefix } = req.query;
-  if (!prefix || prefix.length < 3) return res.json([]);
-  const { rows } = await pool.query(
-    `SELECT DISTINCT p.id, p.prenume, p.telefon
-     FROM pacienti p
-     JOIN programari pr ON pr.pacient_id = p.id
-     WHERE pr.data_ora::date = CURRENT_DATE AND p.telefon LIKE $1
-     LIMIT 8`,
-    [`${prefix}%`]
-  );
-  res.json(rows);
-});
+router.get('/sugestii', async (req, res) => { const { prefix } = req.query; if (!prefix || prefix.length < 4) return res.json([]); const { rows } = await pool.query( `SELECT DISTINCT p.id, p.prenume, p.telefon FROM pacienti p JOIN programari pr ON pr.pacient_id = p.id WHERE pr.data_ora::date = CURRENT_DATE AND p.telefon LIKE $1 ORDER BY p.telefon LIMIT 20`, [`${prefix}%`] ); res.json(rows); });
 
 module.exports = router;

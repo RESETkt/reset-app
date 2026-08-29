@@ -25,7 +25,7 @@ function actualizeazaAfisajTelefon() {
 
 async function incarcaSugestii() {
   const el = document.getElementById('sugestii-telefon');
-  if (telefonTastat.length < 3) { el.innerHTML = ''; return; }
+  if (telefonTastat.length < 4) { el.innerHTML = ''; return; }
   const r = await fetch(`/api/checkin/sugestii?prefix=${encodeURIComponent(telefonTastat)}`);
   const rezultate = await r.json();
   el.innerHTML = rezultate.map(p => `
