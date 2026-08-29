@@ -1,6 +1,14 @@
 let dateCheckin = null;
 let telefonTastat = '';
 
+function comutaFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
 function apasaCifra(cifra) {
   telefonTastat += cifra;
   actualizeazaAfisajTelefon();
