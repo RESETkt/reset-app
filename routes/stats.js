@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     WHERE prezent_marcat_la >= date_trunc('week', now()) AND status = 'prezent'
   `);
   const pacientiLuna = await pool.query(`
-    SELECT COUNT(DISTINCT pacient_id) FROM programari
+    SELECT COUNT(*) FROM programari
     WHERE prezent_marcat_la >= date_trunc('month', now()) AND status = 'prezent'
   `);
   const incasariSaptamana = await pool.query(`
