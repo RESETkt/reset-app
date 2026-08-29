@@ -585,7 +585,7 @@ const LUNI_RO = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', '
 
 function schimbaLuna(directie) {
   const d = new Date(saptamanaCurenta + 'T00:00:00');
-  d.setMonth(d.getMonth() + directie, 1);
+  d.setMonth(d.getMonth() + directie, 15);
   saptamanaCurenta = luniAlSaptamanii(dataLocala(d));
   incarcaCalendarSaptamana();
 }
