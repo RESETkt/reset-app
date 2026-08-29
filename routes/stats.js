@@ -8,11 +8,11 @@ router.use(ceareAutentificare);
 router.get('/', async (req, res) => {
   const pacientiSaptamana = await pool.query(`
     SELECT COUNT(*) FROM programari
-    WHERE prezent_marcat_la >= date_trunc('week', now()) AND status = 'prezent'
+    WHERE data_ora >= date_trunc('week', now()) AND data_ora < date_trunc('week', now()) + interval '7 days' AND status = 'prezent'
   `);
   const pacientiLuna = await pool.query(`
     SELECT COUNT(*) FROM programari
-    WHERE prezent_marcat_la >= date_trunc('month', now()) AND status = 'prezent'
+    WHERE data_ora >= date_trunc('month', now()) AND data_ora < date_trunc('month', now()) + interval '1 month' AND status = 'prezent'
   `);
   const incasariSaptamana = await pool.query(`
     SELECT COALESCE(SUM(suma),0) AS total FROM plati
