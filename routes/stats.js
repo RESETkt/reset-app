@@ -7,7 +7,7 @@ router.use(ceareAutentificare);
 
 router.get('/', async (req, res) => {
   const pacientiSaptamana = await pool.query(`
-    SELECT COUNT(DISTINCT pacient_id) FROM programari
+    SELECT COUNT(*) FROM programari
     WHERE prezent_marcat_la >= date_trunc('week', now()) AND status = 'prezent'
   `);
   const pacientiLuna = await pool.query(`
