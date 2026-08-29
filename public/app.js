@@ -465,7 +465,7 @@ async function aratatFormularPlataNoua(pacientId) {
         <input id="plata-motiv-liber" placeholder="Descrie motivul" style="width:100%;margin-bottom:10px;display:none">
 
         <label>Data platii</label>
-        <input id="plata-data" type="date" style="width:100%;margin-bottom:14px" value="${dataLocala(new Date())}">
+        <input id="plata-data" type="date" style="width:100%;margin-bottom:14px" value="${dataLocala(new Date())}"onclick="this.showPicker && this.showPicker()" Deci linia devine: <input id="plata-data" type="date" style="width:100%;margin-bottom:14px" value="${dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">>
 
         <button class="btn" style="width:100%" onclick="salveazaPlataNoua('${pacientId}')">Salveaza plata</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
@@ -664,7 +664,7 @@ async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
         </select>
 
         <label>Data</label>
-        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataPresetata || dataLocala(new Date())}">
+        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataPresetata || dataLocala(new Date())}"onclick="this.showPicker && this.showPicker()">
 
         <label>Ora</label>
         <select id="prog-ora" style="width:100%;margin-bottom:14px">
@@ -755,7 +755,7 @@ function aratatMeniuProgramare(id, prenume) {
       <div class="card" style="max-width:360px;width:90%">
         <h2>Programare - ${prenume}</h2>
         <label>Data noua</label>
-        <input id="reprog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}">
+        <input id="reprog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}"onclick="this.showPicker && this.showPicker()">
         <label>Ora noua</label>
         <select id="reprog-ora" style="width:100%;margin-bottom:14px">
           ${ORE_DISPONIBILE.map(o => `<option value="${o}">${o}</option>`).join('')}
