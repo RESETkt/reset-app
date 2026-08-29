@@ -58,7 +58,7 @@ th, td { text-align: left; }
   visibility: hidden;
   margin-top: 4px;
   font-size: 11px;
-  color: #9a988e;
+  color: #175e52;
   cursor: pointer;
 }
 .ora-cell:hover .ora-add-btn { visibility: visible; }

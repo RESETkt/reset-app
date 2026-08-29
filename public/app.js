@@ -583,15 +583,15 @@ async function incarcaCalendarSaptamana() {
       </div>
       <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
     </div>
-    <div class="card" style="padding:0">
+    <div class="card" style="padding:0;background:#ffffff;border-color:#dcdad4">
       <table style="border-collapse:collapse;table-layout:fixed">
         <tr>
-          <th style="text-align:left;padding:10px 8px;font-size:12px;color:#9a988e;width:70px;border:${bordura};background:#1e1e1d">Ora</th>
-          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#1e1e1d' : '#9a988e'};border:${bordura};background:${z === astazi ? '#ece9e2' : '#1e1e1d'};width:270px">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
+          <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b6a63;width:70px;border:1px solid #e2e0d9;background:#f4f3ef">Ora</th>
+          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#ffffff' : '#6b6a63'};border:1px solid #e2e0d9;background:${z === astazi ? '#1f8a7a' : '#f4f3ef'};width:270px">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
         </tr>
         ${ORE_DISPONIBILE.map(ora => `
           <tr>
-            <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top;border:${bordura}">
+            <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top;border:1px solid #e2e0d9;background:#e6f2ef;color:#175e52">
               <div class="ora-cell">
                 ${ora}
                 <div class="ora-add-btn" onclick="aratatFormularProgramareNoua(null,'${ora}')">+ adauga</div>
@@ -601,10 +601,10 @@ async function incarcaCalendarSaptamana() {
               const toate = pePeriada[`${z}_${ora}`] || [];
               const randuri = [];
               for (let i = 0; i < toate.length; i += 3) randuri.push(toate.slice(i, i + 3));
-              const fundalZi = z === astazi ? 'background:#2c2b28' : '';
-              return `<td style="padding:6px 8px;vertical-align:top;border:${bordura};${fundalZi}">
+              const fundalZi = z === astazi ? 'background:#eafaf6' : 'background:#ffffff';
+              return `<td style="padding:6px 8px;vertical-align:top;border:1px solid #e2e0d9;${fundalZi}">
                 ${randuri.map((rand, idx) => `
-                  <div style="display:flex;gap:6px;padding:4px 0;${idx < randuri.length - 1 ? 'border-bottom:1px solid #3a3937' : ''}">
+                  <div style="display:flex;gap:6px;padding:4px 0;${idx < randuri.length - 1 ? 'border-bottom:1px solid #eae8e1' : ''}">
                     ${rand.map(p => randPacientRand(p, culoareStatus)).join('')}
                   </div>
                 `).join('')}
@@ -621,10 +621,11 @@ async function incarcaCalendarSaptamana() {
 
 function randPacientRand(p, culoareStatus) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
+  const culoareStatusDeschis = { programat: '#8a8880', prezent: '#1f8a5a', absent: '#c14343', reprogramat: '#b8860b' };
   return `
-    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:1px;border:1px solid #3a3937;border-radius:4px;padding:1px 3px">
-      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
-      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:transparent;color:${culoareStatus[p.status] || '#ece9e2'};border:none;width:14px;flex-shrink:0">
+    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:1px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 3px;background:#f6f5f1">
+      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#2b2a26" onclick="reprogrameazaPrompt('${p.id}')" title="Click pentru reprogramare">${p.prenume}</span>
+      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:10px;padding:0;background:transparent;color:${culoareStatusDeschis[p.status] || '#5a5850'};border:none;width:14px;flex-shrink:0">
         <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
         <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
         <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>&#10007;</option>
