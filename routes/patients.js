@@ -48,7 +48,10 @@ router.get('/:id', async (req, res) => {
     pacient: pacient.rows[0],
     abonament: abonament.rows[0] || null,
     ultima_sedinta: ultimaSedinta.rows[0] || null,
-    gdpr_semnat: consimtamant.rows.length > 0, gdpr_data: consimtamant.rows[0]?.data_semnare || null, plati: plati.rows });
+    gdpr_semnat: consimtamant.rows.length > 0,
+    gdpr_data: consimtamant.rows[0]?.data_semnare || null,
+    plati: plati.rows
+  });
 });
 
 // Adauga o plata noua pentru un pacient - abonament nou, sedinta, sau orice suma
@@ -73,6 +76,18 @@ router.post('/', async (req, res) => {
     [nume, prenume, cnp, telefon, email, diagnostic]
   );
   res.status(201).json(rows[0]);
+});
+
+router.get('/:id/sedinte', async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT p.data_ora, p.exercitii, p.observatii, u.nume AS kineto_nume
+     FROM programari p
+     LEFT JOIN utilizatori u ON u.id = p.kineto_id
+     WHERE p.pacient_id = $1 AND p.status = 'prezent'
+     ORDER BY p.data_ora DESC`,
+    [req.params.id]
+  );
+  res.json(rows);
 });
 
 router.put('/:id', async (req, res) => {

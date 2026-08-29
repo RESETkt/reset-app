@@ -257,7 +257,7 @@ async function deschideFisa(id) {
 
       ${data.ultima_sedinta ? `
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
-        <div style="font-weight:500;font-size:13px;margin-bottom:6px">Ultima sedinta (${new Date(data.ultima_sedinta.data_ora).toLocaleDateString('ro-RO')})</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"> <div style="font-weight:500;font-size:13px">Ultima sedinta (${new Date(data.ultima_sedinta.data_ora).toLocaleDateString('ro-RO')})</div> <button class="btn secundar" onclick="aratatIstoricSedinte('${id}')">Istoric</button> </div>
         <div style="font-size:13px;color:#c9c7bd">Exercitii: ${data.ultima_sedinta.exercitii || '-'}</div>
         <div style="font-size:13px;color:#c9c7bd">Observatii: ${data.ultima_sedinta.observatii || '-'}</div>
       </div>` : ''}
@@ -295,6 +295,25 @@ async function deschideFisa(id) {
   `;
 }
 
+async function aratatIstoricSedinte(pacientId) {
+  const sedinte = await apel(`/api/pacienti/${pacientId}/sedinte`);
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:480px;width:90%;max-height:80vh;overflow-y:auto">
+        <h2>Istoric sedinte</h2>
+        ${sedinte.length === 0 ? '<div style="font-size:13px;color:#9a988e">Nicio sedinta inregistrata inca.</div>' : sedinte.map(s => `
+          <div style="border-bottom:1px solid #3a3937;padding:10px 0">
+            <div style="font-size:13px;font-weight:500;margin-bottom:4px">${new Date(s.data_ora).toLocaleDateString('ro-RO')} ${s.kineto_nume ? `- ${s.kineto_nume}` : ''}</div>
+            <div style="font-size:13px;color:#c9c7bd">Exercitii: ${s.exercitii || '-'}</div>
+            <div style="font-size:13px;color:#c9c7bd">Observatii: ${s.observatii || '-'}</div>
+          </div>
+        `).join('')}
+        <button class="btn secundar" style="width:100%;margin-top:14px" onclick="inchideModalProgramare()">Inchide</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
 async function aratatModalGDPR(pacientId, dejaSemnat, dataSemnare) {
   if (dejaSemnat) {
     const html = `
