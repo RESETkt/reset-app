@@ -73,7 +73,7 @@ function aratapanel(nume) {
 async function incarcaEchipa() {
   const echipa = await apel('/api/utilizatori');
   document.getElementById('panel-echipa').innerHTML = `
-       <div class="card" style="max-width:480px">
+    <div class="card" style="max-width:480px">
       <h2>Echipa curenta</h2>
       ${echipa.map(u => `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #3a3937">
@@ -97,7 +97,6 @@ async function incarcaEchipa() {
       <div id="eroare-echipa" style="color:#e08585;font-size:12px;margin-top:8px"></div>
     </div>
   `;
-}
 }
 
 async function adaugaKineto() {
@@ -461,12 +460,15 @@ async function aratatFormularPlataNoua(pacientId) {
 
         <label>Motiv</label>
         <select id="plata-motiv-select" style="width:100%;margin-bottom:6px" onchange="schimbaMotivPlata(this.value)">
-          <option value="8">Abonament 8 sedinte</option> <option value="12">Abonament 12 sedinte</option> <option value="individual">Sedinta individuala</option> <option value="altceva">Altceva (scriu eu)</option>
+          <option value="8">Abonament 8 sedinte</option>
+          <option value="12">Abonament 12 sedinte</option>
+          <option value="individual">Sedinta individuala</option>
+          <option value="altceva">Altceva (scriu eu)</option>
         </select>
         <input id="plata-motiv-liber" placeholder="Descrie motivul" style="width:100%;margin-bottom:10px;display:none">
 
         <label>Data platii</label>
-        <input id="plata-data" type="date" style="width:100%;margin-bottom:14px" value="${dataLocala(new Date())}"onclick="this.showPicker && this.showPicker()" Deci linia devine: <input id="plata-data" type="date" style="width:100%;margin-bottom:14px" value="${dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">>
+        <input id="plata-data" type="date" style="width:100%;margin-bottom:14px" value="${dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
 
         <button class="btn" style="width:100%" onclick="salveazaPlataNoua('${pacientId}')">Salveaza plata</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
@@ -654,7 +656,7 @@ async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
         <h2>Programare noua</h2>
 
         <label>Pacient</label>
-        <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." style="width:100%;margin-bottom:4px" oninput="filtreazaPacientiProgramare(this.value)" onfocus="filtreazaPacientiProgramare(this.value)" autocomplete="off">
+        <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." style="width:100%;margin-bottom:4px" oninput="filtreazaPacientiProgramare(this.value)" onfocus="filtreazaPacientiProgramare(this.value)" autocomplete="off">
         <input type="hidden" id="prog-pacient-id">
         <div id="prog-pacient-rezultate" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
 
@@ -665,7 +667,7 @@ async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
         </select>
 
         <label>Data</label>
-        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataPresetata || dataLocala(new Date())}"onclick="this.showPicker && this.showPicker()">
+        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataPresetata || dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
 
         <label>Ora</label>
         <select id="prog-ora" style="width:100%;margin-bottom:14px">
@@ -680,6 +682,7 @@ async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
   `;
   document.getElementById('modal-container').innerHTML = html;
 }
+
 function filtreazaPacientiProgramare(text) {
   const rezultateEl = document.getElementById('prog-pacient-rezultate');
   document.getElementById('prog-pacient-id').value = '';
@@ -756,7 +759,7 @@ function aratatMeniuProgramare(id, prenume) {
       <div class="card" style="max-width:360px;width:90%">
         <h2>Programare - ${prenume}</h2>
         <label>Data noua</label>
-        <input id="reprog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}"onclick="this.showPicker && this.showPicker()">
+        <input id="reprog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
         <label>Ora noua</label>
         <select id="reprog-ora" style="width:100%;margin-bottom:14px">
           ${ORE_DISPONIBILE.map(o => `<option value="${o}">${o}</option>`).join('')}
@@ -786,6 +789,7 @@ async function stergeProgramare(id) {
   inchideModalProgramare();
   incarcaCalendarSaptamana();
 }
+
 let sumeDeblocate = false;
 
 async function incarcaStatistici() {
@@ -833,5 +837,11 @@ function blocheazaSume() {
   sumeDeblocate = false;
   incarcaStatistici();
 }
-function delogare() { localStorage.removeItem('reset_token'); sessionStorage.removeItem('tabActiv'); location.reload(); }
+
+function delogare() {
+  localStorage.removeItem('reset_token');
+  sessionStorage.removeItem('tabActiv');
+  location.reload();
+}
+
 if (token) aratatApp();
