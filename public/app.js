@@ -809,6 +809,7 @@ async function salveazaProgramareNoua() {
     eroareEl.textContent = 'Completeaza data si ora.';
     return;
   }
+const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii === 0 || ziSaptamanii === 6) { eroareEl.textContent = 'Nu se pot face programari sambata sau duminica.'; return; }
 
   const data_ora = `${data} ${ora}:00`;
   const rezultat = await apel('/api/programari', {
@@ -860,8 +861,17 @@ async function salveazaReprogramare(id) {
   const data = document.getElementById('reprog-data').value;
   const ora = document.getElementById('reprog-ora').value;
   if (!data || !ora) return;
+  const ziSaptamanii = new Date(data + 'T00:00:00').getDay();
+  if (ziSaptamanii === 0 || ziSaptamanii === 6) {
+    alert('Nu se pot face programari sambata sau duminica.');
+    return;
+  }
   const data_ora_noua = `${data} ${ora}:00`;
-  await apel(`/api/programari/${id}/reprogrameaza`, { method: 'PATCH', body: JSON.stringify({ data_ora_noua }) });
+  const rezultat = await apel(`/api/programari/${id}/reprogrameaza`, { method: 'PATCH', body: JSON.stringify({ data_ora_noua }) });
+  if (rezultat.eroare) {
+    alert(rezultat.eroare);
+    return;
+  }
   inchideModalProgramare();
   incarcaCalendarSaptamana();
 }

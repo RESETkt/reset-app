@@ -5,6 +5,13 @@ const { ceareAutentificare } = require('../services/auth');
 const router = express.Router();
 router.use(ceareAutentificare);
 
+// Verifica daca data (YYYY-MM-DD sau YYYY-MM-DD HH:MM:SS) cade sambata sau duminica
+function esteWeekend(data_ora) {
+  const dataParte = data_ora.slice(0, 10);
+  const zi = new Date(dataParte + 'T00:00:00').getDay();
+  return zi === 0 || zi === 6;
+}
+
 // Programarile dintr-un interval (implicit azi), pentru calendar
 router.get('/', async (req, res) => {
   const { de_la, pana_la } = req.query;
@@ -30,6 +37,9 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const { pacient_id, kineto_id, data_ora } = req.body;
+  if (esteWeekend(data_ora)) {
+    return res.status(400).json({ eroare: 'Nu se pot face programari sambata sau duminica.' });
+  }
   let abonament_id = req.body.abonament_id || null;
 
   if (!abonament_id) {
@@ -47,7 +57,7 @@ router.post('/', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
-// Marcheaza prezenta: incrementeaza sedintele efectuate din abonament (o singura data) si salveaza exercitii/observatii
+// Marcheaza prezenta: incrementeaza sedintele efectuate din abonament si salveaza exercitii/observatii
 router.patch('/:id/prezent', async (req, res) => {
   const { exercitii, observatii } = req.body;
   const client = await pool.connect();
@@ -85,6 +95,9 @@ router.patch('/:id/absent', async (req, res) => {
 
 router.patch('/:id/reprogrameaza', async (req, res) => {
   const { data_ora_noua } = req.body;
+  if (esteWeekend(data_ora_noua)) {
+    return res.status(400).json({ eroare: 'Nu se pot face programari sambata sau duminica.' });
+  }
   const { rows } = await pool.query(
     `UPDATE programari SET status='reprogramat', data_ora=$1 WHERE id=$2 RETURNING *`,
     [data_ora_noua, req.params.id]
