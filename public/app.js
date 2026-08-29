@@ -648,13 +648,12 @@ function randPacientRand(p, culoareStatus) {
   const culoareStatusDeschis = { programat: '#8a8880', prezent: '#1f8a5a', absent: '#c14343', reprogramat: '#b8860b' };
   return `
     <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 3px;background:#f6f5f1">
-      <span style="font-size:12px;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoareStatusDeschis[p.status] || '#2b2a26'};font-weight:600">${p.prenume}</span>
-      <select onchange="marcheaza('${p.id}', this.value)" style="font-size:11px;padding:0;background:transparent;color:${culoareStatusDeschis[p.status] || '#5a5850'};border:none;width:16px;flex-shrink:0">
-        <option value="programat" ${p.status === 'programat' ? 'selected' : ''} disabled>-</option>
-        <option value="prezent" ${p.status === 'prezent' ? 'selected' : ''}>&#10003;</option>
-        <option value="absent" ${p.status === 'absent' ? 'selected' : ''}>&#10007;</option>
-      </select>
+      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoareStatusDeschis[p.status] || '#2b2a26'};font-weight:600" onclick="toggleMeniuStatus('${p.id}')">${p.prenume}</span>
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
+      <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
+        <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="marcheaza('${p.id}','prezent')">Prezent</div>
+        <div style="padding:7px 12px;font-size:12px;color:#c14343;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="marcheaza('${p.id}','absent')">Absent</div>
+      </div>
       <div class="pacient-tooltip">
         <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
         <div>Kineto: ${p.kineto_nume || 'Nealocat'}</div>
@@ -664,6 +663,13 @@ function randPacientRand(p, culoareStatus) {
       </div>
     </div>
   `;
+}
+
+function toggleMeniuStatus(id) {
+  const el = document.getElementById(`status-meniu-${id}`);
+  const eraDeschis = el.style.display === 'block';
+  document.querySelectorAll('[id^="status-meniu-"]').forEach(m => m.style.display = 'none');
+  el.style.display = eraDeschis ? 'none' : 'block';
 }
 
 let pacientiProgramareCache = [];
