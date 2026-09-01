@@ -884,9 +884,11 @@ async function stergeProgramare(id) {
 }
 
 let sumeDeblocate = false;
+const LUNI_RO_STATS = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
 
 async function incarcaStatistici() {
   const s = await apel('/api/statistici');
+  const acum = new Date();
   document.getElementById('panel-statistici').innerHTML = `
     <div class="card">
       <h2>Saptamana aceasta</h2>
@@ -911,8 +913,46 @@ async function incarcaStatistici() {
         ? (s.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${m.total} lei</div>`).join('') || '<div style="font-size:13px;color:#9a988e">Fara plati inregistrate.</div>')
         : '<div style="font-size:13px;color:#9a988e">Sumele sunt ascunse. Apasa "Arata sumele" pentru a le vedea.</div>'}
       <div id="eroare-parola-sume" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+
+      <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
+        <div style="font-weight:500;font-size:13px;margin-bottom:8px">Descarca raport PDF</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select id="pdf-luna" style="flex:1">
+            ${LUNI_RO_STATS.map((l, i) => `<option value="${i + 1}" ${i === acum.getMonth() ? 'selected' : ''}>${l}</option>`).join('')}
+          </select>
+          <input id="pdf-an" type="number" value="${acum.getFullYear()}" style="width:90px">
+        </div>
+        <button class="btn secundar" style="width:100%" onclick="descarcaPdfStatistici()">Descarca PDF</button>
+      </div>
     </div>
   `;
+}
+
+async function descarcaPdfStatistici() {
+  const luna = document.getElementById('pdf-luna').value;
+  const an = document.getElementById('pdf-an').value;
+
+  if (!sumeDeblocate) {
+    cereParolaSume();
+    if (!sumeDeblocate) return;
+  }
+
+  const r = await fetch(`/api/statistici/pdf?an=${an}&luna=${luna}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!r.ok) {
+    alert('Eroare la generarea raportului PDF.');
+    return;
+  }
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `raport-${luna}-${an}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function cereParolaSume() {
