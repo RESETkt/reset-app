@@ -148,19 +148,15 @@ function aratatConfirmare() {
   document.getElementById('sedinte-ramase').textContent = ab
     ? `${ab.total_sedinte - ab.sedinte_efectuate} / ${ab.total_sedinte}`
     : '-';
-
-  pregatesteCanvas('canvas-sedinta');
 }
 
 async function trimiteConfirmareSedinta() {
   if (!dateCheckin.programare) { alert('Nu exista o programare azi de confirmat.'); return; }
-  if (canvasEsteGol('canvas-sedinta')) { alert('Semneaza inainte de a confirma.'); return; }
 
-  const semnatura_svg = document.getElementById('canvas-sedinta').toDataURL();
   await fetch(`/api/checkin/${dateCheckin.programare.id}/confirma`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ semnatura_svg })
+    body: JSON.stringify({})
   });
 
   ascundeToate();
