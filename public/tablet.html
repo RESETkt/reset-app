@@ -14,6 +14,7 @@
   .card { background: #262624; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); color: #ece9e2; }
   input { width: 100%; padding: 10px; border: 1px solid #45443f; border-radius: 8px; font-size: 15px; margin-bottom: 10px; background: #1e1e1d; color: #ece9e2; }
   button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #ece9e2; color: #1e1e1d; font-size: 15px; cursor: pointer; font-weight: 500; }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
   button.secundar { background: #1e1e1d; border: 1px solid #45443f; color: #ece9e2; margin-top: 8px; }
   h2 { font-size: 24px; text-align: center; margin: 0 0 8px; color: #ece9e2; }
   .sub { font-size: 16px; color: #9a988e; text-align: center; margin-bottom: 16px; }
@@ -24,6 +25,7 @@
   .tastatura { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
   .tastatura button { padding: 24px; font-size: 24px; margin-top: 0; min-width: 0; }
   .tastatura button.principal { background: #2b6cb0; color: #ffffff; font-size: 18px; font-weight: 600; }
+  .tastatura button.secundar { background: #34332f; border: 1px solid #57554e; font-size: 22px; }
   .sugestii { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
   .sugestie-btn { display: inline-block; width: auto; padding: 16px 22px; background: #1f3634; border: 2px solid #2d5049; border-radius: 12px; font-size: 20px; font-weight: 600; }
   .buton-fullscreen { position: fixed; top: 24px; right: 24px; width: 44px; height: 44px; border-radius: 50%; background: #262624; border: 1px solid #45443f; color: #9a988e; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
@@ -52,9 +54,9 @@
     <button onclick="apasaCifra('7')">7</button>
     <button onclick="apasaCifra('8')">8</button>
     <button onclick="apasaCifra('9')">9</button>
-    <button class="secundar" onclick="stergeCifra()">&larr;</button>
+    <button class="secundar" onclick="stergeCifra()" aria-label="Sterge ultima cifra">&#9003;</button>
     <button onclick="apasaCifra('0')">0</button>
-    <button class="principal" onclick="cautaProgramare()">Continua</button>
+    <button class="principal" id="btn-continua" onclick="cautaProgramare()" disabled>Continua</button>
   </div>
   <div id="eroare-cautare" style="color:#b23b3b;font-size:12px;margin-top:8px;text-align:center"></div>
 </div>

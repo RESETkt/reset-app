@@ -29,6 +29,7 @@ function golesteTelefon() {
 
 function actualizeazaAfisajTelefon() {
   document.getElementById('afisaj-telefon').textContent = telefonTastat || '\u00a0';
+  document.getElementById('btn-continua').disabled = telefonTastat.length === 0;
 }
 
 async function incarcaSugestii() {
