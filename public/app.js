@@ -1,5 +1,6 @@
 let token = localStorage.getItem('reset_token');
 let pacientCurent = null;
+let pacientEditareAbonamentCurent = '';
 
 async function login() {
   const email = document.getElementById('login-email').value;
@@ -416,6 +417,8 @@ async function trimiteSemnaturaGDPR(pacientId) {
 function aratatFormularEditarePacient(id) {
   apel(`/api/pacienti/${id}`).then(data => {
     const p = data.pacient;
+    const ab = data.abonament;
+    pacientEditareAbonamentCurent = ab ? ab.tip : '';
     const html = `
       <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
         <div class="card" style="max-width:400px;width:90%">
@@ -430,6 +433,14 @@ function aratatFormularEditarePacient(id) {
           <input id="edit-email" value="${p.email || ''}" style="width:100%;margin-bottom:10px">
           <label>Diagnostic</label>
           <input id="edit-diagnostic" value="${p.diagnostic || ''}" style="width:100%;margin-bottom:14px">
+          <label>Abonament</label>
+          <select id="edit-abonament" style="width:100%;margin-bottom:6px">
+            <option value="" ${!ab ? 'selected' : ''}>Fara abonament</option>
+            <option value="8" ${ab && ab.tip === '8' ? 'selected' : ''}>8 sedinte</option>
+            <option value="12" ${ab && ab.tip === '12' ? 'selected' : ''}>12 sedinte</option>
+            <option value="individual" ${ab && ab.tip === 'individual' ? 'selected' : ''}>Sedinta individuala</option>
+          </select>
+          <div style="font-size:12px;color:#9a988e;margin-bottom:14px">${ab ? `Are deja ${ab.sedinte_efectuate}/${ab.total_sedinte} sedinte efectuate. Daca schimbi tipul de abonament, contorul de sedinte efectuate se reseteaza la 0.` : 'Pacientul nu are niciun abonament momentan.'}</div>
           <button class="btn" style="width:100%" onclick="salveazaEditarePacient('${id}')">Salveaza</button>
           <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
         </div>
@@ -445,11 +456,20 @@ async function salveazaEditarePacient(id) {
   const telefon = document.getElementById('edit-telefon').value.trim();
   const email = document.getElementById('edit-email').value.trim();
   const diagnostic = document.getElementById('edit-diagnostic').value.trim();
+  const abonamentEl = document.getElementById('edit-abonament');
+  const tipAbonament = abonamentEl ? abonamentEl.value : '';
 
   await apel(`/api/pacienti/${id}`, {
     method: 'PUT',
     body: JSON.stringify({ nume, prenume, telefon, email, diagnostic })
   });
+
+  if (tipAbonament && tipAbonament !== pacientEditareAbonamentCurent) {
+    await apel('/api/abonamente', {
+      method: 'POST',
+      body: JSON.stringify({ pacient_id: id, tip: tipAbonament })
+    });
+  }
 
   inchideModalProgramare();
   cautaPacienti(document.getElementById('cautare')?.value || '');
