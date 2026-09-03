@@ -335,7 +335,7 @@ async function aratatModalGDPR(pacientId, dejaSemnat, dataSemnare) {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
       <div class="card" style="max-width:420px;width:90%">
         <h2>Consimtamant GDPR</h2>
-        <div style="font-size:13px;color:#c9c7bd;margin-bottom:14px;line-height:1.5">${gdprText.text}</div>
+        <div style="font-size:13px;color:#c9c7bd;margin-bottom:14px;line-height:1.6;white-space:pre-line;max-height:320px;overflow-y:auto;padding-right:6px">${gdprText.text}</div>
         <label>Semnatura</label>
         <canvas id="canvas-gdpr-dashboard" style="border:1px dashed #45443f;border-radius:8px;width:100%;height:140px;touch-action:none;background:#1e1e1d"></canvas>
         <button class="btn" style="width:100%;margin-top:10px" onclick="trimiteSemnaturaGDPR('${pacientId}')">Confirma semnatura</button>
