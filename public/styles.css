@@ -63,3 +63,13 @@ th, td { text-align: left; }
   cursor: pointer;
 }
 .ora-cell:hover .ora-add-btn { visibility: visible; }
+
+.abonament-bara { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; border: 1px dashed #45443f; color: #9a988e; cursor: pointer; font-size: 13px; transition: border-color .12s, background .12s, color .12s; }
+.abonament-bara:hover { border-color: #7fd9a8; color: #ece9e2; }
+.abonament-bara.cta { border-color: #2f6a52; color: #7fd9a8; font-weight: 600; }
+.abonament-bara.cta:hover { background: #1f3626; border-color: #7fd9a8; }
+.abonament-bara-schimba { font-size: 11px; color: #7fd9a8; }
+.abonament-optiuni { display: flex; gap: 8px; margin-top: 8px; }
+.abonament-optiune { flex: 1; text-align: center; padding: 10px 6px; border-radius: 8px; border: 1px solid #45443f; background: #2e2d2a; cursor: pointer; font-size: 12.5px; color: #c9c7bd; transition: border-color .12s, background .12s, color .12s; }
+.abonament-optiune:hover { border-color: #7fd9a8; }
+.abonament-optiune.activ { border-color: #7fd9a8; background: #1f3626; color: #7fd9a8; font-weight: 600; }

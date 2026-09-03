@@ -434,13 +434,17 @@ function aratatFormularEditarePacient(id) {
           <label>Diagnostic</label>
           <input id="edit-diagnostic" value="${p.diagnostic || ''}" style="width:100%;margin-bottom:14px">
           <label>Abonament</label>
-          <select id="edit-abonament" style="width:100%;margin-bottom:6px">
-            <option value="" ${!ab ? 'selected' : ''}>Fara abonament</option>
-            <option value="8" ${ab && ab.tip === '8' ? 'selected' : ''}>8 sedinte</option>
-            <option value="12" ${ab && ab.tip === '12' ? 'selected' : ''}>12 sedinte</option>
-            <option value="individual" ${ab && ab.tip === 'individual' ? 'selected' : ''}>Sedinta individuala</option>
-          </select>
-          <div style="font-size:12px;color:#9a988e;margin-bottom:14px">${ab ? `Are deja ${ab.sedinte_efectuate}/${ab.total_sedinte} sedinte efectuate. Daca schimbi tipul de abonament, contorul de sedinte efectuate se reseteaza la 0.` : 'Pacientul nu are niciun abonament momentan.'}</div>
+          <div id="abonament-bara" class="abonament-bara ${ab ? '' : 'cta'}" onclick="toggleAbonamentOptiuni()">
+            <span id="abonament-bara-text">${ab ? `Abonament ${textAbonament(ab.tip)}` : '+ Adauga abonament'}</span>
+            ${ab ? '<span class="abonament-bara-schimba">Schimba</span>' : ''}
+          </div>
+          <div id="abonament-optiuni" class="abonament-optiuni" style="display:none">
+            <div class="abonament-optiune ${ab && ab.tip === '8' ? 'activ' : ''}" onclick="selecteazaAbonament('8')">8 sedinte</div>
+            <div class="abonament-optiune ${ab && ab.tip === '12' ? 'activ' : ''}" onclick="selecteazaAbonament('12')">12 sedinte</div>
+            <div class="abonament-optiune ${ab && ab.tip === 'individual' ? 'activ' : ''}" onclick="selecteazaAbonament('individual')">Sedinta individuala</div>
+          </div>
+          <input type="hidden" id="edit-abonament" value="${ab ? ab.tip : ''}">
+          <div id="abonament-info" style="font-size:12px;color:#9a988e;margin-top:6px;margin-bottom:14px">${ab ? `Are deja ${ab.sedinte_efectuate}/${ab.total_sedinte} sedinte efectuate.` : 'Pacientul nu are niciun abonament momentan.'}</div>
           <button class="btn" style="width:100%" onclick="salveazaEditarePacient('${id}')">Salveaza</button>
           <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
         </div>
@@ -448,6 +452,36 @@ function aratatFormularEditarePacient(id) {
     `;
     document.getElementById('modal-container').innerHTML = html;
   });
+}
+
+function textAbonament(tip) {
+  return tip === '8' ? '8 sedinte' : tip === '12' ? '12 sedinte' : tip === 'individual' ? 'Sedinta individuala' : '';
+}
+
+function toggleAbonamentOptiuni() {
+  const optiuni = document.getElementById('abonament-optiuni');
+  optiuni.style.display = optiuni.style.display === 'none' ? 'flex' : 'none';
+}
+
+function selecteazaAbonament(tip) {
+  document.getElementById('edit-abonament').value = tip;
+  document.querySelectorAll('.abonament-optiune').forEach(el => el.classList.remove('activ'));
+  event.currentTarget.classList.add('activ');
+
+  const bara = document.getElementById('abonament-bara');
+  bara.classList.remove('cta');
+  document.getElementById('abonament-bara-text').textContent = `Abonament ${textAbonament(tip)}`;
+  if (!bara.querySelector('.abonament-bara-schimba')) {
+    bara.insertAdjacentHTML('beforeend', '<span class="abonament-bara-schimba">Schimba</span>');
+  }
+  document.getElementById('abonament-optiuni').style.display = 'none';
+
+  const info = document.getElementById('abonament-info');
+  info.textContent = tip === pacientEditareAbonamentCurent
+    ? info.textContent
+    : (pacientEditareAbonamentCurent
+      ? 'Atentie: schimbarea tipului de abonament reseteaza la 0 contorul de sedinte efectuate.'
+      : `Se va crea un abonament nou de ${textAbonament(tip)}.`);
 }
 
 async function salveazaEditarePacient(id) {
