@@ -25,7 +25,7 @@ function aratatApp() {
   document.getElementById('app').style.display = 'grid';
   aratapanel(sessionStorage.getItem('tabActiv') || 'calendar');
   actualizeazaNotificari();
-  setInterval(actualizeazaNotificari, 60000);
+  setInterval(actualizeazaNotificari, 5000);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') actualizeazaNotificari();
   });
@@ -85,7 +85,25 @@ function randNotificare(n) {
   `;
 }
 
+let notificariPollInterval = null;
+
 async function deschideNotificari() {
+  await randeazaNotificari();
+  document.getElementById('notificare-text-nou')?.focus();
+  clearInterval(notificariPollInterval);
+  notificariPollInterval = setInterval(randeazaNotificari, 5000);
+}
+
+async function randeazaNotificari() {
+  if (!document.getElementById('lista-notificari-nerezolvate') && notificariPollInterval) {
+    clearInterval(notificariPollInterval);
+    notificariPollInterval = null;
+    return;
+  }
+
+  const inputCurent = document.getElementById('notificare-text-nou');
+  if (inputCurent && document.activeElement === inputCurent && inputCurent.value) return;
+
   const lista = await apel('/api/notificari');
   if (!Array.isArray(lista)) {
     alert('Nu am putut incarca notificarile: ' + (lista?.eroare || 'eroare necunoscuta'));
@@ -93,6 +111,8 @@ async function deschideNotificari() {
   }
   const nerezolvate = lista.filter(n => !n.rezolvat);
   const rezolvate = lista.filter(n => n.rezolvat);
+
+  const textNesalvat = document.getElementById('notificare-text-nou')?.value || '';
 
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
@@ -114,7 +134,8 @@ async function deschideNotificari() {
     </div>
   `;
   document.getElementById('modal-container').innerHTML = html;
-  document.getElementById('notificare-text-nou')?.focus();
+  const inputNou = document.getElementById('notificare-text-nou');
+  if (inputNou) inputNou.value = textNesalvat;
 }
 
 async function adaugaNotificare() {
@@ -1147,6 +1168,10 @@ function selecteazaPacientProgramare(id, nume) {
 
 function inchideModalProgramare() {
   document.getElementById('modal-container').innerHTML = '';
+  if (notificariPollInterval) {
+    clearInterval(notificariPollInterval);
+    notificariPollInterval = null;
+  }
 }
 
 async function salveazaProgramareNoua() {
