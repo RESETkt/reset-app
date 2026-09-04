@@ -85,6 +85,52 @@ router.patch('/:id/prezent', async (req, res) => {
   }
 });
 
+// Adauga retroactiv o sedinta uitata (nu exista programare pentru ea) - fisa pacientului > istoric
+router.post('/sedinta-trecuta', async (req, res) => {
+  const { pacient_id, kineto_id, data_ora, exercitii, observatii } = req.body;
+  if (!pacient_id || !data_ora) {
+    return res.status(400).json({ eroare: 'Pacientul si data sunt obligatorii.' });
+  }
+  if (esteWeekend(data_ora)) {
+    return res.status(400).json({ eroare: 'Nu se pot inregistra sedinte sambata sau duminica.' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const activ = await client.query(
+      `SELECT id FROM abonamente WHERE pacient_id = $1 AND activ = true ORDER BY creat_la DESC LIMIT 1`,
+      [pacient_id]
+    );
+    const abonament_id = activ.rows[0]?.id || null;
+    const prog = await client.query(
+      `INSERT INTO programari (pacient_id, kineto_id, abonament_id, data_ora, status, exercitii, observatii, prezent_marcat_la)
+       VALUES ($1,$2,$3,$4,'prezent',$5,$6,now()) RETURNING *`,
+      [pacient_id, kineto_id || null, abonament_id, data_ora, exercitii || null, observatii || null]
+    );
+    if (abonament_id) {
+      await client.query(`UPDATE abonamente SET sedinte_efectuate = sedinte_efectuate + 1 WHERE id = $1`, [abonament_id]);
+    }
+    await client.query('COMMIT');
+    res.status(201).json(prog.rows[0]);
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ eroare: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Editeaza retroactiv exercitiile/observatiile unei sedinte deja marcate prezenta - fisa pacientului > istoric
+router.patch('/:id/editeaza-istoric', async (req, res) => {
+  const { exercitii, observatii } = req.body;
+  const { rows } = await pool.query(
+    `UPDATE programari SET exercitii=$1, observatii=$2 WHERE id=$3 AND status='prezent' RETURNING *`,
+    [exercitii || null, observatii || null, req.params.id]
+  );
+  if (!rows[0]) return res.status(404).json({ eroare: 'Sedinta inexistenta.' });
+  res.json(rows[0]);
+});
+
 router.patch('/:id/absent', async (req, res) => {
   const { rows } = await pool.query(
     `UPDATE programari SET status='absent' WHERE id=$1 RETURNING *`,

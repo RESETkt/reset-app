@@ -256,12 +256,12 @@ async function deschideFisa(id) {
         <div class="metric" style="cursor:pointer" onclick="aratatModalGDPR('${id}', ${data.gdpr_semnat}, '${data.gdpr_data || ''}')"><div class="label">GDPR</div><div class="value" style="font-size:14px;text-decoration:underline">${data.gdpr_semnat ? 'Semnat' : 'Nesemnat'}</div></div>
       </div>
 
-      ${data.ultima_sedinta ? `
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"> <div style="font-weight:500;font-size:13px">Ultima sedinta (${new Date(data.ultima_sedinta.data_ora).toLocaleDateString('ro-RO')})</div> <button class="btn secundar" onclick="aratatIstoricSedinte('${id}')">Istoric</button> </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"> <div style="font-weight:500;font-size:13px">${data.ultima_sedinta ? `Ultima sedinta (${new Date(data.ultima_sedinta.data_ora).toLocaleDateString('ro-RO')})` : 'Sedinte'}</div> <button class="btn secundar" onclick="aratatIstoricSedinte('${id}')">Istoric</button> </div>
+        ${data.ultima_sedinta ? `
         <div style="font-size:13px;color:#c9c7bd">Exercitii: ${data.ultima_sedinta.exercitii || '-'}</div>
-        <div style="font-size:13px;color:#c9c7bd">Observatii: ${data.ultima_sedinta.observatii || '-'}</div>
-      </div>` : ''}
+        <div style="font-size:13px;color:#c9c7bd">Observatii: ${data.ultima_sedinta.observatii || '-'}</div>` : '<div style="font-size:13px;color:#9a988e">Nicio sedinta inregistrata inca.</div>'}
+      </div>
 
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
         <div style="font-weight:500;font-size:13px;margin-bottom:8px">Contact</div>
@@ -296,15 +296,24 @@ async function deschideFisa(id) {
   `;
 }
 
+let sedinteIstoricCache = [];
+
 async function aratatIstoricSedinte(pacientId) {
   const sedinte = await apel(`/api/pacienti/${pacientId}/sedinte`);
+  sedinteIstoricCache = sedinte;
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
       <div class="card" style="max-width:480px;width:90%;max-height:80vh;overflow-y:auto">
-        <h2>Istoric sedinte</h2>
-        ${sedinte.length === 0 ? '<div style="font-size:13px;color:#9a988e">Nicio sedinta inregistrata inca.</div>' : sedinte.map(s => `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0">Istoric sedinte</h2>
+          <button class="btn secundar" onclick="aratatFormularSedintaNoua('${pacientId}')">+ Adauga sedinta uitata</button>
+        </div>
+        ${sedinte.length === 0 ? '<div style="font-size:13px;color:#9a988e;margin-top:10px">Nicio sedinta inregistrata inca.</div>' : sedinte.map(s => `
           <div style="border-bottom:1px solid #3a3937;padding:10px 0">
-            <div style="font-size:13px;font-weight:500;margin-bottom:4px">${new Date(s.data_ora).toLocaleDateString('ro-RO')} ${s.kineto_nume ? `- ${s.kineto_nume}` : ''}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:13px;font-weight:500">${new Date(s.data_ora).toLocaleDateString('ro-RO')} ${s.kineto_nume ? `- ${s.kineto_nume}` : ''}</div>
+              <span style="font-size:11px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatFormularEditareSedinta('${pacientId}','${s.id}')">Editeaza</span>
+            </div>
             <div style="font-size:13px;color:#c9c7bd">Exercitii: ${s.exercitii || '-'}</div>
             <div style="font-size:13px;color:#c9c7bd">Observatii: ${s.observatii || '-'}</div>
           </div>
@@ -315,6 +324,90 @@ async function aratatIstoricSedinte(pacientId) {
   `;
   document.getElementById('modal-container').innerHTML = html;
 }
+
+function aratatFormularEditareSedinta(pacientId, sedintaId) {
+  const sedinta = sedinteIstoricCache.find(s => s.id === sedintaId);
+  if (!sedinta) return;
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
+      <div class="card" style="max-width:420px;width:90%">
+        <h2>Editeaza sedinta din ${new Date(sedinta.data_ora).toLocaleDateString('ro-RO')}</h2>
+        <label>Exercitii</label>
+        <textarea id="istoric-exercitii" rows="3" style="width:100%;margin-bottom:10px">${sedinta.exercitii || ''}</textarea>
+        <label>Cum s-a simtit / Observatii</label>
+        <textarea id="istoric-observatii" rows="3" style="width:100%;margin-bottom:14px">${sedinta.observatii || ''}</textarea>
+        <button class="btn" style="width:100%" onclick="salveazaEditareSedinta('${sedinta.id}','${pacientId}')">Salveaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function salveazaEditareSedinta(sedintaId, pacientId) {
+  const exercitii = document.getElementById('istoric-exercitii').value.trim();
+  const observatii = document.getElementById('istoric-observatii').value.trim();
+  await apel(`/api/programari/${sedintaId}/editeaza-istoric`, {
+    method: 'PATCH',
+    body: JSON.stringify({ exercitii, observatii })
+  });
+  if (pacientCurent === pacientId) deschideFisa(pacientId);
+  aratatIstoricSedinte(pacientId);
+}
+
+async function aratatFormularSedintaNoua(pacientId) {
+  const kinetoUtilizatori = await apel('/api/utilizatori');
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
+      <div class="card" style="max-width:420px;width:90%">
+        <h2>Adauga sedinta uitata</h2>
+        <label>Data sedintei</label>
+        <input id="sedinta-noua-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
+        <label>Kineto</label>
+        <select id="sedinta-noua-kineto" style="width:100%;margin-bottom:10px">
+          <option value="">Nealocat</option>
+          ${kinetoUtilizatori.map(u => `<option value="${u.id}">${u.nume}</option>`).join('')}
+        </select>
+        <label>Exercitii</label>
+        <textarea id="sedinta-noua-exercitii" rows="3" style="width:100%;margin-bottom:10px"></textarea>
+        <label>Cum s-a simtit / Observatii</label>
+        <textarea id="sedinta-noua-observatii" rows="3" style="width:100%;margin-bottom:14px"></textarea>
+        <button class="btn" style="width:100%" onclick="salveazaSedintaNoua('${pacientId}')">Salveaza sedinta</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
+        <div id="eroare-sedinta-noua" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function salveazaSedintaNoua(pacientId) {
+  const data = document.getElementById('sedinta-noua-data').value;
+  const kineto_id = document.getElementById('sedinta-noua-kineto').value || null;
+  const exercitii = document.getElementById('sedinta-noua-exercitii').value.trim();
+  const observatii = document.getElementById('sedinta-noua-observatii').value.trim();
+  const eroareEl = document.getElementById('eroare-sedinta-noua');
+  eroareEl.textContent = '';
+
+  if (!data) {
+    eroareEl.textContent = 'Alege data sedintei.';
+    return;
+  }
+
+  const rezultat = await apel('/api/programari/sedinta-trecuta', {
+    method: 'POST',
+    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, exercitii, observatii })
+  });
+
+  if (rezultat.eroare) {
+    eroareEl.textContent = rezultat.eroare;
+    return;
+  }
+
+  if (pacientCurent === pacientId) deschideFisa(pacientId);
+  aratatIstoricSedinte(pacientId);
+}
+
 async function aratatModalGDPR(pacientId, dejaSemnat, dataSemnare) {
   if (dejaSemnat) {
     const html = `
