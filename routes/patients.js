@@ -75,6 +75,14 @@ router.post('/', async (req, res) => {
      VALUES ($1,$2,$3,$4,$5) RETURNING *`,
     [nume, prenume, telefon, email, diagnostic]
   );
+  try {
+    await pool.query(
+      `INSERT INTO notificari_echipa (tip, text, pacient_id, creat_de) VALUES ('pacient_nou', $1, $2, $3)`,
+      [`Pacient nou: ${nume} ${prenume}`, rows[0].id, req.user.id]
+    );
+  } catch (e) {
+    console.error('Nu am putut adauga notificarea de pacient nou:', e.message);
+  }
   res.status(201).json(rows[0]);
 });
 

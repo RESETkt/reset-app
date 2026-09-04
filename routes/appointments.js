@@ -139,15 +139,37 @@ router.patch('/:id/absent', async (req, res) => {
   res.json(rows[0]);
 });
 
+function formateazaDataOra(data_ora) {
+  return new Date(data_ora).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
 router.patch('/:id/reprogrameaza', async (req, res) => {
   const { data_ora_noua } = req.body;
   if (esteWeekend(data_ora_noua)) {
     return res.status(400).json({ eroare: 'Nu se pot face programari sambata sau duminica.' });
   }
+  const vechi = await pool.query(
+    `SELECT p.data_ora, p.pacient_id, pac.nume, pac.prenume
+     FROM programari p JOIN pacienti pac ON pac.id = p.pacient_id
+     WHERE p.id = $1`,
+    [req.params.id]
+  );
   const { rows } = await pool.query(
     `UPDATE programari SET status='reprogramat', data_ora=$1 WHERE id=$2 RETURNING *`,
     [data_ora_noua, req.params.id]
   );
+  if (vechi.rows[0]) {
+    try {
+      const v = vechi.rows[0];
+      const text = `${v.nume} ${v.prenume}: programare mutata din ${formateazaDataOra(v.data_ora)} in ${formateazaDataOra(data_ora_noua)}`;
+      await pool.query(
+        `INSERT INTO notificari_echipa (tip, text, pacient_id, creat_de) VALUES ('reprogramare', $1, $2, $3)`,
+        [text, v.pacient_id, req.user.id]
+      );
+    } catch (e) {
+      console.error('Nu am putut adauga notificarea de reprogramare:', e.message);
+    }
+  }
   res.json(rows[0]);
 });
 
