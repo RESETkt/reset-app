@@ -69,11 +69,15 @@ router.post('/:id/plati', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { nume, prenume, cnp, telefon, email, diagnostic } = req.body;
+  const { nume, prenume, telefon, email, diagnostic } = req.body;
   const { rows } = await pool.query(
-    `INSERT INTO pacienti (nume, prenume, cnp, telefon, email, diagnostic)
-     VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-    [nume, prenume, cnp, telefon, email, diagnostic]
+    `INSERT INTO pacienti (nume, prenume, telefon, email, diagnostic)
+     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+    [nume, prenume, telefon, email, diagnostic]
+  );
+  await pool.query(
+    `INSERT INTO notificari_echipa (tip, text, pacient_id, creat_de) VALUES ('pacient_nou', $1, $2, $3)`,
+    [`Pacient nou: ${nume} ${prenume}`, rows[0].id, req.user.id]
   );
   res.status(201).json(rows[0]);
 });

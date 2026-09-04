@@ -13,13 +13,14 @@ CREATE TABLE IF NOT EXISTS pacienti (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nume text NOT NULL,
   prenume text NOT NULL,
-  cnp text UNIQUE,
   telefon text,
   email text,
   diagnostic text,
   activ boolean NOT NULL DEFAULT true,
   creat_la timestamptz DEFAULT now()
 );
+
+ALTER TABLE pacienti DROP COLUMN IF EXISTS cnp;
 
 CREATE TABLE IF NOT EXISTS consimtaminte_gdpr (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -84,3 +85,18 @@ CREATE TABLE IF NOT EXISTS orar_kineto (
 CREATE INDEX IF NOT EXISTS idx_programari_data ON programari(data_ora);
 CREATE INDEX IF NOT EXISTS idx_programari_pacient ON programari(pacient_id);
 CREATE INDEX IF NOT EXISTS idx_abonamente_pacient ON abonamente(pacient_id);
+
+-- Tabla de notificari a echipei: bifa zilnica de baie/materiale, reprogramari, pacienti noi - orice trebuie stiut de toata echipa
+CREATE TABLE IF NOT EXISTS notificari_echipa (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tip text NOT NULL DEFAULT 'manual' CHECK (tip IN ('manual','reprogramare','pacient_nou')),
+  text text NOT NULL,
+  pacient_id uuid REFERENCES pacienti(id) ON DELETE SET NULL,
+  creat_de uuid REFERENCES utilizatori(id) ON DELETE SET NULL,
+  creat_la timestamptz DEFAULT now(),
+  rezolvat boolean NOT NULL DEFAULT false,
+  rezolvat_de uuid REFERENCES utilizatori(id) ON DELETE SET NULL,
+  rezolvat_la timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS idx_notificari_rezolvat ON notificari_echipa(rezolvat);

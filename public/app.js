@@ -24,6 +24,125 @@ function aratatApp() {
   document.getElementById('login').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
   aratapanel(sessionStorage.getItem('tabActiv') || 'calendar');
+  actualizeazaNotificari();
+  setInterval(actualizeazaNotificari, 60000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') actualizeazaNotificari();
+  });
+}
+
+// Doar bulina/pulsul - conteaza cate notificari nerezolvate sunt, fara sa deschida panoul
+async function actualizeazaNotificari() {
+  const lista = await apel('/api/notificari');
+  if (!Array.isArray(lista)) return;
+  const nerezolvate = lista.filter(n => !n.rezolvat).length;
+
+  const badgeSidebar = document.getElementById('badge-notificari');
+  const btnSidebar = document.getElementById('btn-notificari');
+  const dotMobil = document.getElementById('badge-notificari-dot');
+  const btnMobil = document.getElementById('btn-notificari-mobil');
+
+  if (badgeSidebar) { badgeSidebar.textContent = nerezolvate; badgeSidebar.style.display = nerezolvate > 0 ? 'flex' : 'none'; }
+  if (btnSidebar) btnSidebar.classList.toggle('are-noutati', nerezolvate > 0);
+  if (dotMobil) dotMobil.style.display = nerezolvate > 0 ? 'block' : 'none';
+  if (btnMobil) btnMobil.classList.toggle('are-noutati', nerezolvate > 0);
+}
+
+let notificariAratatRezolvate = false;
+
+function iconaNotificare(tip) {
+  if (tip === 'reprogramare') return '📅';
+  if (tip === 'pacient_nou') return '🆕';
+  return '📝';
+}
+
+function formateazaCandNotificare(data) {
+  return new Date(data).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function scapaHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s ?? '';
+  return d.innerHTML;
+}
+
+function randNotificare(n) {
+  const cine = n.rezolvat
+    ? `rezolvat de ${n.rezolvat_de_nume || '?'} - ${formateazaCandNotificare(n.rezolvat_la)}`
+    : `adaugat de ${n.creat_de_nume || 'sistem'} - ${formateazaCandNotificare(n.creat_la)}`;
+  return `
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #3a3937;${n.rezolvat ? 'opacity:0.5' : ''}">
+      <input type="checkbox" ${n.rezolvat ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px;flex-shrink:0;cursor:pointer"
+        onchange="this.checked ? rezolvaNotificareItem('${n.id}') : redeschideNotificareItem('${n.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;${n.rezolvat ? 'text-decoration:line-through' : ''}">${iconaNotificare(n.tip)} ${scapaHtml(n.text)}</div>
+        <div style="font-size:11px;color:#9a988e;margin-top:2px">${cine}</div>
+      </div>
+      <svg onclick="stergeNotificareItem('${n.id}')" title="Sterge" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#9a988e;cursor:pointer;flex-shrink:0;margin-top:3px">
+        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </div>
+  `;
+}
+
+async function deschideNotificari() {
+  const lista = await apel('/api/notificari');
+  if (!Array.isArray(lista)) {
+    alert('Nu am putut incarca notificarile: ' + (lista?.eroare || 'eroare necunoscuta'));
+    return;
+  }
+  const nerezolvate = lista.filter(n => !n.rezolvat);
+  const rezolvate = lista.filter(n => n.rezolvat);
+
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:460px;width:100%">
+        <h2>Notificari</h2>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <input id="notificare-text-nou" placeholder="Scrie ceva ce trebuie stiut sau facut..." style="flex:1" onkeydown="if(event.key==='Enter') adaugaNotificare()">
+          <button class="btn" onclick="adaugaNotificare()">Adauga</button>
+        </div>
+        <div id="lista-notificari-nerezolvate">
+          ${nerezolvate.map(randNotificare).join('') || '<div style="font-size:13px;color:#9a988e;padding:8px 0">Nimic in asteptare. 🎉</div>'}
+        </div>
+        <div style="font-size:12px;color:#9a988e;margin-top:10px;cursor:pointer" onclick="notificariAratatRezolvate=!notificariAratatRezolvate; deschideNotificari()">
+          ${notificariAratatRezolvate ? 'Ascunde rezolvate' : `Vezi rezolvate (${rezolvate.length})`}
+        </div>
+        ${notificariAratatRezolvate ? `<div style="margin-top:6px">${rezolvate.map(randNotificare).join('') || '<div style="font-size:13px;color:#9a988e;padding:8px 0">Niciuna inca.</div>'}</div>` : ''}
+        <button class="btn secundar" style="width:100%;margin-top:14px" onclick="inchideModalProgramare()">Inchide</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+  document.getElementById('notificare-text-nou')?.focus();
+}
+
+async function adaugaNotificare() {
+  const input = document.getElementById('notificare-text-nou');
+  const text = input.value.trim();
+  if (!text) return;
+  await apel('/api/notificari', { method: 'POST', body: JSON.stringify({ text }) });
+  await deschideNotificari();
+  actualizeazaNotificari();
+}
+
+async function rezolvaNotificareItem(id) {
+  await apel(`/api/notificari/${id}/rezolva`, { method: 'PATCH' });
+  await deschideNotificari();
+  actualizeazaNotificari();
+}
+
+async function redeschideNotificareItem(id) {
+  await apel(`/api/notificari/${id}/redeschide`, { method: 'PATCH' });
+  await deschideNotificari();
+  actualizeazaNotificari();
+}
+
+async function stergeNotificareItem(id) {
+  if (!confirm('Stergi aceasta notificare?')) return;
+  await apel(`/api/notificari/${id}`, { method: 'DELETE' });
+  await deschideNotificari();
+  actualizeazaNotificari();
 }
 
 async function apel(cale, optiuni = {}) {
@@ -163,8 +282,6 @@ function aratatFormularPacientNou() {
       <input id="nou-prenume" style="width:100%;margin-bottom:10px">
       <label>Nume</label>
       <input id="nou-nume" style="width:100%;margin-bottom:10px">
-      <label>CNP</label>
-      <input id="nou-cnp" style="width:100%;margin-bottom:10px">
       <label>Telefon</label>
       <input id="nou-telefon" style="width:100%;margin-bottom:10px" placeholder="07xxxxxxxx">
       <label>Email</label>
@@ -189,7 +306,6 @@ function aratatFormularPacientNou() {
 async function salveazaPacientNou() {
   const nume = document.getElementById('nou-nume').value.trim();
   const prenume = document.getElementById('nou-prenume').value.trim();
-  const cnp = document.getElementById('nou-cnp').value.trim();
   const telefon = document.getElementById('nou-telefon').value.trim();
   const email = document.getElementById('nou-email').value.trim();
   const diagnostic = document.getElementById('nou-diagnostic').value.trim();
@@ -205,7 +321,7 @@ async function salveazaPacientNou() {
 
   const pacient = await apel('/api/pacienti', {
     method: 'POST',
-    body: JSON.stringify({ nume, prenume, cnp: cnp || null, telefon, email, diagnostic })
+    body: JSON.stringify({ nume, prenume, telefon, email, diagnostic })
   });
 
   if (pacient.eroare) {
