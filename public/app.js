@@ -1212,6 +1212,33 @@ function delogare() {
   location.reload();
 }
 
+let swipeStartX = null;
+let swipeStartY = null;
+
+function initSwipeCalendar() {
+  const el = document.getElementById('panel-calendar');
+  if (!el || el.dataset.swipeInit) return;
+  el.dataset.swipeInit = '1';
+
+  el.addEventListener('touchstart', e => {
+    if (!esteMobil() || e.touches.length !== 1) return;
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  el.addEventListener('touchend', e => {
+    if (!esteMobil() || swipeStartX === null) return;
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    const dy = e.changedTouches[0].clientY - swipeStartY;
+    swipeStartX = null;
+    swipeStartY = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      schimbaZiuaMobil(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+}
+initSwipeCalendar();
+
 let esteMobilAnterior = esteMobil();
 let redimensionareTimeout = null;
 window.addEventListener('resize', () => {

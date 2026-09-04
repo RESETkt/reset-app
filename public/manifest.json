@@ -1,6 +1,6 @@
 {
-  "name": "Reset - dashboard kineto",
-  "short_name": "Reset",
+  "name": "RESET - dashboard kineto",
+  "short_name": "RESET",
   "description": "Aplicatie de gestiune pentru cabinet de kinetoterapie",
   "start_url": "/index.html",
   "scope": "/",
