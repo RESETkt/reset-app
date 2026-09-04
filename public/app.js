@@ -55,8 +55,8 @@ async function cautaPacienti(q) {
   `).join('') || '<div style="font-size:12px;color:#9a988e;padding:8px">Niciun pacient gasit.</div>';
 }
 
-function marcheazaActiv(index) {
-  document.querySelectorAll('.top-nav-btn').forEach((b, i) => b.classList.toggle('activ', i === index));
+function marcheazaActiv(nume) {
+  document.querySelectorAll('.top-nav-btn, .bottom-nav-btn').forEach(b => b.classList.toggle('activ', b.dataset.panel === nume));
 }
 
 function aratapanel(nume) {
@@ -64,8 +64,7 @@ function aratapanel(nume) {
   ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
   });
-  const index = { calendar: 0, fisa: 1, echipa: 2, statistici: 3 }[nume];
-  marcheazaActiv(index);
+  marcheazaActiv(nume);
   if (nume === 'calendar') incarcaCalendarSaptamana();
   if (nume === 'echipa') incarcaEchipa();
   if (nume === 'statistici') incarcaStatistici();
@@ -155,7 +154,7 @@ function aratatFormularPacientNou() {
   ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
-  marcheazaActiv(1);
+  marcheazaActiv('fisa');
 
   document.getElementById('panel-fisa').innerHTML = `
     <div class="card" style="max-width:420px">
@@ -230,7 +229,7 @@ async function deschideFisa(id) {
   ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
-  marcheazaActiv(1);
+  marcheazaActiv('fisa');
 
   const data = await apel(`/api/pacienti/${id}`);
   const p = data.pacient;
@@ -775,7 +774,12 @@ function schimbaLuna(directie) {
   incarcaCalendarSaptamana();
 }
 
+function esteMobil() {
+  return window.innerWidth <= 768;
+}
+
 async function incarcaCalendarSaptamana() {
+  if (esteMobil()) return incarcaCalendarZi();
   const astazi = dataLocala(new Date());
   const zile = [0, 1, 2, 3, 4].map(i => adaugaZile(saptamanaCurenta, i));
   const rows = await apel(`/api/programari?de_la=${zile[0]}&pana_la=${zile[4]}`);
@@ -845,18 +849,95 @@ async function incarcaCalendarSaptamana() {
   document.getElementById('panel-calendar').innerHTML = html;
 }
 
-function randPacientRand(p, culoareStatus) {
+let ziuaMobilCurenta = dataLocala(new Date());
+
+function ziLucratoareVecina(dataISO, directie) {
+  let d = adaugaZile(dataISO, directie);
+  let zi = new Date(d + 'T00:00:00').getDay();
+  while (zi === 0 || zi === 6) {
+    d = adaugaZile(d, directie);
+    zi = new Date(d + 'T00:00:00').getDay();
+  }
+  return d;
+}
+
+function schimbaZiuaMobil(directie) {
+  ziuaMobilCurenta = ziLucratoareVecina(ziuaMobilCurenta, directie);
+  incarcaCalendarZi();
+}
+
+function ziuaMobilAstazi() {
+  ziuaMobilCurenta = dataLocala(new Date());
+  incarcaCalendarZi();
+}
+
+function schimbaZiuaMobilData(valoare) {
+  ziuaMobilCurenta = valoare;
+  incarcaCalendarZi();
+}
+
+async function incarcaCalendarZi() {
+  const astazi = dataLocala(new Date());
+  const d = new Date(ziuaMobilCurenta + 'T00:00:00');
+  const ziSaptamanii = d.getDay();
+  const esteWeekendZi = ziSaptamanii === 0 || ziSaptamanii === 6;
+  const numeZi = !esteWeekendZi ? ZILE_SAPTAMANA[ziSaptamanii - 1] : (ziSaptamanii === 0 ? 'Duminica' : 'Sambata');
+
+  const rows = esteWeekendZi ? [] : await apel(`/api/programari?de_la=${ziuaMobilCurenta}&pana_la=${ziuaMobilCurenta}`);
+
+  const peOra = {};
+  rows.forEach(r => {
+    const oraR = new Date(r.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+    if (!peOra[oraR]) peOra[oraR] = [];
+    peOra[oraR].push(r);
+  });
+
+  const html = `
+    <div class="day-nav">
+      <button class="btn day-nav-arrow" onclick="schimbaZiuaMobil(-1)">&larr;</button>
+      <div class="day-nav-info">
+        <div class="day-nav-titlu">${numeZi}, ${d.toLocaleDateString('ro-RO', { day: '2-digit', month: 'long' })}</div>
+        ${ziuaMobilCurenta === astazi ? '<div class="day-nav-azi">azi</div>' : '<div class="day-nav-azi clickabil" onclick="ziuaMobilAstazi()">&larr; inapoi la azi</div>'}
+      </div>
+      <button class="btn day-nav-arrow" onclick="schimbaZiuaMobil(1)">&rarr;</button>
+    </div>
+    <input type="date" class="day-nav-date-input" value="${ziuaMobilCurenta}" onchange="schimbaZiuaMobilData(this.value)" onclick="this.showPicker && this.showPicker()">
+    <button class="btn" style="width:100%;margin:10px 0" onclick="aratatFormularProgramareNoua('${ziuaMobilCurenta}', null)">+ Programare noua</button>
+    ${esteWeekendZi
+      ? '<div class="card" style="text-align:center;color:#9a988e;font-size:13px">Cabinetul este inchis in weekend.</div>'
+      : `<div class="day-view">
+          ${ORE_DISPONIBILE.map(ora => {
+            const toate = peOra[ora] || [];
+            return `
+              <div class="day-view-row">
+                <div class="day-view-ora">${ora}</div>
+                <div class="day-view-chips">
+                  ${toate.map(p => randPacientRand(p)).join('')}
+                  <span class="day-view-add" onclick="aratatFormularProgramareNoua('${ziuaMobilCurenta}','${ora}')">+ adauga</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>`}
+  `;
+
+  document.getElementById('panel-calendar').innerHTML = html;
+}
+
+function randPacientRand(p) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
   const culoareStatusDeschis = { programat: '#8a8880', prezent: '#1f8a5a', absent: '#c14343', reprogramat: '#b8860b' };
+  const tooltipId = `tooltip-${p.id}`;
   return `
     <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 3px;background:#f6f5f1">
       <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoareStatusDeschis[p.status] || '#2b2a26'};font-weight:600" onclick="toggleMeniuStatus('${p.id}')">${p.prenume}</span>
+      <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="toggleInfoChip('${tooltipId}')" title="Detalii">&#9432;</span>
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
       <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
         <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="marcheaza('${p.id}','prezent')">Prezent</div>
         <div style="padding:7px 12px;font-size:12px;color:#c14343;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="marcheaza('${p.id}','absent')">Absent</div>
       </div>
-      <div class="pacient-tooltip">
+      <div id="${tooltipId}" class="pacient-tooltip">
         <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
         <div>Kineto: ${p.kineto_nume || 'Nealocat'}</div>
         <div>Diagnostic: ${p.diagnostic || '-'}</div>
@@ -872,6 +953,13 @@ function toggleMeniuStatus(id) {
   const eraDeschis = el.style.display === 'block';
   document.querySelectorAll('[id^="status-meniu-"]').forEach(m => m.style.display = 'none');
   el.style.display = eraDeschis ? 'none' : 'block';
+}
+
+function toggleInfoChip(id) {
+  const el = document.getElementById(id);
+  const eraVizibil = el.classList.contains('vizibil');
+  document.querySelectorAll('.pacient-tooltip.vizibil').forEach(t => t.classList.remove('vizibil'));
+  el.classList.toggle('vizibil', !eraVizibil);
 }
 
 let pacientiProgramareCache = [];
@@ -1123,5 +1211,18 @@ function delogare() {
   sessionStorage.removeItem('tabActiv');
   location.reload();
 }
+
+let esteMobilAnterior = esteMobil();
+let redimensionareTimeout = null;
+window.addEventListener('resize', () => {
+  clearTimeout(redimensionareTimeout);
+  redimensionareTimeout = setTimeout(() => {
+    if (esteMobil() !== esteMobilAnterior) {
+      esteMobilAnterior = esteMobil();
+      const panelCalendar = document.getElementById('panel-calendar');
+      if (panelCalendar && panelCalendar.style.display !== 'none') incarcaCalendarSaptamana();
+    }
+  }, 250);
+});
 
 if (token) aratatApp();
