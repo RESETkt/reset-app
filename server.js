@@ -12,7 +12,6 @@ const statsRoutes = require('./routes/stats');
 const checkinRoutes = require('./routes/checkin');
 const usersRoutes = require('./routes/users');
 const scheduleRoutes = require('./routes/schedule');
-const notificariRoutes = require('./routes/notificari');
 const { porneteReminderele } = require('./services/reminders');
 
 const app = express();
@@ -28,7 +27,6 @@ app.use('/api/statistici', statsRoutes);
 app.use('/api/checkin', checkinRoutes);
 app.use('/api/utilizatori', usersRoutes);
 app.use('/api/orar-kineto', scheduleRoutes);
-app.use('/api/notificari', notificariRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

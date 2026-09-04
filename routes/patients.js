@@ -75,10 +75,6 @@ router.post('/', async (req, res) => {
      VALUES ($1,$2,$3,$4,$5) RETURNING *`,
     [nume, prenume, telefon, email, diagnostic]
   );
-  await pool.query(
-    `INSERT INTO notificari_echipa (tip, text, pacient_id, creat_de) VALUES ('pacient_nou', $1, $2, $3)`,
-    [`Pacient nou: ${nume} ${prenume}`, rows[0].id, req.user.id]
-  );
   res.status(201).json(rows[0]);
 });
 

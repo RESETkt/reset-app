@@ -64,12 +64,6 @@
       <button class="btn top-nav-btn" data-panel="echipa" onclick="aratapanel('echipa')">Echipa</button>
       <button class="btn top-nav-btn" data-panel="statistici" onclick="aratapanel('statistici')">Statistici</button>
     </div>
-    <div style="border-top:1px solid #3a3937;padding-top:12px;margin-bottom:12px">
-      <button id="btn-notificari" class="btn btn-notificari" style="width:100%" onclick="deschideNotificari()">
-        Notificari
-        <span id="badge-notificari" class="badge-notif" style="display:none">0</span>
-      </button>
-    </div>
     <button class="btn" style="width:100%;margin-bottom:12px" onclick="aratatFormularPacientNou()">+ Pacient nou</button>
   </div>
   <div class="main">
@@ -91,11 +85,6 @@
     <button class="bottom-nav-btn" data-panel="statistici" onclick="aratapanel('statistici')">
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
       <span>Statistici</span>
-    </button>
-    <button class="bottom-nav-btn" id="btn-notificari-mobil" onclick="deschideNotificari()">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1" ry="1"></rect><path d="M9 14l2 2 4-4"></path></svg>
-      <span>Notificari</span>
-      <span id="badge-notificari-dot" class="badge-notif-dot" style="display:none"></span>
     </button>
   </nav>
 </div>
