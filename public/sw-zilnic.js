@@ -1,4 +1,4 @@
-const CACHE = 'reset-zilnic-shell-v1';
+const CACHE = 'reset-zilnic-shell-v2';
 const SHELL = ['/zilnic.html', '/zilnic.js', '/logo-icon.png', '/apple-touch-icon.png', '/icon-192.png'];
 
 self.addEventListener('install', e => {
@@ -13,10 +13,24 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Totul e static (nu exista date de server pentru aceasta aplicatie), asa ca
-// mergem cache-first ca deschiderea de pe ecranul principal sa fie instanta si offline.
+// Pagina si manifestul merg network-first (sa se vada imediat orice schimbare, ex. numele
+// aplicatiei), restul (js, iconite) cache-first ca deschiderea de pe ecran sa fie instanta.
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  const proaspat = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('manifest.json');
+
+  if (proaspat) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        const copie = resp.clone();
+        caches.open(CACHE).then(c => c.put(e.request, copie));
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       const copie = resp.clone();

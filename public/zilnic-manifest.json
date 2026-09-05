@@ -1,6 +1,7 @@
 {
-  "name": "RESET Zilnic - sanatate si recuperare",
-  "short_name": "RESET Zilnic",
+  "id": "/zilnic.html",
+  "name": "RESETing - sanatate si recuperare",
+  "short_name": "RESETing",
   "description": "Mementouri, check-in dimineata/seara si exercitii scurte de miscare si respiratie",
   "start_url": "/zilnic.html",
   "scope": "/zilnic.html",

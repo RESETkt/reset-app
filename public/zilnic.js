@@ -458,7 +458,7 @@ function verificaMemento() {
 function declanseazaMemento(cheie) {
   const { titlu, text } = MESAJE_MEMENTO[cheie];
   if ('Notification' in window && Notification.permission === 'granted') {
-    try { new Notification(`RESET Zilnic - ${titlu}`, { body: text, icon: 'icon-192.png' }); } catch {}
+    try { new Notification(`RESETing - ${titlu}`, { body: text, icon: 'icon-192.png' }); } catch {}
   } else {
     aratatoast(`${titlu}: ${text}`);
   }
