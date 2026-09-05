@@ -1,0 +1,16 @@
+{
+  "name": "RESET Zilnic - sanatate si recuperare",
+  "short_name": "RESET Zilnic",
+  "description": "Mementouri, check-in dimineata/seara si exercitii scurte de miscare si respiratie",
+  "start_url": "/zilnic.html",
+  "scope": "/zilnic.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1e1e1d",
+  "theme_color": "#1e1e1d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

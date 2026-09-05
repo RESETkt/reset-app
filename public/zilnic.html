@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="RESET Zilnic">
+<meta name="theme-color" content="#1e1e1d">
+<title>RESET Zilnic</title>
+<link rel="icon" href="favicon-v2.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="zilnic-manifest.json">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #1e1e1d; color: #ece9e2; padding-bottom: 76px; }
+
+  header { display: flex; align-items: center; gap: 10px; padding: 16px 18px 8px; }
+  header img { height: 30px; }
+  header span { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
+
+  main { max-width: 480px; margin: 0 auto; padding: 8px 16px 24px; }
+  .vizual { display: none; }
+
+  .card { background: #262624; border: 1px solid #3a3937; border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .card-actiune { cursor: pointer; }
+  .card-actiune:active { background: #2e2d2a; }
+  .card-titlu { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .card-titlu.centrat { text-align: center; margin-bottom: 18px; font-size: 18px; }
+  .card-text { font-size: 14px; color: #b9b7ae; line-height: 1.5; }
+  .card-sageata { margin-top: 10px; font-size: 13px; color: #e2703f; font-weight: 600; }
+
+  #streak-banner { text-align: center; color: #9a988e; font-size: 13px; margin-bottom: 18px; }
+
+  .btn-mare { width: 100%; padding: 14px; border-radius: 10px; border: none; background: #ece9e2; color: #1e1e1d; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-mare:active { opacity: 0.85; }
+  .btn-secundar { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #45443f; background: #1e1e1d; color: #ece9e2; font-size: 14px; cursor: pointer; margin-top: 10px; }
+
+  .scala-emoji { display: flex; justify-content: space-between; gap: 6px; }
+  .buton-emoji { flex: 1; font-size: 28px; padding: 10px 0; border-radius: 12px; border: 1px solid #3a3937; background: #262624; cursor: pointer; }
+  .buton-emoji:active { background: #3a3937; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip { padding: 9px 14px; border-radius: 20px; border: 1px solid #45443f; background: #262624; color: #ece9e2; font-size: 13.5px; cursor: pointer; }
+  .chip-activ { background: #e2703f; border-color: #e2703f; color: #1e1e1d; font-weight: 600; }
+
+  .grup-titlu { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #9a988e; margin: 18px 0 10px; }
+  .grup-titlu:first-child { margin-top: 4px; }
+
+  .ecran-final { text-align: center; padding-top: 30px; }
+  .emoji-mare { font-size: 52px; margin-bottom: 12px; }
+
+  .cerc-progres {
+    width: 160px; height: 160px; border-radius: 50%; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: conic-gradient(#e2703f var(--progres, 0deg), #33322e 0deg);
+  }
+  .cerc-progres span { background: #1e1e1d; width: 130px; height: 130px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; }
+
+  .cerc-respiratie {
+    width: 130px; height: 130px; border-radius: 50%; margin: 20px auto; transform: scale(1);
+    background: radial-gradient(circle, #e2703f 0%, #b85830 100%);
+    display: flex; align-items: center; justify-content: center; color: #1e1e1d; font-weight: 700; font-size: 16px;
+  }
+
+  .comutator { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .comutator input { width: 18px; height: 18px; }
+  select { background: #1e1e1d; color: #ece9e2; border: 1px solid #45443f; border-radius: 6px; padding: 4px 8px; margin-left: 6px; }
+
+  .centrat { text-align: center; }
+
+  #nav-jos { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #262624; border-top: 1px solid #3a3937; padding: 6px 0 max(6px, env(safe-area-inset-bottom)); z-index: 10; }
+  .nav-buton { flex: 1; background: none; border: none; color: #9a988e; font-size: 12px; padding: 8px 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .nav-buton.activ { color: #e2703f; font-weight: 600; }
+  .nav-buton .nav-icon { font-size: 20px; }
+
+  .zona-exercitiu-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px 4px; }
+  .zona-exercitiu-header button { background: none; border: none; color: #ece9e2; font-size: 22px; cursor: pointer; padding: 4px 8px; }
+  .zona-exercitiu-header h2 { font-size: 17px; margin: 0; }
+
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px);
+    background: #262624; border: 1px solid #45443f; color: #ece9e2; padding: 12px 18px; border-radius: 10px;
+    font-size: 13.5px; opacity: 0; transition: opacity 0.3s, transform 0.3s; max-width: 90%; text-align: center; z-index: 30;
+  }
+  .toast.vizibil { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="logo-icon.png" alt="Reset">
+  <span>RESET Zilnic</span>
+</header>
+
+<main>
+
+  <div class="vizual" id="vizual-acasa">
+    <div class="card" id="banner-instalare" style="display:none">
+      <div class="card-titlu">Adauga aplicatia pe telefon</div>
+      <div class="card-text">Pe iPhone: apasa <b>Distribuie</b>, apoi <b>Adauga pe ecranul principal</b>. Pe Android: meniul <b>⋮</b>, apoi <b>Instaleaza aplicatia</b>.</div>
+      <button class="btn-secundar" onclick="ascundeBannerInstalare()">Am inteles</button>
+    </div>
+    <h2 id="salut" style="margin: 4px 0 2px"></h2>
+    <div id="streak-banner"><span id="streak-text"></span></div>
+    <div id="carduri-checkin"></div>
+  </div>
+
+  <div class="vizual" id="vizual-exercitii">
+    <h2 style="margin: 4px 0 10px">Exercitii</h2>
+    <div id="lista-exercitii"></div>
+  </div>
+
+  <div class="vizual" id="vizual-setari">
+    <h2 style="margin: 4px 0 10px">Mementouri</h2>
+    <div id="setari-continut"></div>
+  </div>
+
+  <div class="vizual" id="vizual-checkin">
+    <div id="checkin-continut"></div>
+  </div>
+
+</main>
+
+<div class="vizual" id="vizual-exercitiu">
+  <div class="zona-exercitiu-header">
+    <button id="buton-inapoi-exercitiu">&larr;</button>
+    <h2 id="exercitiu-titlu"></h2>
+  </div>
+  <main><div id="exercitiu-continut" style="padding-top: 10px"></div></main>
+</div>
+
+<div id="nav-jos">
+  <button class="nav-buton" data-tinta="vizual-acasa" onclick="aratavizual('vizual-acasa'); renderAcasa();">
+    <span class="nav-icon">🏠</span>Acasa
+  </button>
+  <button class="nav-buton" data-tinta="vizual-exercitii" onclick="aratavizual('vizual-exercitii')">
+    <span class="nav-icon">🧘</span>Exercitii
+  </button>
+  <button class="nav-buton" data-tinta="vizual-setari" onclick="aratavizual('vizual-setari')">
+    <span class="nav-icon">⚙️</span>Mementouri
+  </button>
+</div>
+
+<script src="zilnic.js"></script>
+</body>
+</html>
