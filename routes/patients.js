@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { ceareAutentificare } = require('../services/auth');
+const { creeazaNotificare } = require('../services/notificariEchipa');
 
 const router = express.Router();
 router.use(ceareAutentificare);
@@ -76,10 +77,12 @@ router.post('/', async (req, res) => {
     [nume, prenume, telefon, email, diagnostic]
   );
   try {
-    await pool.query(
-      `INSERT INTO notificari_echipa (tip, text, pacient_id, creat_de) VALUES ('pacient_nou', $1, $2, $3)`,
-      [`Pacient nou: ${nume} ${prenume}`, rows[0].id, req.user.id]
-    );
+    await creeazaNotificare({
+      tip: 'pacient_nou',
+      text: `Pacient nou: ${nume} ${prenume}`,
+      pacient_id: rows[0].id,
+      creat_de: req.user.id
+    });
   } catch (e) {
     console.error('Nu am putut adauga notificarea de pacient nou:', e.message);
   }

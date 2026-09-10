@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { ceareAutentificare } = require('../services/auth');
+const { creeazaNotificare } = require('../services/notificariEchipa');
 
 const router = express.Router();
 router.use(ceareAutentificare);
@@ -28,11 +29,8 @@ router.post('/', async (req, res) => {
   try {
     const text = (req.body.text || '').trim();
     if (!text) return res.status(400).json({ eroare: 'Scrie ceva mai intai.' });
-    const { rows } = await pool.query(
-      `INSERT INTO notificari_echipa (tip, text, creat_de) VALUES ('manual', $1, $2) RETURNING *`,
-      [text, req.user.id]
-    );
-    res.status(201).json(rows[0]);
+    const notificare = await creeazaNotificare({ tip: 'manual', text, creat_de: req.user.id });
+    res.status(201).json(notificare);
   } catch (e) {
     res.status(500).json({ eroare: e.message });
   }

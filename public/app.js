@@ -25,10 +25,84 @@ function aratatApp() {
   document.getElementById('app').style.display = 'grid';
   aratapanel(sessionStorage.getItem('tabActiv') || 'calendar');
   actualizeazaNotificari();
-  setInterval(actualizeazaNotificari, 5000);
+  initLive();
+  initPush();
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') actualizeazaNotificari();
+    if (document.visibilityState !== 'visible') return;
+    actualizeazaNotificari();
+    if (!sseConexiune || sseConexiune.readyState === EventSource.CLOSED) initLive();
   });
+}
+
+// Conexiune live cu serverul (Server-Sent Events): la orice modificare facuta de oricine,
+// oriunde in aplicatie, reimprospatam ce se vede pe ecran - fara refresh manual.
+let sseConexiune = null;
+
+function initLive() {
+  if (sseConexiune) return;
+  sseConexiune = new EventSource(`/api/live?token=${encodeURIComponent(token)}`);
+  sseConexiune.onmessage = reimprospateazaDupaSchimbare;
+  sseConexiune.onerror = () => {}; // EventSource reincearca singur reconectarea
+}
+
+function reimprospateazaDupaSchimbare() {
+  actualizeazaNotificari();
+
+  if (document.getElementById('lista-notificari-nerezolvate')) {
+    randeazaNotificari();
+  } else if (document.getElementById('modal-container').innerHTML.trim() !== '') {
+    return; // alt modal e deschis (editare etc.) - nu ii calcam datele pe dedesubt
+  }
+
+  const tabActiv = sessionStorage.getItem('tabActiv') || 'calendar';
+  const panelActiv = document.getElementById(`panel-${tabActiv}`);
+  const focalizatInPanel = document.activeElement
+    && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)
+    && panelActiv?.contains(document.activeElement);
+  if (focalizatInPanel) return;
+
+  if (tabActiv === 'calendar') incarcaCalendarSaptamana();
+  if (tabActiv === 'echipa') incarcaEchipa();
+  if (tabActiv === 'statistici') incarcaStatistici();
+  if (tabActiv === 'fisa') {
+    if (document.getElementById('cautare')) cautaPacienti(document.getElementById('cautare').value || '');
+    else if (document.getElementById('nou-nume')) { /* formular de pacient nou deschis - nu il suprascriem */ }
+    else if (pacientCurent) deschideFisa(pacientCurent);
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const bruta = atob(base64);
+  return Uint8Array.from([...bruta].map(c => c.charCodeAt(0)));
+}
+
+// Notificari push: functioneaza si cand aplicatia e inchisa (ex: notificare noua de la un coleg)
+async function initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const inregistrare = await navigator.serviceWorker.ready;
+    let abonament = await inregistrare.pushManager.getSubscription();
+
+    if (!abonament) {
+      if (Notification.permission === 'denied') return;
+      const permisiune = await Notification.requestPermission();
+      if (permisiune !== 'granted') return;
+
+      const { cheiePublica } = await apel('/api/push/cheie-publica');
+      if (!cheiePublica) return;
+
+      abonament = await inregistrare.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(cheiePublica)
+      });
+    }
+
+    await apel('/api/push/aboneaza', { method: 'POST', body: JSON.stringify(abonament.toJSON()) });
+  } catch (e) {
+    console.error('Nu am putut activa notificarile push:', e.message);
+  }
 }
 
 // Doar bulina/pulsul - conteaza cate notificari nerezolvate sunt, fara sa deschida panoul
@@ -85,22 +159,12 @@ function randNotificare(n) {
   `;
 }
 
-let notificariPollInterval = null;
-
 async function deschideNotificari() {
   await randeazaNotificari();
   document.getElementById('notificare-text-nou')?.focus();
-  clearInterval(notificariPollInterval);
-  notificariPollInterval = setInterval(randeazaNotificari, 5000);
 }
 
 async function randeazaNotificari() {
-  if (!document.getElementById('lista-notificari-nerezolvate') && notificariPollInterval) {
-    clearInterval(notificariPollInterval);
-    notificariPollInterval = null;
-    return;
-  }
-
   const inputCurent = document.getElementById('notificare-text-nou');
   if (inputCurent && document.activeElement === inputCurent && inputCurent.value) return;
 

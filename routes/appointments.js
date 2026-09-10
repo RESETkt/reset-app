@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { ceareAutentificare } = require('../services/auth');
+const { creeazaNotificare } = require('../services/notificariEchipa');
 
 const router = express.Router();
 router.use(ceareAutentificare);
@@ -162,10 +163,7 @@ router.patch('/:id/reprogrameaza', async (req, res) => {
     try {
       const v = vechi.rows[0];
       const text = `${v.nume} ${v.prenume}: programare mutata din ${formateazaDataOra(v.data_ora)} in ${formateazaDataOra(data_ora_noua)}`;
-      await pool.query(
-        `INSERT INTO notificari_echipa (tip, text, pacient_id, creat_de) VALUES ('reprogramare', $1, $2, $3)`,
-        [text, v.pacient_id, req.user.id]
-      );
+      await creeazaNotificare({ tip: 'reprogramare', text, pacient_id: v.pacient_id, creat_de: req.user.id });
     } catch (e) {
       console.error('Nu am putut adauga notificarea de reprogramare:', e.message);
     }

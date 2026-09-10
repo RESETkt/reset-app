@@ -30,3 +30,32 @@ self.addEventListener('fetch', e => {
       .catch(() => caches.match(e.request))
   );
 });
+
+// Notificare push de la server (ex: notificare noua adaugata de un coleg), chiar cand aplicatia e inchisa
+self.addEventListener('push', e => {
+  let date = {};
+  try { date = e.data ? e.data.json() : {}; } catch { date = {}; }
+
+  e.waitUntil(
+    self.registration.showNotification(date.title || 'Reset', {
+      body: date.body || '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: date.url || '/index.html' }
+    })
+  );
+});
+
+// La click pe notificare, aduce in fata un tab deja deschis sau deschide unul nou
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/index.html';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(listaTaburi => {
+      for (const tab of listaTaburi) {
+        if ('focus' in tab) return tab.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});

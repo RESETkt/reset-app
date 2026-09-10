@@ -17,6 +17,7 @@
 3. Dupa ce serviciul e creat, in tab-ul **Environment** al web service-ului completezi manual:
    - `BREVO_API_KEY` - din contul tau Brevo (Settings -> SMTP & API -> API Keys)
    - `BREVO_EMAIL_SENDER` - un email verificat in Brevo (Settings -> Senders)
+   - `VAPID_PUBLIC_KEY` si `VAPID_PRIVATE_KEY` - perechea de chei pentru notificarile push (vezi mai jos)
 4. Ruleaza migrarea o singura data, din tab-ul **Shell** al serviciului pe Render:
    ```
    npm run migrate
@@ -32,6 +33,22 @@
 ## Adrese dupa deploy
 - Dashboard kineto: `https://<numele-aplicatiei>.onrender.com/index.html`
 - Tableta pacienti: `https://<numele-aplicatiei>.onrender.com/tablet.html`
+
+## Actualizari live si sesiune
+- Orice modificare facuta de un membru al echipei (programare noua, prezenta marcata, notificare adaugata etc.) apare instant pe toate telefoanele/tabletele deschise, fara sa mai fie nevoie de refresh manual (conexiune live prin Server-Sent Events).
+- Sesiunea de login tine 30 de zile (nu 12h ca inainte), asa ca echipa nu mai e deconectata in fiecare dimineata.
+
+## Notificari push
+Butonul "Notificari" trimite acum si o notificare push reala (apare pe telefon chiar daca aplicatia
+e inchisa), pe langa actualizarea instant din aplicatie.
+
+- Ai nevoie de o pereche de chei VAPID. Le generezi o singura data, cu:
+  ```
+  npx web-push generate-vapid-keys
+  ```
+- Pui rezultatul in `VAPID_PUBLIC_KEY` si `VAPID_PRIVATE_KEY` in Environment pe Render (si local, in `.env`, daca rulezi pe laptop).
+- Daca aceste chei lipsesc, aplicatia merge in continuare normal - doar notificarile push raman dezactivate (actualizarea live din aplicatie functioneaza oricum).
+- Fiecare kineto e intrebat o singura data, la login, daca vrea sa primeasca notificari - raspunsul e retinut de browser.
 
 ## Sender ID pentru SMS
 Daca vrei sa apara "RESET" in loc de un numar la SMS, se cere din panoul Brevo (SMS -> Senders) - aprobarea dureaza cateva zile lucratoare. Pana atunci, `BREVO_SMS_SENDER` poate ramane un numar de telefon Brevo default.

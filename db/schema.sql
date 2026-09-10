@@ -100,3 +100,14 @@ CREATE TABLE IF NOT EXISTS notificari_echipa (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notificari_rezolvat ON notificari_echipa(rezolvat);
+
+-- Abonamentele push ale fiecarui telefon/browser autentificat, ca sa putem trimite notificari
+-- chiar si cand aplicatia e inchisa (notificari noi in echipa, reprogramari, etc.)
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  utilizator_id uuid REFERENCES utilizatori(id) ON DELETE CASCADE,
+  endpoint text UNIQUE NOT NULL,
+  p256dh text NOT NULL,
+  auth text NOT NULL,
+  creat_la timestamptz DEFAULT now()
+);

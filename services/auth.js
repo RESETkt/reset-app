@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken');
 const SECRET = process.env.JWT_SECRET || 'schimba-acest-secret-in-productie';
 
 function creeazaToken(user) {
-  return jwt.sign({ id: user.id, rol: user.rol, nume: user.nume }, SECRET, { expiresIn: '12h' });
+  // 30 de zile, nu 12h: telefoanele echipei raman logate de pe o zi pe alta, nu se mai deconecteaza in fiecare dimineata.
+  return jwt.sign({ id: user.id, rol: user.rol, nume: user.nume }, SECRET, { expiresIn: '30d' });
 }
 
 function ceareAutentificare(req, res, next) {
