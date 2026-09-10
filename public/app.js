@@ -1088,10 +1088,12 @@ async function incarcaCalendarSaptamana() {
         <span style="min-width:90px;text-align:center">${LUNI_RO[dataCurenta.getMonth()]} ${dataCurenta.getFullYear()}</span>
         <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(1)" title="Luna urmatoare">&rarr;</span>
       </div>
-      <div style="display:flex;gap:8px;justify-content:center">
-        <button class="btn" onclick="schimbaSaptamana(-1)">&larr; Saptamana trecuta</button>
-        <button class="btn" onclick="saptamanaAceasta()">Azi</button>
-        <button class="btn" onclick="schimbaSaptamana(1)">Saptamana urmatoare &rarr;</button>
+      <div style="display:flex;justify-content:center">
+        <div class="week-nav">
+          <button class="week-nav-btn" onclick="schimbaSaptamana(-1)">&larr; Saptamana trecuta</button>
+          <button class="week-nav-btn azi" onclick="saptamanaAceasta()">Azi</button>
+          <button class="week-nav-btn" onclick="schimbaSaptamana(1)">Saptamana urmatoare &rarr;</button>
+        </div>
       </div>
       <div style="display:flex;justify-content:flex-end">
         <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
