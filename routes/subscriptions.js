@@ -1,7 +1,6 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { ceareAutentificare } = require('../services/auth');
-const { trimiteTuturor } = require('../services/live');
 
 const router = express.Router();
 router.use(ceareAutentificare);
@@ -15,7 +14,6 @@ router.post('/', async (req, res) => {
     `INSERT INTO abonamente (pacient_id, tip, total_sedinte) VALUES ($1,$2,$3) RETURNING *`,
     [pacient_id, tip, TOTAL_SEDINTE[tip] || 1]
   );
-  trimiteTuturor({ tip: 'abonament_nou' });
   res.status(201).json(rows[0]);
 });
 

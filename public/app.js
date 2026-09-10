@@ -233,6 +233,7 @@ async function stergeNotificareItem(id) {
 async function apel(cale, optiuni = {}) {
   const r = await fetch(cale, {
     ...optiuni,
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,

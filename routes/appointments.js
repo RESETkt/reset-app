@@ -2,7 +2,6 @@ const express = require('express');
 const pool = require('../db/pool');
 const { ceareAutentificare } = require('../services/auth');
 const { creeazaNotificare } = require('../services/notificariEchipa');
-const { trimiteTuturor } = require('../services/live');
 
 const router = express.Router();
 router.use(ceareAutentificare);
@@ -56,7 +55,6 @@ router.post('/', async (req, res) => {
     `INSERT INTO programari (pacient_id, kineto_id, abonament_id, data_ora) VALUES ($1,$2,$3,$4) RETURNING *`,
     [pacient_id, kineto_id, abonament_id, data_ora]
   );
-  trimiteTuturor({ tip: 'programare_noua' });
   res.status(201).json(rows[0]);
 });
 
@@ -79,7 +77,6 @@ router.patch('/:id/prezent', async (req, res) => {
       );
     }
     await client.query('COMMIT');
-    trimiteTuturor({ tip: 'prezenta_marcata' });
     res.json(prog.rows[0]);
   } catch (e) {
     await client.query('ROLLBACK');
@@ -115,7 +112,6 @@ router.post('/sedinta-trecuta', async (req, res) => {
       await client.query(`UPDATE abonamente SET sedinte_efectuate = sedinte_efectuate + 1 WHERE id = $1`, [abonament_id]);
     }
     await client.query('COMMIT');
-    trimiteTuturor({ tip: 'sedinta_trecuta_adaugata' });
     res.status(201).json(prog.rows[0]);
   } catch (e) {
     await client.query('ROLLBACK');
@@ -133,7 +129,6 @@ router.patch('/:id/editeaza-istoric', async (req, res) => {
     [exercitii || null, observatii || null, req.params.id]
   );
   if (!rows[0]) return res.status(404).json({ eroare: 'Sedinta inexistenta.' });
-  trimiteTuturor({ tip: 'sedinta_editata' });
   res.json(rows[0]);
 });
 
@@ -156,7 +151,6 @@ router.patch('/:id/absent', async (req, res) => {
       );
     }
     await client.query('COMMIT');
-    trimiteTuturor({ tip: 'absenta_marcata' });
     res.json(prog.rows[0]);
   } catch (e) {
     await client.query('ROLLBACK');
@@ -194,7 +188,6 @@ router.patch('/:id/reprogrameaza', async (req, res) => {
       console.error('Nu am putut adauga notificarea de reprogramare:', e.message);
     }
   }
-  trimiteTuturor({ tip: 'programare_mutata' });
   res.json(rows[0]);
 });
 
@@ -215,7 +208,6 @@ router.delete('/:id', async (req, res) => {
       );
     }
     await client.query('COMMIT');
-    trimiteTuturor({ tip: 'programare_stearsa' });
     res.json({ sters: true });
   } catch (e) {
     await client.query('ROLLBACK');

@@ -31,6 +31,14 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' })); // limita mare, semnaturile sunt imagini base64
 
+// Raspunsurile API nu trebuie cache-uite niciodata (nici de browser, nici de un proxy
+// intermediar precum modul de economisire de date al lui Opera) - altfel datele vechi
+// pot ramane afisate dupa o modificare pana la un refresh manual de pagina.
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 // Orice modificare reusita (POST/PATCH/DELETE) anunta instant, prin SSE, toate telefoanele/tabletele
 // deschise - ca datele sa se actualizeze singure la ceilalti, fara sa mai fie nevoie de refresh manual.
 const CAI_FARA_ANUNT = ['/api/auth', '/api/live', '/api/push'];
