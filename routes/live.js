@@ -13,6 +13,13 @@ router.get('/', (req, res) => {
     return res.status(401).end();
   }
 
+  // Un telefon care pierde semnalul brusc poate lasa conexiunea intr-o stare in care un
+  // write ulterior arunca eroare - fara acest listener, eroarea nu prinsa dobora tot procesul.
+  res.on('error', () => {
+    clearInterval(bataieInima);
+    eliminaClient(res);
+  });
+
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -24,7 +31,14 @@ router.get('/', (req, res) => {
   adaugaClient(res);
 
   // Bataie de inima, ca sa nu inchida proxy-urile conexiunea inactiva
-  const bataieInima = setInterval(() => res.write(':\n\n'), 25000);
+  const bataieInima = setInterval(() => {
+    try {
+      res.write(':\n\n');
+    } catch {
+      clearInterval(bataieInima);
+      eliminaClient(res);
+    }
+  }, 25000);
 
   req.on('close', () => {
     clearInterval(bataieInima);

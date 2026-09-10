@@ -12,7 +12,13 @@ function eliminaClient(res) {
 
 function trimiteTuturor(eveniment) {
   const linie = `data: ${JSON.stringify(eveniment)}\n\n`;
-  clienti.forEach(res => res.write(linie));
+  clienti.forEach(res => {
+    try {
+      res.write(linie);
+    } catch {
+      eliminaClient(res);
+    }
+  });
 }
 
 module.exports = { adaugaClient, eliminaClient, trimiteTuturor };
