@@ -41,6 +41,16 @@ router.post('/', async (req, res) => {
   if (esteWeekend(data_ora)) {
     return res.status(400).json({ eroare: 'Nu se pot face programari sambata sau duminica.' });
   }
+
+  // Acelasi pacient nu poate fi programat de doua ori in aceeasi zi (indiferent de ora)
+  const dubla = await pool.query(
+    `SELECT data_ora FROM programari WHERE pacient_id = $1 AND data_ora::date = $2::date AND status != 'absent' LIMIT 1`,
+    [pacient_id, data_ora.slice(0, 10)]
+  );
+  if (dubla.rows[0]) {
+    return res.status(400).json({ eroare: `Acest pacient are deja o programare pe ${formateazaDataOra(dubla.rows[0].data_ora)}.` });
+  }
+
   let abonament_id = req.body.abonament_id || null;
 
   if (!abonament_id) {
