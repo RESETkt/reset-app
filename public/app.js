@@ -170,7 +170,15 @@ async function randeazaNotificari() {
 
   const lista = await apel('/api/notificari');
   if (!Array.isArray(lista)) {
-    alert('Nu am putut incarca notificarile: ' + (lista?.eroare || 'eroare necunoscuta'));
+    document.getElementById('modal-container').innerHTML = `
+      <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+        <div class="card" style="max-width:360px;width:90%">
+          <h2>Notificari</h2>
+          <div style="color:#e08585;font-size:13px">Nu am putut incarca notificarile: ${lista?.eroare || 'eroare necunoscuta'}</div>
+          <button class="btn secundar" style="width:100%;margin-top:14px" onclick="inchideModalProgramare()">Inchide</button>
+        </div>
+      </div>
+    `;
     return;
   }
   const nerezolvate = lista.filter(n => !n.rezolvat);
@@ -352,7 +360,7 @@ async function stergeKineto(id, nume) {
   if (!confirm(`Sigur vrei sa stergi \"${nume}\" din echipa? Programarile lui vechi raman, dar devin nealocate.`)) return;
   const rezultat = await apel(`/api/utilizatori/${id}`, { method: 'DELETE' });
   if (rezultat.eroare) {
-    alert(rezultat.eroare);
+    document.getElementById('eroare-echipa').textContent = rezultat.eroare;
     return;
   }
   incarcaEchipa();
@@ -1349,6 +1357,7 @@ function aratatMeniuProgramare(id, prenume) {
         <button class="btn" style="width:100%" onclick="salveazaReprogramare('${id}')">Reprogrameaza</button>
         <button class="btn secundar" style="width:100%;margin-top:8px;color:#e08585" onclick="stergeProgramare('${id}')">Sterge programarea</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Inchide</button>
+        <div id="eroare-reprogramare" style="color:#e08585;font-size:12px;margin-top:8px"></div>
       </div>
     </div>
   `;
@@ -1358,16 +1367,18 @@ function aratatMeniuProgramare(id, prenume) {
 async function salveazaReprogramare(id) {
   const data = document.getElementById('reprog-data').value;
   const ora = document.getElementById('reprog-ora').value;
+  const eroareEl = document.getElementById('eroare-reprogramare');
+  eroareEl.textContent = '';
   if (!data || !ora) return;
   const ziSaptamanii = new Date(data + 'T00:00:00').getDay();
   if (ziSaptamanii === 0 || ziSaptamanii === 6) {
-    alert('Nu se pot face programari sambata sau duminica.');
+    eroareEl.textContent = 'Nu se pot face programari sambata sau duminica.';
     return;
   }
   const data_ora_noua = `${data} ${ora}:00`;
   const rezultat = await apel(`/api/programari/${id}/reprogrameaza`, { method: 'PATCH', body: JSON.stringify({ data_ora_noua }) });
   if (rezultat.eroare) {
-    alert(rezultat.eroare);
+    eroareEl.textContent = rezultat.eroare;
     return;
   }
   inchideModalProgramare();
@@ -1442,7 +1453,8 @@ async function descarcaPdfStatistici() {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!r.ok) {
-    alert('Eroare la generarea raportului PDF.');
+    const eroareEl = document.getElementById('eroare-parola-sume');
+    if (eroareEl) eroareEl.textContent = 'Eroare la generarea raportului PDF.';
     return;
   }
   const blob = await r.blob();
@@ -1461,7 +1473,8 @@ async function cereParolaSume() {
   if (parola === null) return;
   const s = await apel(`/api/statistici?parola=${encodeURIComponent(parola)}`);
   if (s.incasari_luna == null) {
-    alert('Parola gresita.');
+    const eroareEl = document.getElementById('eroare-parola-sume');
+    if (eroareEl) eroareEl.textContent = 'Parola gresita.';
     return;
   }
   parolaSumeCurenta = parola;
