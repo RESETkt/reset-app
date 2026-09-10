@@ -184,7 +184,7 @@ th, td { text-align: left; }
 .desktop-topbar-row1 { display: flex; align-items: center; gap: 20px; padding: 10px 24px; }
 .desktop-topbar-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .desktop-topbar .global-search-wrap { flex: 0 1 220px; margin: 0; }
-.desktop-topbar .global-search-wrap input { padding: 6px 12px; font-size: 13px; }
+.desktop-topbar .global-search-wrap input { padding: 7px 12px; font-size: 13px; }
 .desktop-topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
 .desktop-topbar-actions .btn { padding: 7px 14px; white-space: nowrap; flex-shrink: 0; }
 .desktop-tabs {
