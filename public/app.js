@@ -1381,11 +1381,14 @@ async function stergeProgramare(id) {
   incarcaCalendarSaptamana();
 }
 
-let sumeDeblocate = false;
+let parolaSumeCurenta = null;
 const LUNI_RO_STATS = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
 
 async function incarcaStatistici() {
-  const s = await apel('/api/statistici');
+  const query = parolaSumeCurenta ? `?parola=${encodeURIComponent(parolaSumeCurenta)}` : '';
+  const s = await apel(`/api/statistici${query}`);
+  const sumeDeblocate = s.incasari_luna != null;
+  if (parolaSumeCurenta && !sumeDeblocate) parolaSumeCurenta = null;
   const acum = new Date();
   document.getElementById('panel-statistici').innerHTML = `
     <div class="card">
@@ -1430,12 +1433,12 @@ async function descarcaPdfStatistici() {
   const luna = document.getElementById('pdf-luna').value;
   const an = document.getElementById('pdf-an').value;
 
-  if (!sumeDeblocate) {
-    cereParolaSume();
-    if (!sumeDeblocate) return;
+  if (!parolaSumeCurenta) {
+    await cereParolaSume();
+    if (!parolaSumeCurenta) return;
   }
 
-  const r = await fetch(`/api/statistici/pdf?an=${an}&luna=${luna}`, {
+  const r = await fetch(`/api/statistici/pdf?an=${an}&luna=${luna}&parola=${encodeURIComponent(parolaSumeCurenta)}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!r.ok) {
@@ -1453,19 +1456,20 @@ async function descarcaPdfStatistici() {
   URL.revokeObjectURL(url);
 }
 
-function cereParolaSume() {
+async function cereParolaSume() {
   const parola = prompt('Introdu parola pentru a vedea sumele incasate:');
   if (parola === null) return;
-  if (parola === 'Reset2020cash') {
-    sumeDeblocate = true;
-    incarcaStatistici();
-  } else {
+  const s = await apel(`/api/statistici?parola=${encodeURIComponent(parola)}`);
+  if (s.incasari_luna == null) {
     alert('Parola gresita.');
+    return;
   }
+  parolaSumeCurenta = parola;
+  incarcaStatistici();
 }
 
 function blocheazaSume() {
-  sumeDeblocate = false;
+  parolaSumeCurenta = null;
   incarcaStatistici();
 }
 

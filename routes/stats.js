@@ -8,7 +8,13 @@ router.use(ceareAutentificare);
 
 const LUNI_RO = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
 
+// Parola care ascunde sumele incasate de privirile curioase - verificata aici, pe server,
+// nu doar mascata vizual in client (altfel oricine se uita in codul sursa vede sumele oricum).
+const PAROLA_SUME = 'resetcash';
+
 router.get('/', async (req, res) => {
+  const parolaCorecta = req.query.parola === PAROLA_SUME;
+
   const pacientiSaptamana = await pool.query(`
     SELECT COUNT(*) FROM programari
     WHERE data_ora >= date_trunc('week', now()) AND data_ora < date_trunc('week', now()) + interval '7 days' AND status = 'prezent'
@@ -17,31 +23,44 @@ router.get('/', async (req, res) => {
     SELECT COUNT(*) FROM programari
     WHERE data_ora >= date_trunc('month', now()) AND data_ora < date_trunc('month', now()) + interval '1 month' AND status = 'prezent'
   `);
-  const incasariSaptamana = await pool.query(`
-    SELECT COALESCE(SUM(suma),0) AS total FROM plati
-    WHERE data_plata >= date_trunc('week', now())
-  `);
-  const incasariLuna = await pool.query(`
-    SELECT COALESCE(SUM(suma),0) AS total FROM plati
-    WHERE data_plata >= date_trunc('month', now())
-  `);
-  const dupaMetoda = await pool.query(`
-    SELECT metoda, COALESCE(SUM(suma),0) AS total FROM plati
-    WHERE data_plata >= date_trunc('month', now())
-    GROUP BY metoda
-  `);
+
+  let incasari_saptamana = null;
+  let incasari_luna = null;
+  let incasari_dupa_metoda = null;
+
+  if (parolaCorecta) {
+    const incasariSaptamana = await pool.query(`
+      SELECT COALESCE(SUM(suma),0) AS total FROM plati
+      WHERE data_plata >= date_trunc('week', now())
+    `);
+    const incasariLuna = await pool.query(`
+      SELECT COALESCE(SUM(suma),0) AS total FROM plati
+      WHERE data_plata >= date_trunc('month', now())
+    `);
+    const dupaMetoda = await pool.query(`
+      SELECT metoda, COALESCE(SUM(suma),0) AS total FROM plati
+      WHERE data_plata >= date_trunc('month', now())
+      GROUP BY metoda
+    `);
+    incasari_saptamana = Number(incasariSaptamana.rows[0].total);
+    incasari_luna = Number(incasariLuna.rows[0].total);
+    incasari_dupa_metoda = dupaMetoda.rows;
+  }
 
   res.json({
     pacienti_saptamana: Number(pacientiSaptamana.rows[0].count),
     pacienti_luna: Number(pacientiLuna.rows[0].count),
-    incasari_saptamana: Number(incasariSaptamana.rows[0].total),
-    incasari_luna: Number(incasariLuna.rows[0].total),
-    incasari_dupa_metoda: dupaMetoda.rows
+    incasari_saptamana,
+    incasari_luna,
+    incasari_dupa_metoda
   });
 });
 
 // Raport PDF pentru o luna aleasa (an + luna, luna 1-12)
 router.get('/pdf', async (req, res) => {
+  if (req.query.parola !== PAROLA_SUME) {
+    return res.status(401).json({ eroare: 'Parola gresita.' });
+  }
   const an = parseInt(req.query.an, 10);
   const luna = parseInt(req.query.luna, 10);
   if (!an || !luna || luna < 1 || luna > 12) {
