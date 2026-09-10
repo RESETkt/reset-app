@@ -132,12 +132,32 @@ router.patch('/:id/editeaza-istoric', async (req, res) => {
   res.json(rows[0]);
 });
 
+// Marcheaza absent: daca sedinta fusese deja marcata prezenta din greseala,
+// anuleaza si sedinta contorizata in abonament (ca sa nu ramana consumata pe nedrept)
 router.patch('/:id/absent', async (req, res) => {
-  const { rows } = await pool.query(
-    `UPDATE programari SET status='absent' WHERE id=$1 RETURNING *`,
-    [req.params.id]
-  );
-  res.json(rows[0]);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const existent = await client.query(`SELECT status, abonament_id FROM programari WHERE id = $1`, [req.params.id]);
+    const eraPrezent = existent.rows[0]?.status === 'prezent';
+    const prog = await client.query(
+      `UPDATE programari SET status='absent' WHERE id=$1 RETURNING *`,
+      [req.params.id]
+    );
+    if (eraPrezent && prog.rows[0]?.abonament_id) {
+      await client.query(
+        `UPDATE abonamente SET sedinte_efectuate = GREATEST(sedinte_efectuate - 1, 0) WHERE id = $1`,
+        [prog.rows[0].abonament_id]
+      );
+    }
+    await client.query('COMMIT');
+    res.json(prog.rows[0]);
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ eroare: e.message });
+  } finally {
+    client.release();
+  }
 });
 
 function formateazaDataOra(data_ora) {
@@ -171,9 +191,30 @@ router.patch('/:id/reprogrameaza', async (req, res) => {
   res.json(rows[0]);
 });
 
+// Sterge o programare: daca era deja marcata prezenta, anuleaza si sedinta
+// contorizata in abonament, ca sa nu ramana consumata pe nedrept
 router.delete('/:id', async (req, res) => {
-  await pool.query(`DELETE FROM programari WHERE id = $1`, [req.params.id]);
-  res.json({ sters: true });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const existent = await client.query(`SELECT status, abonament_id FROM programari WHERE id = $1`, [req.params.id]);
+    const eraPrezent = existent.rows[0]?.status === 'prezent';
+    const abonament_id = existent.rows[0]?.abonament_id;
+    await client.query(`DELETE FROM programari WHERE id = $1`, [req.params.id]);
+    if (eraPrezent && abonament_id) {
+      await client.query(
+        `UPDATE abonamente SET sedinte_efectuate = GREATEST(sedinte_efectuate - 1, 0) WHERE id = $1`,
+        [abonament_id]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ sters: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ eroare: e.message });
+  } finally {
+    client.release();
+  }
 });
 
 // Semnatura de pe tableta la intrarea in sedinta (nu e GDPR, doar confirmare prezenta)
