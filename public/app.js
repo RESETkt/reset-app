@@ -1135,7 +1135,7 @@ function randPacientRand(p) {
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="toggleInfoChip('${tooltipId}')" title="Detalii">&#9432;</span>
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
       <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
-        <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="marcheaza('${p.id}','prezent')">Prezent</div>
+        <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="marcheaza('${p.id}','prezent','${p.prenume}',${p.total_sedinte ?? 'null'},${p.sedinte_efectuate ?? 'null'},'${p.status}')">Prezent</div>
         <div style="padding:7px 12px;font-size:12px;color:#c14343;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="marcheaza('${p.id}','absent')">Absent</div>
       </div>
       <div id="${tooltipId}" class="pacient-tooltip">
@@ -1271,11 +1271,18 @@ const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii ===
   incarcaCalendarSaptamana();
 }
 
-async function marcheaza(id, status) {
+async function marcheaza(id, status, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
   if (status === 'prezent') {
     const exercitii = prompt('Exercitii facute azi (pe scurt):') || '';
     const observatii = prompt('Observatii:') || '';
     await apel(`/api/programari/${id}/prezent`, { method: 'PATCH', body: JSON.stringify({ exercitii, observatii }) });
+
+    if (statusCurent !== 'prezent' && totalSedinte != null && sedinteEfectuate != null) {
+      const ramase = totalSedinte - (sedinteEfectuate + 1);
+      if (ramase === 2) {
+        alert(`${prenume} mai are 2 sedinte.`);
+      }
+    }
   } else {
     await apel(`/api/programari/${id}/absent`, { method: 'PATCH' });
   }
