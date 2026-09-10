@@ -1098,10 +1098,10 @@ async function incarcaCalendarSaptamana() {
       <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
     </div>
     <div class="card" style="padding:0;background:#ffffff;border-color:#dcdad4">
-      <table style="border-collapse:collapse;table-layout:fixed">
+      <table style="border-collapse:collapse;table-layout:fixed;width:100%">
         <tr>
-          <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b6a63;width:70px;border:1px solid #e2e0d9;background:#f4f3ef">Ora</th>
-          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#ffffff' : '#6b6a63'};border:1px solid #e2e0d9;background:${z === astazi ? '#1f8a7a' : '#f4f3ef'};width:270px">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
+          <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b6a63;width:60px;border:1px solid #e2e0d9;background:#f4f3ef">Ora</th>
+          ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#ffffff' : '#6b6a63'};border:1px solid #e2e0d9;background:${z === astazi ? '#1f8a7a' : '#f4f3ef'}">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
         </tr>
         ${ORE_DISPONIBILE.map(ora => `
           <tr>

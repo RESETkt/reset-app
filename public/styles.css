@@ -4,10 +4,11 @@ body {
   margin: 0;
   background: #1e1e1d;
   color: #ece9e2;
+  overflow-x: hidden;
 }
 .app { display: block; min-height: 100vh; }
 .sidebar { display: none; }
-.main { margin-left: 0; padding: 12px; padding-top: calc(96px + env(safe-area-inset-top) + 10px); padding-bottom: calc(68px + env(safe-area-inset-bottom) + 10px); }
+.main { margin-left: 0; padding: 10px; padding-top: calc(80px + env(safe-area-inset-top) + 8px); padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
 .sidebar input { width: 100%; padding: 8px; border: 1px solid #45443f; border-radius: 8px; margin-bottom: 12px; background: #1e1e1d; color: #ece9e2; }
 .patient-row { padding: 10px 8px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; }
 .patient-row:hover, .patient-row.activ { background: #33322e; }
@@ -91,16 +92,17 @@ th, td { text-align: left; }
   display: block;
   position: fixed;
   top: 0; left: 0; right: 0;
-  padding: 10px 14px;
-  padding-top: calc(env(safe-area-inset-top) + 10px);
+  padding: 8px 14px;
+  padding-top: calc(env(safe-area-inset-top) + 8px);
   background: #262624;
   border-bottom: 1px solid #3a3937;
   z-index: 30;
 }
-.mobile-topbar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.mobile-topbar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .topbar-icon-btn { cursor: pointer; color: #c9c7bd; }
 .topbar-icon-btn:active { color: #ece9e2; }
 .mobile-topbar .global-search-wrap { margin-bottom: 0; max-width: 280px; }
+.mobile-topbar .global-search-wrap input { padding: 6px 12px; }
 
 .bottom-nav {
   display: flex;
@@ -117,15 +119,15 @@ th, td { text-align: left; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   background: none;
   border: none;
   color: #9a988e;
-  padding: 11px 4px 9px;
-  font-size: 13px;
+  padding: 9px 4px 8px;
+  font-size: 12px;
   cursor: pointer;
 }
-.bottom-nav-btn svg { width: 26px; height: 26px; }
+.bottom-nav-btn svg { width: 22px; height: 22px; }
 .bottom-nav-btn.activ { color: #7fd9a8; }
 .bottom-nav-btn.are-noutati { color: #e2703f; }
 .badge-notif-dot {
