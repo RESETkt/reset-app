@@ -818,9 +818,9 @@ async function reactiveazaPacient(id) {
 
 async function stergePacientDefinitiv(id, nume) {
   if (!confirm(`ATENTIE: stergi definitiv pe "${nume}" - se sterg si toate programarile, platile si abonamentele lui. Nu se mai poate recupera. Esti sigur?`)) return;
+  pacientCurent = null;
   await apel(`/api/pacienti/${id}`, { method: 'DELETE' });
-  cautaPacienti(document.getElementById('cautare')?.value || '');
-  document.getElementById('panel-fisa').innerHTML = '<div class="card">Pacient sters.</div>';
+  aratatListaPacienti();
 }
 
 function aratatConfirmareAbonamentNou(pacientId) {

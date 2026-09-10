@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db/pool');
 const { ceareAutentificare } = require('../services/auth');
 const { creeazaNotificare } = require('../services/notificariEchipa');
+const { trimiteTuturor } = require('../services/live');
 
 const router = express.Router();
 router.use(ceareAutentificare);
@@ -66,6 +67,7 @@ router.post('/:id/plati', async (req, res) => {
      VALUES ($1,$2,$3,$4,$5, COALESCE($6, now())) RETURNING *`,
     [req.params.id, suma, metoda, tip_plata, motiv || null, data_plata || null]
   );
+  trimiteTuturor({ tip: 'plata_noua' });
   res.status(201).json(rows[0]);
 });
 
@@ -86,6 +88,7 @@ router.post('/', async (req, res) => {
   } catch (e) {
     console.error('Nu am putut adauga notificarea de pacient nou:', e.message);
   }
+  trimiteTuturor({ tip: 'pacient_nou' });
   res.status(201).json(rows[0]);
 });
 
@@ -107,22 +110,26 @@ router.put('/:id', async (req, res) => {
     `UPDATE pacienti SET nume=$1, prenume=$2, telefon=$3, email=$4, diagnostic=$5 WHERE id=$6 RETURNING *`,
     [nume, prenume, telefon, email, diagnostic, req.params.id]
   );
+  trimiteTuturor({ tip: 'pacient_editat' });
   res.json(rows[0]);
 });
 
 router.patch('/:id/arhiveaza', async (req, res) => {
   const { rows } = await pool.query(`UPDATE pacienti SET activ = false WHERE id = $1 RETURNING *`, [req.params.id]);
+  trimiteTuturor({ tip: 'pacient_arhivat' });
   res.json(rows[0]);
 });
 
 router.patch('/:id/reactiveaza', async (req, res) => {
   const { rows } = await pool.query(`UPDATE pacienti SET activ = true WHERE id = $1 RETURNING *`, [req.params.id]);
+  trimiteTuturor({ tip: 'pacient_reactivat' });
   res.json(rows[0]);
 });
 
 // Stergere definitiva - sterge automat si programarile, platile, abonamentele lui (cascade in baza de date)
 router.delete('/:id', async (req, res) => {
   await pool.query(`DELETE FROM pacienti WHERE id = $1`, [req.params.id]);
+  trimiteTuturor({ tip: 'pacient_sters' });
   res.json({ sters: true });
 });
 

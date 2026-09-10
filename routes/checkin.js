@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../db/pool');
+const { trimiteTuturor } = require('../services/live');
 
 const router = express.Router();
 
@@ -50,6 +51,7 @@ router.post('/:programareId/confirma', async (req, res) => {
       );
     }
     await client.query('COMMIT');
+    trimiteTuturor({ tip: 'prezenta_marcata' });
     res.json(prog.rows[0]);
   } catch (e) {
     await client.query('ROLLBACK');
