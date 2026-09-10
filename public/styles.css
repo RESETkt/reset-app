@@ -85,6 +85,28 @@ th, td { text-align: left; }
 /* --- Navigatie mobila (ascunsa pe desktop) --- */
 .mobile-topbar, .bottom-nav { display: none; }
 
+/* --- Cautare globala pacienti (sidebar desktop + topbar mobil): bara mereu vizibila, sub logo --- */
+.global-search-wrap { position: relative; margin-bottom: 16px; }
+.global-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #6f6d64; pointer-events: none; }
+.global-search-wrap input {
+  width: 100%; padding-left: 32px;
+  background: #1a1a19; border: 1px solid #45443f;
+}
+.global-search-wrap input:focus { border-color: #6b8f7f; outline: none; }
+.global-cautare-dropdown {
+  display: none;
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #2e2d2a; border: 1px solid #45443f; border-radius: 8px;
+  max-height: 280px; overflow-y: auto; z-index: 25;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+}
+.global-cautare-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #3a3937; }
+.global-cautare-item:last-child { border-bottom: none; }
+.global-cautare-item:hover { background: #3a3937; }
+.global-cautare-item .nume { font-size: 13px; font-weight: 500; }
+.global-cautare-item .info { font-size: 11px; color: #9a988e; }
+.global-cautare-gol { padding: 10px; font-size: 12px; color: #9a988e; }
+
 /* --- Vizualizare zilnica calendar (folosita doar pe mobil) --- */
 .day-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .day-nav-arrow { padding: 8px 14px; flex-shrink: 0; }
@@ -102,20 +124,19 @@ th, td { text-align: left; }
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .mobile-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: block;
     position: fixed;
     top: 0; left: 0; right: 0;
-    height: 62px;
-    padding: 0 14px;
-    padding-top: env(safe-area-inset-top);
+    padding: 10px 14px;
+    padding-top: calc(env(safe-area-inset-top) + 10px);
     background: #262624;
     border-bottom: 1px solid #3a3937;
     z-index: 30;
   }
+  .mobile-topbar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .topbar-icon-btn { cursor: pointer; color: #c9c7bd; }
   .topbar-icon-btn:active { color: #ece9e2; }
+  .mobile-topbar .global-search-wrap { margin-bottom: 0; }
 
   .bottom-nav {
     display: flex;
@@ -148,7 +169,7 @@ th, td { text-align: left; }
     animation: puls-notificari 1.7s ease-in-out infinite;
   }
 
-  .main { margin-left: 0; padding: 12px; padding-top: calc(62px + env(safe-area-inset-top) + 12px); padding-bottom: calc(58px + env(safe-area-inset-bottom) + 16px); }
+  .main { margin-left: 0; padding: 12px; padding-top: calc(112px + env(safe-area-inset-top) + 12px); padding-bottom: calc(58px + env(safe-area-inset-bottom) + 16px); }
 
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 .metric:nth-child(3) { grid-column: span 2; }

@@ -278,6 +278,71 @@ async function cautaPacienti(q) {
   `).join('') || '<div style="font-size:12px;color:#9a988e;padding:8px">Niciun pacient gasit.</div>';
 }
 
+let cautareGlobalaTimeout = null;
+let cautareGlobalaToken = 0;
+
+function cautaGlobalDebounced(q, mobil) {
+  clearTimeout(cautareGlobalaTimeout);
+  cautareGlobalaTimeout = setTimeout(() => cautaGlobala(q, mobil), 150);
+}
+
+async function cautaGlobala(q, mobil) {
+  const rezultateEl = document.getElementById(mobil ? 'global-cautare-rezultate-mobil' : 'global-cautare-rezultate');
+  if (!rezultateEl) return;
+  const query = (q || '').trim();
+  const cerereId = ++cautareGlobalaToken;
+  if (!query) {
+    rezultateEl.innerHTML = '';
+    rezultateEl.style.display = 'none';
+    return;
+  }
+  const rows = await apel(`/api/pacienti?q=${encodeURIComponent(query)}`);
+  if (cerereId !== cautareGlobalaToken) return;
+  const gasiti = rows.slice(0, 8);
+  rezultateEl.innerHTML = gasiti.map(p => `
+    <div class="global-cautare-item" onclick="selecteazaCautareGlobala('${p.id}')">
+      <div class="nume">${p.nume} ${p.prenume}</div>
+      <div class="info">${p.diagnostic || 'fara diagnostic'}</div>
+    </div>
+  `).join('') || '<div class="global-cautare-gol">Niciun pacient gasit.</div>';
+  rezultateEl.style.display = 'block';
+}
+
+function cautareGlobalaTasta(event, mobil) {
+  if (event.key === 'Escape') {
+    inchideCautareGlobala();
+  } else if (event.key === 'Enter') {
+    const rezultateEl = document.getElementById(mobil ? 'global-cautare-rezultate-mobil' : 'global-cautare-rezultate');
+    const primul = rezultateEl?.querySelector('.global-cautare-item');
+    if (primul) primul.click();
+  }
+}
+
+function selecteazaCautareGlobala(id) {
+  inchideCautareGlobala();
+  aratapanel('fisa');
+  deschideFisa(id);
+}
+
+function inchideCautareGlobala() {
+  const inputD = document.getElementById('global-cautare');
+  const inputM = document.getElementById('global-cautare-mobil');
+  if (inputD) inputD.value = '';
+  if (inputM) inputM.value = '';
+  ['global-cautare-rezultate', 'global-cautare-rezultate-mobil'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+  });
+}
+
+document.addEventListener('click', (event) => {
+  document.querySelectorAll('.global-search-wrap').forEach(wrap => {
+    if (wrap.contains(event.target)) return;
+    const rezultate = wrap.querySelector('.global-cautare-dropdown');
+    if (rezultate) rezultate.style.display = 'none';
+  });
+});
+
 function marcheazaActiv(nume) {
   document.querySelectorAll('.top-nav-btn, .bottom-nav-btn').forEach(b => b.classList.toggle('activ', b.dataset.panel === nume));
 }

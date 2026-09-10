@@ -31,19 +31,29 @@
 
 <div id="app" class="app" style="display:none">
   <div class="mobile-topbar">
-    <div style="display:flex;align-items:center;gap:10px">
-      <img src="logo-icon.png" alt="Reset" style="height:36px">
-      <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px">RESET</span>
+    <div class="mobile-topbar-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <img src="logo-icon.png" alt="Reset" style="height:36px">
+        <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px">RESET</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <svg class="topbar-icon-btn" onclick="aratatFormularPacientNou()" title="Pacient nou" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <svg class="topbar-icon-btn" onclick="delogare()" title="Delogare" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+          <line x1="12" y1="2" x2="12" y2="12"></line>
+        </svg>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:14px">
-      <svg class="topbar-icon-btn" onclick="aratatFormularPacientNou()" title="Pacient nou" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
+    <div class="global-search-wrap">
+      <svg class="global-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
-      <svg class="topbar-icon-btn" onclick="delogare()" title="Delogare" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-        <line x1="12" y1="2" x2="12" y2="12"></line>
-      </svg>
+      <input id="global-cautare-mobil" type="text" placeholder="Cauta pacient dupa nume..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, true)" onkeydown="cautareGlobalaTasta(event, true)">
+      <div id="global-cautare-rezultate-mobil" class="global-cautare-dropdown"></div>
     </div>
   </div>
 
@@ -57,6 +67,14 @@
         <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
         <line x1="12" y1="2" x2="12" y2="12"></line>
       </svg>
+    </div>
+    <div class="global-search-wrap">
+      <svg class="global-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input id="global-cautare" type="text" placeholder="Cauta pacient dupa nume..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, false)" onkeydown="cautareGlobalaTasta(event, false)">
+      <div id="global-cautare-rezultate" class="global-cautare-dropdown"></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
       <button class="btn top-nav-btn activ" data-panel="calendar" onclick="aratapanel('calendar')">Programari</button>
