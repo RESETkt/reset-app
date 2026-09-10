@@ -2,15 +2,21 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RESET Check-in">
+<meta name="theme-color" content="#1e1e1d">
 <title>Reset - check-in</title>
-<link rel="icon" href="favicon.png">
+<link rel="icon" href="favicon-v2.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="tablet-manifest.json">
 <style>
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, sans-serif; background: #1e1e1d; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-top: 90px; }
+  * { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  html, body { height: 100%; overscroll-behavior: none; touch-action: manipulation; }
+  input { -webkit-user-select: text; user-select: text; }
+  body { font-family: -apple-system, sans-serif; background: #1e1e1d; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-top: calc(90px + env(safe-area-inset-top)); padding-bottom: env(safe-area-inset-bottom); overflow: hidden; }
   .card { background: #262624; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); color: #ece9e2; }
   input { width: 100%; padding: 10px; border: 1px solid #45443f; border-radius: 8px; font-size: 15px; margin-bottom: 10px; background: #1e1e1d; color: #ece9e2; }
   button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #ece9e2; color: #1e1e1d; font-size: 15px; cursor: pointer; font-weight: 500; }
@@ -28,14 +34,18 @@
   .tastatura button.secundar { background: #34332f; border: 1px solid #57554e; font-size: 22px; }
   .sugestii { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
   .sugestie-btn { display: inline-block; width: auto; padding: 16px 22px; background: #1f3634; border: 2px solid #2d5049; border-radius: 12px; font-size: 20px; font-weight: 600; }
-  .buton-fullscreen { position: fixed; top: 24px; right: 24px; width: 44px; height: 44px; border-radius: 50%; background: #262624; border: 1px solid #45443f; color: #9a988e; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
+  .buton-fullscreen { position: fixed; top: calc(24px + env(safe-area-inset-top)); right: 24px; width: 44px; height: 44px; border-radius: 50%; background: #262624; border: 1px solid #45443f; color: #9a988e; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
+  .banner-instalare { position: fixed; bottom: 0; left: 0; right: 0; background: #262624; border-top: 1px solid #45443f; color: #ece9e2; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); font-size: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 20; }
+  .banner-instalare .txt { flex: 1; line-height: 1.4; }
+  .banner-instalare .txt b { color: #ece9e2; }
+  .banner-instalare button { width: auto; padding: 8px 14px; font-size: 13px; }
 </style>
 </head>
 <body>
 
 <span class="buton-fullscreen" onclick="comutaFullscreen()" title="Ecran complet">&#10021;</span>
 
-<div style="position:fixed;top:24px;left:50%;transform:translateX(-50%)">
+<div style="position:fixed;top:calc(24px + env(safe-area-inset-top));left:50%;transform:translateX(-50%)">
   <img src="logo-icon.png" alt="Reset" style="height:64px">
 </div>
 
@@ -75,6 +85,11 @@
 <div class="card" id="pas-gata" style="display:none">
   <h2>Multumim!</h2>
   <div class="sub">Prezenta ta a fost confirmata.</div>
+</div>
+
+<div class="banner-instalare" id="banner-instalare" style="display:none">
+  <div class="txt">Ca sa nu mai iesi accidental din ecran complet: apasa <b>&#x2191; Distribuie</b>, apoi <b>Adauga pe ecranul principal</b>. Deschide de acolo — tine minte modul si nu mai are bara de Safari.</div>
+  <button onclick="ascundeBannerInstalare()">Am inteles</button>
 </div>
 
 <script src="tablet.js"></script>

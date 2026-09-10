@@ -1,0 +1,16 @@
+{
+  "name": "RESET - Check-in pacienti",
+  "short_name": "Check-in",
+  "description": "Confirmare prezenta la sedinta de kinetoterapie",
+  "start_url": "/tablet.html",
+  "scope": "/tablet.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1e1e1d",
+  "theme_color": "#1e1e1d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

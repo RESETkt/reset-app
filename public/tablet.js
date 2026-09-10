@@ -1,6 +1,9 @@
 let dateCheckin = null;
 let telefonTastat = '';
 
+const ruleazaInstalat = window.navigator.standalone === true
+  || window.matchMedia('(display-mode: standalone)').matches;
+
 function comutaFullscreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(() => {});
@@ -8,6 +11,44 @@ function comutaFullscreen() {
     document.exitFullscreen();
   }
 }
+
+function ascundeBannerInstalare() {
+  document.getElementById('banner-instalare').style.display = 'none';
+  localStorage.setItem('reset-tablet-banner-ascuns', '1');
+}
+
+function initInstalare() {
+  if (ruleazaInstalat) {
+    // Rulam deja ca aplicatie de pe ecranul principal: nu mai are rost fullscreen manual.
+    document.querySelector('.buton-fullscreen').style.display = 'none';
+    return;
+  }
+  if (!localStorage.getItem('reset-tablet-banner-ascuns')) {
+    document.getElementById('banner-instalare').style.display = 'flex';
+  }
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw-tablet.js').catch(() => {}));
+}
+
+initInstalare();
+
+// Reseteaza ecranul daca cineva incepe sa introduca un numar si pleaca fara sa termine,
+// ca urmatorul pacient sa gaseasca mereu tastatura goala, nu un ecran pe jumatate completat.
+let timerInactivitate = null;
+function reseteazaTimerInactivitate() {
+  clearTimeout(timerInactivitate);
+  if (telefonTastat === '' && document.getElementById('pas-cautare').style.display !== 'none') return;
+  timerInactivitate = setTimeout(() => {
+    dateCheckin = null;
+    golesteTelefon();
+    ascundeToate();
+    document.getElementById('pas-cautare').style.display = 'block';
+  }, 30000);
+}
+document.addEventListener('click', reseteazaTimerInactivitate);
+document.addEventListener('touchstart', reseteazaTimerInactivitate);
 
 function apasaCifra(cifra) {
   telefonTastat += cifra;
