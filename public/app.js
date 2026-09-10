@@ -714,8 +714,8 @@ function aratatFormularEditarePacient(id) {
     const ab = data.abonament;
     pacientEditareAbonamentCurent = ab ? ab.tip : '';
     const html = `
-      <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
-        <div class="card" style="max-width:400px;width:90%">
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+        <div class="card" style="max-width:400px;width:90%;max-height:calc(100vh - 48px);overflow-y:auto">
           <h2>Editeaza pacient</h2>
           <label>Prenume</label>
           <input id="edit-prenume" value="${p.prenume}" style="width:100%;margin-bottom:10px">
