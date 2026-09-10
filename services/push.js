@@ -1,18 +1,28 @@
 const webpush = require('web-push');
 const pool = require('../db/pool');
 
-const cheiePublica = process.env.VAPID_PUBLIC_KEY || null;
-const activat = !!(cheiePublica && process.env.VAPID_PRIVATE_KEY);
+// .trim() ca o linie noua/spatiu lipit din greseala la copiere sa nu strice cheia
+const cheiePublicaBruta = (process.env.VAPID_PUBLIC_KEY || '').trim() || null;
+const cheiePrivataBruta = (process.env.VAPID_PRIVATE_KEY || '').trim() || null;
 
-if (activat) {
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:contact@reset.ro',
-    cheiePublica,
-    process.env.VAPID_PRIVATE_KEY
-  );
+let activat = false;
+if (cheiePublicaBruta && cheiePrivataBruta) {
+  try {
+    webpush.setVapidDetails(
+      (process.env.VAPID_SUBJECT || 'mailto:contact@reset.ro').trim(),
+      cheiePublicaBruta,
+      cheiePrivataBruta
+    );
+    activat = true;
+  } catch (e) {
+    // O cheie invalida nu trebuie sa opreasca toata aplicatia - doar push-ul ramane dezactivat.
+    console.error('Cheile VAPID sunt invalide, notificarile push raman dezactivate:', e.message);
+  }
 } else {
   console.warn('VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY lipsesc din environment - notificarile push sunt dezactivate.');
 }
+
+const cheiePublica = activat ? cheiePublicaBruta : null;
 
 // Trimite o notificare push tuturor telefoanelor abonate (in afara, optional, de cel care a declansat-o).
 // Abonamentele expirate/revocate de browser sunt sterse automat din baza de date.
