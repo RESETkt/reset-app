@@ -4,12 +4,8 @@ let telefonTastat = '';
 const ruleazaInstalat = window.navigator.standalone === true
   || window.matchMedia('(display-mode: standalone)').matches;
 
-function comutaFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  } else {
-    document.exitFullscreen();
-  }
+function reincarcaAplicatia() {
+  location.reload();
 }
 
 function ascundeBannerInstalare() {
@@ -18,11 +14,7 @@ function ascundeBannerInstalare() {
 }
 
 function initInstalare() {
-  if (ruleazaInstalat) {
-    // Rulam deja ca aplicatie de pe ecranul principal: nu mai are rost fullscreen manual.
-    document.querySelector('.buton-fullscreen').style.display = 'none';
-    return;
-  }
+  if (ruleazaInstalat) return;
   if (!localStorage.getItem('reset-tablet-banner-ascuns')) {
     document.getElementById('banner-instalare').style.display = 'flex';
   }
