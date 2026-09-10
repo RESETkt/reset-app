@@ -7,9 +7,8 @@ body {
   overflow-x: hidden;
 }
 .app { display: block; min-height: 100vh; }
-.sidebar { display: none; }
+.desktop-topbar { display: none; }
 .main { margin-left: 0; padding: 10px; padding-top: calc(48px + env(safe-area-inset-top) + 8px); padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
-.sidebar input { width: 100%; padding: 8px; border: 1px solid #45443f; border-radius: 8px; margin-bottom: 12px; background: #1e1e1d; color: #ece9e2; }
 .patient-row { padding: 10px 8px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; }
 .patient-row:hover, .patient-row.activ { background: #33322e; }
 .patient-row .nume { font-size: 13px; font-weight: 500; }
@@ -47,7 +46,7 @@ body {
 }
 
 .top-nav button.activ { background: #ece9e2; color: #1e1e1d; }
-.top-nav-btn { width: 100%; text-align: left; }
+.top-nav-btn { flex: 1; text-align: center; padding: 10px 16px; font-size: 13.5px; font-weight: 600; }
 .top-nav-btn.activ { background: #ece9e2; color: #1e1e1d; }
 .logout-btn { cursor: pointer; color: #9a988e; padding: 4px; border-radius: 6px; flex-shrink: 0; } .logout-btn:hover { color: #ece9e2; background: #33322e; }
 h2 { font-size: 15px; margin: 0 0 12px; color: #ece9e2; }
@@ -102,8 +101,7 @@ th, td { text-align: left; }
 .topbar-icon-btn { cursor: pointer; color: #c9c7bd; }
 .topbar-icon-btn:active { color: #ece9e2; }
 .mobile-topbar .global-search-wrap { flex: 1 1 auto; max-width: 190px; margin: 0; min-width: 90px; }
-.mobile-topbar .global-search-wrap input { padding: 6px 10px; font-size: 12.5px; }
-.mobile-topbar .global-search-wrap input { padding: 6px 12px; }
+.mobile-topbar .global-search-wrap input { padding: 6px 12px; font-size: 12.5px; }
 
 .bottom-nav {
   display: flex;
@@ -135,6 +133,27 @@ th, td { text-align: left; }
   position: absolute; top: 10px; right: calc(50% - 24px);
   width: 8px; height: 8px; border-radius: 50%; background: #e2703f;
   animation: puls-notificari 1.7s ease-in-out infinite;
+}
+
+/* --- Bara de sus pentru ecran lat: rand 1 = brand/cautare/actiuni, rand 2 = taburi --- */
+.desktop-topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: #262624;
+  border-bottom: 1px solid #3a3937;
+  padding-top: env(safe-area-inset-top);
+  z-index: 30;
+}
+.desktop-topbar-row1 { display: flex; align-items: center; gap: 20px; padding: 10px 24px; }
+.desktop-topbar-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.desktop-topbar .global-search-wrap { flex: 0 1 260px; margin: 0; }
+.desktop-topbar-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-shrink: 0; }
+.desktop-tabs { display: flex; gap: 4px; padding: 0 24px 10px; }
+
+@media (min-width: 769px) {
+  .mobile-topbar, .bottom-nav { display: none; }
+  .desktop-topbar { display: block; }
+  .main { padding-top: calc(100px + env(safe-area-inset-top) + 10px); padding-bottom: 20px; }
 }
 
 /* --- Cautare globala pacienti (sidebar desktop + topbar mobil): bara mereu vizibila, sub logo --- */

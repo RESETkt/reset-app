@@ -53,34 +53,34 @@
     </div>
   </div>
 
-  <div class="sidebar">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:8px">
-        <img src="logo-icon.png" alt="Reset" style="height:32px">
-        <span style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.5px">RESET</span>
+  <div class="desktop-topbar">
+    <div class="desktop-topbar-row1">
+      <div class="desktop-topbar-brand">
+        <img src="logo-icon.png" alt="Reset" style="height:28px">
+        <span style="font-size:17px;font-weight:700;color:#ffffff;letter-spacing:0.5px">RESET</span>
       </div>
-      <svg class="logout-btn" onclick="delogare()" title="Delogare" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-        <line x1="12" y1="2" x2="12" y2="12"></line>
-      </svg>
+      <div class="global-search-wrap">
+        <input id="global-cautare" type="text" placeholder="Cauta pacient dupa nume..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, false)" onkeydown="cautareGlobalaTasta(event, false)">
+        <div id="global-cautare-rezultate" class="global-cautare-dropdown"></div>
+      </div>
+      <div class="desktop-topbar-actions">
+        <button id="btn-notificari" class="btn btn-notificari" onclick="deschideNotificari()">
+          Notificari
+          <span id="badge-notificari" class="badge-notif" style="display:none">0</span>
+        </button>
+        <button class="btn" onclick="aratatFormularPacientNou()">+ Pacient nou</button>
+        <svg class="logout-btn" onclick="delogare()" title="Delogare" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+          <line x1="12" y1="2" x2="12" y2="12"></line>
+        </svg>
+      </div>
     </div>
-    <div class="global-search-wrap">
-      <input id="global-cautare" type="text" placeholder="Cauta pacient dupa nume..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, false)" onkeydown="cautareGlobalaTasta(event, false)">
-      <div id="global-cautare-rezultate" class="global-cautare-dropdown"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+    <nav class="desktop-tabs">
       <button class="btn top-nav-btn activ" data-panel="calendar" onclick="aratapanel('calendar')">Programari</button>
       <button class="btn top-nav-btn" data-panel="fisa" onclick="aratapanel('fisa')">Fise pacienti</button>
       <button class="btn top-nav-btn" data-panel="echipa" onclick="aratapanel('echipa')">Echipa</button>
       <button class="btn top-nav-btn" data-panel="statistici" onclick="aratapanel('statistici')">Statistici</button>
-    </div>
-    <div style="border-top:1px solid #3a3937;padding-top:12px;margin-bottom:12px">
-      <button id="btn-notificari" class="btn btn-notificari" style="width:100%" onclick="deschideNotificari()">
-        Notificari
-        <span id="badge-notificari" class="badge-notif" style="display:none">0</span>
-      </button>
-    </div>
-    <button class="btn" style="width:100%;margin-bottom:12px" onclick="aratatFormularPacientNou()">+ Pacient nou</button>
+    </nav>
   </div>
   <div class="main">
     <div id="panel-calendar"></div>
