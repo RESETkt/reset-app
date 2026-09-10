@@ -1280,13 +1280,28 @@ async function marcheaza(id, status, prenume, totalSedinte, sedinteEfectuate, st
     if (statusCurent !== 'prezent' && totalSedinte != null && sedinteEfectuate != null) {
       const ramase = totalSedinte - (sedinteEfectuate + 1);
       if (ramase === 2) {
-        alert(`${prenume} mai are 2 sedinte.`);
+        aratatPopupSedinteRamase(prenume);
       }
     }
   } else {
     await apel(`/api/programari/${id}/absent`, { method: 'PATCH' });
   }
   incarcaCalendarSaptamana();
+}
+
+function aratatPopupSedinteRamase(prenume) {
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:340px;width:90%;text-align:center;padding:32px 26px">
+        <div style="font-size:38px;margin-bottom:14px">&#9203;</div>
+        <div style="font-size:14px;color:#9a988e;margin-bottom:2px">${prenume}</div>
+        <div style="font-size:25px;font-weight:700;line-height:1.35;margin-bottom:14px">Mai are <span style="color:#e0b85e">2 sedinte</span></div>
+        <div style="font-size:14px;color:#9a988e;line-height:1.5;margin-bottom:22px">E un moment bun sa discutati despre reinnoirea abonamentului.</div>
+        <button class="btn" style="width:100%" onclick="inchideModalProgramare()">Am inteles</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
 }
 
 function aratatMeniuProgramare(id, prenume) {
