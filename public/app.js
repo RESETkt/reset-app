@@ -332,6 +332,8 @@ async function adaugaKineto() {
     return;
   }
 
+  const buton = event.target;
+  buton.disabled = true;
   const rezultat = await apel('/api/utilizatori', {
     method: 'POST',
     body: JSON.stringify({ nume, email, parola })
@@ -339,6 +341,7 @@ async function adaugaKineto() {
 
   if (rezultat.eroare) {
     eroareEl.textContent = rezultat.eroare;
+    buton.disabled = false;
     return;
   }
 
@@ -405,6 +408,8 @@ async function salveazaPacientNou() {
     return;
   }
 
+  const buton = event.target;
+  buton.disabled = true;
   const pacient = await apel('/api/pacienti', {
     method: 'POST',
     body: JSON.stringify({ nume, prenume, telefon, email, diagnostic })
@@ -412,6 +417,7 @@ async function salveazaPacientNou() {
 
   if (pacient.eroare) {
     eroareEl.textContent = pacient.eroare;
+    buton.disabled = false;
     return;
   }
 
@@ -595,6 +601,8 @@ async function salveazaSedintaNoua(pacientId) {
     return;
   }
 
+  const buton = event.target;
+  buton.disabled = true;
   const rezultat = await apel('/api/programari/sedinta-trecuta', {
     method: 'POST',
     body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, exercitii, observatii })
@@ -602,6 +610,7 @@ async function salveazaSedintaNoua(pacientId) {
 
   if (rezultat.eroare) {
     eroareEl.textContent = rezultat.eroare;
+    buton.disabled = false;
     return;
   }
 
@@ -787,6 +796,7 @@ async function salveazaEditarePacient(id) {
   const abonamentEl = document.getElementById('edit-abonament');
   const tipAbonament = abonamentEl ? abonamentEl.value : '';
 
+  event.target.disabled = true;
   await apel(`/api/pacienti/${id}`, {
     method: 'PUT',
     body: JSON.stringify({ nume, prenume, telefon, email, diagnostic })
@@ -846,6 +856,7 @@ function aratatConfirmareAbonamentNou(pacientId) {
 
 async function confirmaAbonamentNou(pacientId) {
   const tip = document.getElementById('abonament-nou-tip').value;
+  event.target.disabled = true;
   await apel('/api/abonamente', {
     method: 'POST',
     body: JSON.stringify({ pacient_id: pacientId, tip })
@@ -917,6 +928,8 @@ async function salveazaPlataNoua(pacientId) {
   const NUME_MOTIV = { '8': 'Abonament 8 sedinte', '12': 'Abonament 12 sedinte', individual: 'Sedinta individuala' };
   const motiv = motivSelect === 'altceva' ? document.getElementById('plata-motiv-liber').value.trim() : NUME_MOTIV[motivSelect];
 
+  const buton = event.target;
+  buton.disabled = true;
   const rezultat = await apel(`/api/pacienti/${pacientId}/plati`, {
     method: 'POST',
     body: JSON.stringify({ suma, metoda, tip_plata, motiv, data_plata: data })
@@ -924,6 +937,7 @@ async function salveazaPlataNoua(pacientId) {
 
   if (rezultat.eroare) {
     eroareEl.textContent = rezultat.eroare;
+    buton.disabled = false;
     return;
   }
 
@@ -1253,6 +1267,8 @@ async function salveazaProgramareNoua() {
 const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii === 0 || ziSaptamanii === 6) { eroareEl.textContent = 'Nu se pot face programari sambata sau duminica.'; return; }
 
   const data_ora = `${data} ${ora}:00`;
+  const buton = event.target;
+  buton.disabled = true;
   const rezultat = await apel('/api/programari', {
     method: 'POST',
     body: JSON.stringify({ pacient_id, kineto_id, data_ora })
@@ -1260,6 +1276,7 @@ const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii ===
 
   if (rezultat.eroare) {
     eroareEl.textContent = rezultat.eroare;
+    buton.disabled = false;
     return;
   }
 
