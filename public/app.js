@@ -377,28 +377,30 @@ function aratatListaPacienti() {
 async function incarcaEchipa() {
   const echipa = await apel('/api/utilizatori');
   document.getElementById('panel-echipa').innerHTML = `
-    <div class="card" style="max-width:480px">
-      <h2>Echipa curenta</h2>
-      ${echipa.map(u => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #3a3937">
-          <div>
-            <div style="font-size:13px;font-weight:500">${u.nume}</div>
-            <div style="font-size:11px;color:#9a988e">${u.email} - ${u.rol}</div>
+    <div class="panel-cols-2">
+      <div class="card">
+        <h2>Echipa curenta</h2>
+        ${echipa.map(u => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #3a3937">
+            <div>
+              <div style="font-size:13px;font-weight:500">${u.nume}</div>
+              <div style="font-size:11px;color:#9a988e">${u.email} - ${u.rol}</div>
+            </div>
+            <button class="btn secundar" onclick="stergeKineto('${u.id}','${u.nume}')">Sterge</button>
           </div>
-          <button class="btn secundar" onclick="stergeKineto('${u.id}','${u.nume}')">Sterge</button>
-        </div>
-      `).join('') || '<div style="font-size:13px;color:#9a988e">Niciun membru inca.</div>'}
-    </div>
-    <div class="card" style="max-width:480px">
-      <h2>Adauga kineto nou</h2>
-      <label>Nume</label>
-      <input id="echipa-nume" style="width:100%;margin-bottom:10px">
-      <label>Email (folosit la login)</label>
-      <input id="echipa-email" type="email" style="width:100%;margin-bottom:10px">
-      <label>Parola</label>
-      <input id="echipa-parola" type="password" style="width:100%;margin-bottom:14px">
-      <button class="btn" style="width:100%" onclick="adaugaKineto()">Adauga in echipa</button>
-      <div id="eroare-echipa" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+        `).join('') || '<div style="font-size:13px;color:#9a988e">Niciun membru inca.</div>'}
+      </div>
+      <div class="card">
+        <h2>Adauga kineto nou</h2>
+        <label>Nume</label>
+        <input id="echipa-nume" style="width:100%;margin-bottom:10px">
+        <label>Email (folosit la login)</label>
+        <input id="echipa-email" type="email" style="width:100%;margin-bottom:10px">
+        <label>Parola</label>
+        <input id="echipa-parola" type="password" style="width:100%;margin-bottom:14px">
+        <button class="btn" style="width:100%" onclick="adaugaKineto()">Adauga in echipa</button>
+        <div id="eroare-echipa" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
     </div>
   `;
 }
@@ -1461,18 +1463,20 @@ async function incarcaStatistici() {
   if (parolaSumeCurenta && !sumeDeblocate) parolaSumeCurenta = null;
   const acum = new Date();
   document.getElementById('panel-statistici').innerHTML = `
-    <div class="card">
-      <h2>Saptamana aceasta</h2>
-      <div class="grid-2">
-        <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_saptamana}</div></div>
-        <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_saptamana + ' lei' : '••• lei'}</div></div>
+    <div class="panel-cols-2">
+      <div class="card">
+        <h2>Saptamana aceasta</h2>
+        <div class="grid-2">
+          <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_saptamana}</div></div>
+          <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_saptamana + ' lei' : '••• lei'}</div></div>
+        </div>
       </div>
-    </div>
-    <div class="card">
-      <h2>Luna aceasta</h2>
-      <div class="grid-2">
-        <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
-        <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_luna + ' lei' : '••• lei'}</div></div>
+      <div class="card">
+        <h2>Luna aceasta</h2>
+        <div class="grid-2">
+          <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
+          <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_luna + ' lei' : '••• lei'}</div></div>
+        </div>
       </div>
     </div>
     <div class="card">
