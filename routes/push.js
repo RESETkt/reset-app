@@ -13,23 +13,31 @@ router.get('/cheie-publica', (req, res) => {
 router.use(ceareAutentificare);
 
 router.post('/aboneaza', async (req, res) => {
-  const { endpoint, keys } = req.body;
-  if (!endpoint || !keys?.p256dh || !keys?.auth) {
-    return res.status(400).json({ eroare: 'Date de abonare incomplete.' });
+  try {
+    const { endpoint, keys } = req.body;
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return res.status(400).json({ eroare: 'Date de abonare incomplete.' });
+    }
+    await pool.query(
+      `INSERT INTO push_subscriptions (utilizator_id, endpoint, p256dh, auth)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT (endpoint) DO UPDATE SET utilizator_id = $1, p256dh = $3, auth = $4`,
+      [req.user.id, endpoint, keys.p256dh, keys.auth]
+    );
+    res.status(201).json({ abonat: true });
+  } catch (e) {
+    res.status(500).json({ eroare: e.message });
   }
-  await pool.query(
-    `INSERT INTO push_subscriptions (utilizator_id, endpoint, p256dh, auth)
-     VALUES ($1,$2,$3,$4)
-     ON CONFLICT (endpoint) DO UPDATE SET utilizator_id = $1, p256dh = $3, auth = $4`,
-    [req.user.id, endpoint, keys.p256dh, keys.auth]
-  );
-  res.status(201).json({ abonat: true });
 });
 
 router.post('/dezaboneaza', async (req, res) => {
-  const { endpoint } = req.body;
-  if (endpoint) await pool.query('DELETE FROM push_subscriptions WHERE endpoint = $1', [endpoint]);
-  res.json({ dezabonat: true });
+  try {
+    const { endpoint } = req.body;
+    if (endpoint) await pool.query('DELETE FROM push_subscriptions WHERE endpoint = $1', [endpoint]);
+    res.json({ dezabonat: true });
+  } catch (e) {
+    res.status(500).json({ eroare: e.message });
+  }
 });
 
 module.exports = router;

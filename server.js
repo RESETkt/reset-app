@@ -18,6 +18,15 @@ const pushRoutes = require('./routes/push');
 const { porneteReminderele } = require('./services/reminders');
 const { trimiteTuturor } = require('./services/live');
 
+// Plasa de siguranta: o eroare care scapa neprinsa dintr-o ruta (ex. o interogare DB esuata)
+// nu mai trebuie sa doboare tot serverul si sa deconecteze toata echipa - doar se logheaza.
+process.on('unhandledRejection', (motiv) => {
+  console.error('Promisiune nerezolvata, neprinsa:', motiv);
+});
+process.on('uncaughtException', (eroare) => {
+  console.error('Eroare neprinsa:', eroare);
+});
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' })); // limita mare, semnaturile sunt imagini base64
