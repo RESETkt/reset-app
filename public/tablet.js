@@ -68,11 +68,15 @@ function actualizeazaAfisajTelefon() {
 async function incarcaSugestii() {
   const el = document.getElementById('sugestii-telefon');
   if (telefonTastat.length < 4) { el.innerHTML = ''; return; }
-  const r = await fetch(`/api/checkin/sugestii?prefix=${encodeURIComponent(telefonTastat)}`);
-  const rezultate = await r.json();
-  el.innerHTML = rezultate.map(p => `
-    <span class="sugestie-btn" onclick="selecteazaSugestie('${p.telefon}')">${p.prenume}</span>
-  `).join('');
+  try {
+    const r = await fetch(`/api/checkin/sugestii?prefix=${encodeURIComponent(telefonTastat)}`);
+    const rezultate = await r.json();
+    el.innerHTML = rezultate.map(p => `
+      <span class="sugestie-btn" onclick="selecteazaSugestie('${p.telefon}')">${p.prenume} ..${p.telefon.slice(-2)}</span>
+    `).join('');
+  } catch {
+    // sugestiile sunt doar un ajutor optional - o eroare de retea aici nu trebuie sa opreasca tastarea
+  }
 }
 
 function selecteazaSugestie(telefon) {
@@ -94,9 +98,15 @@ async function cautaProgramare() {
   eroareEl.textContent = '';
   if (!telefon) { eroareEl.textContent = 'Introdu un numar de telefon.'; return; }
 
-  const r = await fetch(`/api/checkin?telefon=${encodeURIComponent(telefon)}`);
-  const data = await r.json();
-  if (!r.ok) { eroareEl.textContent = data.eroare; return; }
+  let r, data;
+  try {
+    r = await fetch(`/api/checkin?telefon=${encodeURIComponent(telefon)}`);
+    data = await r.json();
+  } catch {
+    eroareEl.textContent = 'Nu am conexiune la internet. Incearca din nou.';
+    return;
+  }
+  if (!r.ok) { eroareEl.textContent = (data.eroare || 'Eroare necunoscuta') + ' - cere ajutorul receptiei.'; return; }
 
   dateCheckin = data;
   aratatConfirmare();
@@ -106,6 +116,7 @@ function aratatConfirmare() {
   ascundeToate();
   document.getElementById('pas-confirmare').style.display = 'block';
   document.getElementById('salut-nume').textContent = `Hai, ca bine a fi, ${dateCheckin.pacient.prenume}!`;
+  document.getElementById('eroare-confirmare').textContent = '';
 
   if (dateCheckin.programare) {
     const ora = new Date(dateCheckin.programare.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
@@ -113,6 +124,7 @@ function aratatConfirmare() {
   } else {
     document.getElementById('detalii-programare').textContent = 'Nu am gasit o programare azi pentru acest numar.';
   }
+  document.getElementById('btn-confirma-prezenta').disabled = !dateCheckin.programare;
 
   const ab = dateCheckin.abonament;
   document.getElementById('sedinte-ramase').textContent = ab
@@ -120,14 +132,39 @@ function aratatConfirmare() {
     : '-';
 }
 
-async function trimiteConfirmareSedinta() {
-  if (!dateCheckin.programare) { alert('Nu exista o programare azi de confirmat.'); return; }
+function inapoiLaCautare() {
+  dateCheckin = null;
+  golesteTelefon();
+  ascundeToate();
+  document.getElementById('pas-cautare').style.display = 'block';
+}
 
-  await fetch(`/api/checkin/${dateCheckin.programare.id}/confirma`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({})
-  });
+async function trimiteConfirmareSedinta() {
+  if (!dateCheckin.programare) return;
+
+  const buton = document.getElementById('btn-confirma-prezenta');
+  const eroareEl = document.getElementById('eroare-confirmare');
+  eroareEl.textContent = '';
+  buton.disabled = true;
+
+  let r;
+  try {
+    r = await fetch(`/api/checkin/${dateCheckin.programare.id}/confirma`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+  } catch {
+    eroareEl.textContent = 'Nu am conexiune la internet. Incearca din nou.';
+    buton.disabled = false;
+    return;
+  }
+
+  if (!r.ok) {
+    eroareEl.textContent = 'Nu am putut confirma prezenta. Incearca din nou sau cere ajutorul receptiei.';
+    buton.disabled = false;
+    return;
+  }
 
   ascundeToate();
   document.getElementById('pas-gata').style.display = 'block';
