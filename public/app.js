@@ -372,9 +372,9 @@ function aratatFormularPacientNou() {
       <label>Nume</label>
       <input id="nou-nume" style="width:100%;margin-bottom:10px">
       <label>Telefon</label>
-      <input id="nou-telefon" style="width:100%;margin-bottom:10px" placeholder="07xxxxxxxx">
+      <input id="nou-telefon" type="tel" style="width:100%;margin-bottom:10px" placeholder="07xxxxxxxx">
       <label>Email</label>
-      <input id="nou-email" style="width:100%;margin-bottom:10px">
+      <input id="nou-email" type="email" style="width:100%;margin-bottom:10px">
       <label>Diagnostic</label>
       <input id="nou-diagnostic" style="width:100%;margin-bottom:14px">
 
@@ -731,9 +731,9 @@ function aratatFormularEditarePacient(id) {
           <label>Nume</label>
           <input id="edit-nume" value="${p.nume}" style="width:100%;margin-bottom:10px">
           <label>Telefon</label>
-          <input id="edit-telefon" value="${p.telefon || ''}" style="width:100%;margin-bottom:10px">
+          <input id="edit-telefon" type="tel" value="${p.telefon || ''}" style="width:100%;margin-bottom:10px">
           <label>Email</label>
-          <input id="edit-email" value="${p.email || ''}" style="width:100%;margin-bottom:10px">
+          <input id="edit-email" type="email" value="${p.email || ''}" style="width:100%;margin-bottom:10px">
           <label>Diagnostic</label>
           <input id="edit-diagnostic" value="${p.diagnostic || ''}" style="width:100%;margin-bottom:14px">
           <label>Abonament</label>
