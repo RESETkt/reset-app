@@ -198,23 +198,24 @@ th, td { text-align: left; }
 /* --- Grup mic de navigare saptamanala (calendar), stil consistent cu taburile de sus --- */
 .week-nav {
   display: flex;
-  gap: 2px;
+  gap: 1px;
   width: fit-content;
-  padding: 3px;
+  padding: 2px;
   background: #201f1c;
   border: 1px solid #3a3937;
-  border-radius: 9px;
+  border-radius: 7px;
 }
 .week-nav-btn {
   background: transparent;
   border: none;
   color: #c9c7bd;
-  padding: 6px 12px;
+  padding: 4px 8px;
   font-size: 12px;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 5px;
   cursor: pointer;
   font-family: inherit;
+  white-space: nowrap;
 }
 .week-nav-btn:hover { background: #33322e; color: #ece9e2; }
 .week-nav-btn.azi { color: #7fd9a8; font-weight: 700; }
