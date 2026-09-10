@@ -17,7 +17,8 @@ body {
 .card { background: #262624; border: 1px solid #3a3937; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.panel-cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.panel-cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+.panel-cols-2 > .card { margin-bottom: 0; display: flex; flex-direction: column; }
 @media (max-width: 760px) {
   .panel-cols-2 { grid-template-columns: 1fr; }
 }
@@ -46,8 +47,20 @@ body {
 }
 
 .top-nav button.activ { background: #ece9e2; color: #1e1e1d; }
-.top-nav-btn { flex: 1; text-align: center; padding: 10px 16px; font-size: 13.5px; font-weight: 600; }
-.top-nav-btn.activ { background: #ece9e2; color: #1e1e1d; }
+.top-nav-btn {
+  flex: none;
+  text-align: center;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #9a988e;
+  border-radius: 7px;
+}
+.top-nav-btn:hover { color: #ece9e2; background: #33322e; }
+.top-nav-btn.activ { background: #1f3626; color: #7fd9a8; border-color: #2e5240; }
+.top-nav-btn.activ:hover { background: #1f3626; }
 .logout-btn { cursor: pointer; color: #9a988e; padding: 4px; border-radius: 6px; flex-shrink: 0; } .logout-btn:hover { color: #ece9e2; background: #33322e; }
 h2 { font-size: 15px; margin: 0 0 12px; color: #ece9e2; }
 label { display: block; font-size: 12px; color: #9a988e; margin-bottom: 4px; }
@@ -147,8 +160,18 @@ th, td { text-align: left; }
 .desktop-topbar-row1 { display: flex; align-items: center; gap: 20px; padding: 10px 24px; }
 .desktop-topbar-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .desktop-topbar .global-search-wrap { flex: 0 1 260px; margin: 0; }
-.desktop-topbar-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-shrink: 0; }
-.desktop-tabs { display: flex; gap: 4px; padding: 0 24px 10px; }
+.desktop-topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+.desktop-topbar-actions .btn { padding: 6px 12px; font-size: 12.5px; }
+.desktop-tabs {
+  display: flex;
+  gap: 2px;
+  width: fit-content;
+  margin: 0 24px 10px;
+  padding: 3px;
+  background: #201f1c;
+  border: 1px solid #3a3937;
+  border-radius: 10px;
+}
 
 @media (min-width: 769px) {
   .mobile-topbar, .bottom-nav { display: none; }

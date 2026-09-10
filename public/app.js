@@ -1082,20 +1082,20 @@ async function incarcaCalendarSaptamana() {
   const dataCurenta = new Date(saptamanaCurenta + 'T00:00:00');
 
   let html = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="display:flex;gap:8px">
-          <button class="btn" onclick="schimbaSaptamana(-1)">&larr; Saptamana trecuta</button>
-          <button class="btn" onclick="saptamanaAceasta()">Azi</button>
-          <button class="btn" onclick="schimbaSaptamana(1)">Saptamana urmatoare &rarr;</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9a988e">
-          <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(-1)" title="Luna anterioara">&larr;</span>
-          <span style="min-width:90px;text-align:center">${LUNI_RO[dataCurenta.getMonth()]} ${dataCurenta.getFullYear()}</span>
-          <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(1)" title="Luna urmatoare">&rarr;</span>
-        </div>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9a988e">
+        <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(-1)" title="Luna anterioara">&larr;</span>
+        <span style="min-width:90px;text-align:center">${LUNI_RO[dataCurenta.getMonth()]} ${dataCurenta.getFullYear()}</span>
+        <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(1)" title="Luna urmatoare">&rarr;</span>
       </div>
-      <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn" onclick="schimbaSaptamana(-1)">&larr; Saptamana trecuta</button>
+        <button class="btn" onclick="saptamanaAceasta()">Azi</button>
+        <button class="btn" onclick="schimbaSaptamana(1)">Saptamana urmatoare &rarr;</button>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
+      </div>
     </div>
     <div class="card" style="padding:0;background:#ffffff;border-color:#dcdad4">
       <table style="border-collapse:collapse;table-layout:fixed;width:100%">
@@ -1464,40 +1464,42 @@ async function incarcaStatistici() {
   const acum = new Date();
   document.getElementById('panel-statistici').innerHTML = `
     <div class="panel-cols-2">
-      <div class="card">
-        <h2>Saptamana aceasta</h2>
-        <div class="grid-2">
-          <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_saptamana}</div></div>
-          <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_saptamana + ' lei' : '••• lei'}</div></div>
+      <div style="display:flex;flex-direction:column">
+        <div class="card">
+          <h2>Saptamana aceasta</h2>
+          <div class="grid-2">
+            <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_saptamana}</div></div>
+            <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_saptamana + ' lei' : '••• lei'}</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Luna aceasta</h2>
+          <div class="grid-2">
+            <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
+            <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_luna + ' lei' : '••• lei'}</div></div>
+          </div>
         </div>
       </div>
       <div class="card">
-        <h2>Luna aceasta</h2>
-        <div class="grid-2">
-          <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
-          <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_luna + ' lei' : '••• lei'}</div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h2 style="margin:0">Incasari dupa metoda (luna aceasta)</h2>
+          <button class="btn" onclick="${sumeDeblocate ? 'blocheazaSume()' : 'cereParolaSume()'}">${sumeDeblocate ? 'Blocheaza sumele' : 'Arata sumele'}</button>
         </div>
-      </div>
-    </div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h2 style="margin:0">Incasari dupa metoda (luna aceasta)</h2>
-        <button class="btn" onclick="${sumeDeblocate ? 'blocheazaSume()' : 'cereParolaSume()'}">${sumeDeblocate ? 'Blocheaza sumele' : 'Arata sumele'}</button>
-      </div>
-      ${sumeDeblocate
-        ? (s.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${m.total} lei</div>`).join('') || '<div style="font-size:13px;color:#9a988e">Fara plati inregistrate.</div>')
-        : '<div style="font-size:13px;color:#9a988e">Sumele sunt ascunse. Apasa "Arata sumele" pentru a le vedea.</div>'}
-      <div id="eroare-parola-sume" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+        ${sumeDeblocate
+          ? (s.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${m.total} lei</div>`).join('') || '<div style="font-size:13px;color:#9a988e">Fara plati inregistrate.</div>')
+          : '<div style="font-size:13px;color:#9a988e">Sumele sunt ascunse. Apasa "Arata sumele" pentru a le vedea.</div>'}
+        <div id="eroare-parola-sume" style="color:#e08585;font-size:12px;margin-top:8px"></div>
 
-      <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
-        <div style="font-weight:500;font-size:13px;margin-bottom:8px">Descarca raport PDF</div>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <select id="pdf-luna" style="flex:1">
-            ${LUNI_RO_STATS.map((l, i) => `<option value="${i + 1}" ${i === acum.getMonth() ? 'selected' : ''}>${l}</option>`).join('')}
-          </select>
-          <input id="pdf-an" type="number" value="${acum.getFullYear()}" style="width:90px">
+        <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
+          <div style="font-weight:500;font-size:13px;margin-bottom:8px">Descarca raport PDF</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <select id="pdf-luna" style="flex:1">
+              ${LUNI_RO_STATS.map((l, i) => `<option value="${i + 1}" ${i === acum.getMonth() ? 'selected' : ''}>${l}</option>`).join('')}
+            </select>
+            <input id="pdf-an" type="number" value="${acum.getFullYear()}" style="width:90px">
+          </div>
+          <button class="btn secundar" style="width:100%" onclick="descarcaPdfStatistici()">Descarca PDF</button>
         </div>
-        <button class="btn secundar" style="width:100%" onclick="descarcaPdfStatistici()">Descarca PDF</button>
       </div>
     </div>
   `;
