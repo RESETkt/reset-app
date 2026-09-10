@@ -37,16 +37,27 @@ router.post('/:programareId/confirma', async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const existent = await client.query(`SELECT status, abonament_id FROM programari WHERE id = $1`, [req.params.programareId]);
+    const existent = await client.query(`SELECT status, pacient_id, abonament_id FROM programari WHERE id = $1`, [req.params.programareId]);
     const eraDejaPrezent = existent.rows[0]?.status === 'prezent';
+    // Programarea poate fi facuta inainte ca pacientul sa aiba un abonament (adaugat ulterior din
+    // editarea pacientului) - recalculam abonamentul activ curent daca cel retinut pe programare
+    // e gol, ca sedinta sa se contorizeze corect in loc sa se piarda.
+    let abonament_id = existent.rows[0]?.abonament_id || null;
+    if (!abonament_id && existent.rows[0]?.pacient_id) {
+      const activ = await client.query(
+        `SELECT id FROM abonamente WHERE pacient_id = $1 AND activ = true ORDER BY creat_la DESC LIMIT 1`,
+        [existent.rows[0].pacient_id]
+      );
+      abonament_id = activ.rows[0]?.id || null;
+    }
     const prog = await client.query(
-      `UPDATE programari SET status='prezent', semnatura_confirmare=$1, confirmat_la=now(), prezent_marcat_la=now() WHERE id=$2 RETURNING *`,
-      [semnatura_svg, req.params.programareId]
+      `UPDATE programari SET status='prezent', semnatura_confirmare=$1, confirmat_la=now(), prezent_marcat_la=now(), abonament_id=$2 WHERE id=$3 RETURNING *`,
+      [semnatura_svg, abonament_id, req.params.programareId]
     );
-    if (!eraDejaPrezent && prog.rows[0]?.abonament_id) {
+    if (!eraDejaPrezent && abonament_id) {
       await client.query(
         `UPDATE abonamente SET sedinte_efectuate = sedinte_efectuate + 1 WHERE id = $1`,
-        [prog.rows[0].abonament_id]
+        [abonament_id]
       );
     }
     await client.query('COMMIT');
