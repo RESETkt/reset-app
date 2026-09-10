@@ -32,24 +32,24 @@
 <div id="app" class="app" style="display:none">
   <div class="mobile-topbar">
     <div class="mobile-topbar-header">
-      <div style="display:flex;align-items:center;gap:10px">
-        <img src="logo-icon.png" alt="Reset" style="height:36px">
-        <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px">RESET</span>
+      <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">
+        <img src="logo-icon.png" alt="Reset" style="height:26px;flex-shrink:0">
+        <span style="font-size:17px;font-weight:700;color:#ffffff;letter-spacing:0.5px;flex-shrink:0">RESET</span>
+        <div class="global-search-wrap">
+          <input id="global-cautare-mobil" type="text" placeholder="Cauta pacient..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, true)" onkeydown="cautareGlobalaTasta(event, true)">
+          <div id="global-cautare-rezultate-mobil" class="global-cautare-dropdown"></div>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:14px">
-        <svg class="topbar-icon-btn" onclick="aratatFormularPacientNou()" title="Pacient nou" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <div style="display:flex;align-items:center;gap:14px;flex-shrink:0">
+        <svg class="topbar-icon-btn" onclick="aratatFormularPacientNou()" title="Pacient nou" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
-        <svg class="topbar-icon-btn" onclick="delogare()" title="Delogare" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="topbar-icon-btn" onclick="delogare()" title="Delogare" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
           <line x1="12" y1="2" x2="12" y2="12"></line>
         </svg>
       </div>
-    </div>
-    <div class="global-search-wrap">
-      <input id="global-cautare-mobil" type="text" placeholder="Cauta pacient dupa nume..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, true)" onkeydown="cautareGlobalaTasta(event, true)">
-      <div id="global-cautare-rezultate-mobil" class="global-cautare-dropdown"></div>
     </div>
   </div>
 
