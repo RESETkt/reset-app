@@ -68,20 +68,20 @@ body {
 .top-nav-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: none;
   text-align: center;
   white-space: nowrap;
-  padding: 10px 20px;
-  font-size: 13.5px;
-  font-weight: 700;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
   background: #262624;
   border: 1px solid #3a3937;
   color: #b0aea5;
-  border-radius: 10px;
+  border-radius: 8px;
   transition: background .12s, color .12s, border-color .12s, box-shadow .12s;
 }
-.top-nav-btn svg { flex-shrink: 0; }
+.top-nav-btn svg { display: none; }
 .top-nav-btn:hover { color: #ece9e2; background: #33322e; border-color: #45443f; }
 .top-nav-btn.activ { background: #7fd9a8; color: #12251a; border-color: #7fd9a8; box-shadow: 0 4px 14px rgba(127,217,168,.28); }
 .top-nav-btn.activ:hover { background: #7fd9a8; color: #12251a; }
@@ -190,9 +190,9 @@ th, td { text-align: left; }
 .desktop-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 6px;
   width: fit-content;
-  margin: 0 24px 14px;
+  margin: 0 24px 12px;
 }
 
 /* --- Grup mic de navigare saptamanala (calendar), stil consistent cu taburile de sus --- */
