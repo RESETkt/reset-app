@@ -21,6 +21,11 @@ async function login() {
   aratatApp();
 }
 
+function ajusteazaInaltimeTopbar() {
+  const bara = document.querySelector('.desktop-topbar');
+  if (bara) document.documentElement.style.setProperty('--topbar-h', bara.offsetHeight + 'px');
+}
+
 function aratatApp() {
   document.getElementById('login').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
@@ -28,6 +33,8 @@ function aratatApp() {
   actualizeazaNotificari();
   initLive();
   initPush();
+  ajusteazaInaltimeTopbar();
+  window.addEventListener('resize', ajusteazaInaltimeTopbar);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     actualizeazaNotificari();

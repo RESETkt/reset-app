@@ -225,7 +225,7 @@ th, td { text-align: left; }
   .mobile-topbar, .bottom-nav { display: none; }
   .desktop-topbar { display: block; }
   .main {
-    padding-top: calc(106px + env(safe-area-inset-top));
+    padding-top: calc(var(--topbar-h, 94px) + 12px + env(safe-area-inset-top));
     padding-bottom: 20px;
     padding-left: 24px;
     padding-right: 24px;
