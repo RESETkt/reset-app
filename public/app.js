@@ -1096,7 +1096,7 @@ async function incarcaCalendarSaptamana() {
         </div>
       </div>
       <div style="display:flex;justify-content:flex-end">
-        <button class="btn" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
+        <button class="btn btn-adauga" onclick="aratatFormularProgramareNoua(null, null)">+ Programare noua</button>
       </div>
     </div>
     <div class="card" style="padding:0;background:#ffffff;border-color:#dcdad4">
@@ -1188,7 +1188,7 @@ async function incarcaCalendarZi() {
       <button class="btn day-nav-arrow" onclick="schimbaZiuaMobil(1)">&rarr;</button>
     </div>
     <input type="date" class="day-nav-date-input" value="${ziuaMobilCurenta}" onchange="schimbaZiuaMobilData(this.value)" onclick="this.showPicker && this.showPicker()">
-    <button class="btn" style="width:100%;margin:10px 0" onclick="aratatFormularProgramareNoua('${ziuaMobilCurenta}', null)">+ Programare noua</button>
+    <button class="btn btn-adauga" style="width:100%;margin:10px 0" onclick="aratatFormularProgramareNoua('${ziuaMobilCurenta}', null)">+ Programare noua</button>
     ${esteWeekendZi
       ? '<div class="card" style="text-align:center;color:#9a988e;font-size:13px">Cabinetul este inchis in weekend.</div>'
       : `<div class="day-view">

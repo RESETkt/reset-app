@@ -30,7 +30,7 @@ body {
   background: #1f8a7a;
   color: #ffffff;
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -43,6 +43,11 @@ body {
 .btn.secundar { background: #1e1e1d; border-color: #45443f; color: #ece9e2; }
 .btn.secundar:hover { background: #2a2926; border-color: #45443f; }
 .btn.secundar:active { background: #2a2926; border-color: #45443f; }
+
+/* --- Butoanele de "adauga nou" (Pacient nou, Programare noua) - culoare separata de teal/verde, tot din logo RESET --- */
+.btn.btn-adauga { background: #ea532f; border-color: #c23f22; color: #ffffff; }
+.btn.btn-adauga:hover { background: #f0673f; border-color: #d1522f; }
+.btn.btn-adauga:active { background: #f39c78; border-color: #e0865f; color: #4a1f0d; }
 .badge { display: inline-block; padding: 3px 10px; border-radius: 8px; font-size: 12px; background: #1f3626; color: #7fd9a8; }
 .top-nav { display: flex; gap: 8px; margin-bottom: 16px; }
 .btn-notificari { position: relative; }
@@ -171,8 +176,8 @@ th, td { text-align: left; }
 .desktop-topbar {
   position: fixed;
   top: 0; left: 0; right: 0;
-  background: #262624;
-  border-bottom: 1px solid #3a3937;
+  background: #33322e;
+  border-bottom: 1px solid #45443f;
   padding-top: env(safe-area-inset-top);
   z-index: 30;
 }
