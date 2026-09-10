@@ -87,12 +87,12 @@ th, td { text-align: left; }
 
 /* --- Cautare globala pacienti (sidebar desktop + topbar mobil): bara mereu vizibila, sub logo --- */
 .global-search-wrap { position: relative; margin-bottom: 16px; }
-.global-search-icon { display: block; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #6f6d64; pointer-events: none; }
 .global-search-wrap input {
-  width: 100%; padding-left: 32px;
-  background: #1a1a19; border: 1px solid #45443f;
+  width: 100%; margin-bottom: 0; padding: 9px 12px;
+  border-radius: 8px; background: #1a1a19; border: 1px solid #45443f;
 }
 .global-search-wrap input:focus { border-color: #6b8f7f; outline: none; }
+.global-search-wrap input::placeholder { color: #6f6d64; }
 .global-cautare-dropdown {
   display: none;
   position: absolute; top: calc(100% + 4px); left: 0; right: 0;
