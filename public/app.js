@@ -1233,10 +1233,6 @@ function selecteazaPacientProgramare(id, nume) {
 
 function inchideModalProgramare() {
   document.getElementById('modal-container').innerHTML = '';
-  if (notificariPollInterval) {
-    clearInterval(notificariPollInterval);
-    notificariPollInterval = null;
-  }
 }
 
 async function salveazaProgramareNoua() {
