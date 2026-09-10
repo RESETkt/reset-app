@@ -5,6 +5,7 @@ const ruleazaInstalat = window.navigator.standalone === true
   || window.matchMedia('(display-mode: standalone)').matches;
 
 function reincarcaAplicatia() {
+  if ((telefonTastat || dateCheckin) && !confirm('Reincarci aplicatia? Se pierde ce e completat acum pe ecran.')) return;
   location.reload();
 }
 
@@ -28,16 +29,19 @@ initInstalare();
 
 // Reseteaza ecranul daca cineva incepe sa introduca un numar si pleaca fara sa termine,
 // ca urmatorul pacient sa gaseasca mereu tastatura goala, nu un ecran pe jumatate completat.
+// Pe ecranul de confirmare (nume + sedinte ramase ale altcuiva) timpul e mai scurt, ca datele
+// personale sa nu ramana vizibile prea mult daca pacientul pleaca fara sa apese Confirma.
 let timerInactivitate = null;
 function reseteazaTimerInactivitate() {
   clearTimeout(timerInactivitate);
   if (telefonTastat === '' && document.getElementById('pas-cautare').style.display !== 'none') return;
+  const peConfirmare = document.getElementById('pas-confirmare').style.display !== 'none';
   timerInactivitate = setTimeout(() => {
     dateCheckin = null;
     golesteTelefon();
     ascundeToate();
     document.getElementById('pas-cautare').style.display = 'block';
-  }, 30000);
+  }, peConfirmare ? 12000 : 30000);
 }
 document.addEventListener('click', reseteazaTimerInactivitate);
 document.addEventListener('touchstart', reseteazaTimerInactivitate);
