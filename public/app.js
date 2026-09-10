@@ -254,11 +254,21 @@ async function apel(cale, optiuni = {}) {
   return r.json();
 }
 
+let cautarePacientiTimeout = null;
+let cautarePacientiToken = 0;
+
+function cautaPacientiDebounced(q) {
+  clearTimeout(cautarePacientiTimeout);
+  cautarePacientiTimeout = setTimeout(() => cautaPacienti(q), 150);
+}
+
 async function cautaPacienti(q) {
   const lista = document.getElementById('lista-pacienti');
   if (!lista) return;
+  const cerereId = ++cautarePacientiToken;
   const arhivati = document.getElementById('toggle-arhivati')?.checked ? '1' : '0';
   const rows = await apel(`/api/pacienti?q=${encodeURIComponent(q)}&arhivati=${arhivati}`);
+  if (cerereId !== cautarePacientiToken) return;
   lista.innerHTML = rows.map(p => `
     <div class="patient-row" onclick="deschideFisa('${p.id}')">
       <div class="nume">${p.nume} ${p.prenume}</div>
@@ -287,7 +297,7 @@ function aratatListaPacienti() {
   document.getElementById('panel-fisa').innerHTML = `
     <div class="card" style="max-width:460px">
       <h2>Pacienti</h2>
-      <input id="cautare" placeholder="Cauta pacient" oninput="cautaPacienti(this.value)" style="width:100%;margin-bottom:10px" autofocus>
+      <input id="cautare" placeholder="Cauta pacient" oninput="cautaPacientiDebounced(this.value)" style="width:100%;margin-bottom:10px" autofocus>
       <div id="lista-pacienti"></div>
       <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:#9a988e;cursor:pointer">
         <input type="checkbox" id="toggle-arhivati" onchange="cautaPacienti(document.getElementById('cautare')?.value || '')" style="width:auto">
