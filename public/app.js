@@ -1135,7 +1135,7 @@ function randPacientRand(p) {
       <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoareStatusDeschis[p.status] || '#2b2a26'};font-weight:600" onclick="toggleMeniuStatus('${p.id}', event)">${p.prenume}</span>
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
       <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
-        <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="marcheaza('${p.id}','prezent','${p.prenume}',${p.total_sedinte ?? 'null'},${p.sedinte_efectuate ?? 'null'},'${p.status}')">Prezent</div>
+        <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="aratatFormularPrezenta('${p.id}','${p.prenume}',${p.total_sedinte ?? 'null'},${p.sedinte_efectuate ?? 'null'},'${p.status}')">Prezent</div>
         <div style="padding:7px 12px;font-size:12px;color:#c14343;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="marcheaza('${p.id}','absent')">Absent</div>
       </div>
       <div id="${tooltipId}" class="pacient-tooltip">
@@ -1267,21 +1267,41 @@ const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii ===
   incarcaCalendarSaptamana();
 }
 
-async function marcheaza(id, status, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
-  if (status === 'prezent') {
-    const exercitii = prompt('Exercitii facute azi (pe scurt):') || '';
-    const observatii = prompt('Observatii:') || '';
-    await apel(`/api/programari/${id}/prezent`, { method: 'PATCH', body: JSON.stringify({ exercitii, observatii }) });
+async function marcheaza(id, status) {
+  await apel(`/api/programari/${id}/${status}`, { method: 'PATCH' });
+  incarcaCalendarSaptamana();
+}
 
-    if (statusCurent !== 'prezent' && totalSedinte != null && sedinteEfectuate != null) {
-      const ramase = totalSedinte - (sedinteEfectuate + 1);
-      if (ramase === 2) {
-        aratatPopupSedinteRamase(prenume);
-      }
-    }
+function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:380px;width:90%">
+        <h2>Prezenta - ${prenume}</h2>
+        <label>Exercitii</label>
+        <textarea id="prezenta-exercitii" rows="3" style="width:100%;margin-bottom:10px"></textarea>
+        <label>Cum s-a simtit / Observatii</label>
+        <textarea id="prezenta-observatii" rows="3" style="width:100%;margin-bottom:14px"></textarea>
+        <button class="btn" style="width:100%" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salveaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
+  const exercitii = document.getElementById('prezenta-exercitii').value.trim();
+  const observatii = document.getElementById('prezenta-observatii').value.trim();
+  await apel(`/api/programari/${id}/prezent`, { method: 'PATCH', body: JSON.stringify({ exercitii, observatii }) });
+
+  const areMaiPutinDe3 = statusCurent !== 'prezent' && totalSedinte != null && sedinteEfectuate != null
+    && totalSedinte - (sedinteEfectuate + 1) === 2;
+  if (areMaiPutinDe3) {
+    aratatPopupSedinteRamase(prenume);
   } else {
-    await apel(`/api/programari/${id}/absent`, { method: 'PATCH' });
+    inchideModalProgramare();
   }
+
   incarcaCalendarSaptamana();
 }
 
