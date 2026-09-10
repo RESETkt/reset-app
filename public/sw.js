@@ -41,6 +41,9 @@ self.addEventListener('push', e => {
       body: date.body || '',
       icon: '/icon-192.png',
       badge: '/logo-icon.png',
+      // Acelasi tag = o singura notificare pe ecran, care se inlocuieste, nu se aduna una peste alta
+      tag: 'reset-notificari',
+      renotify: true,
       data: { url: date.url || '/index.html' }
     })
   );
