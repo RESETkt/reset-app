@@ -40,7 +40,7 @@ self.addEventListener('push', e => {
     self.registration.showNotification(date.title || 'Reset', {
       body: date.body || '',
       icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      badge: '/logo-icon.png',
       data: { url: date.url || '/index.html' }
     })
   );
