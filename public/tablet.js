@@ -9,6 +9,19 @@ function reincarcaAplicatia() {
   location.reload();
 }
 
+function comutaTema() {
+  const zi = document.documentElement.classList.toggle('zi');
+  localStorage.setItem('reset-tablet-tema', zi ? 'zi' : 'noapte');
+  actualizeazaIconTema();
+}
+
+function actualizeazaIconTema() {
+  const zi = document.documentElement.classList.contains('zi');
+  const buton = document.getElementById('buton-tema');
+  buton.textContent = zi ? '☾' : '☀';
+  buton.title = zi ? 'Comuta in mod noapte' : 'Comuta in mod zi';
+}
+
 function ascundeBannerInstalare() {
   document.getElementById('banner-instalare').style.display = 'none';
   localStorage.setItem('reset-tablet-banner-ascuns', '1');
@@ -26,6 +39,7 @@ if ('serviceWorker' in navigator) {
 }
 
 initInstalare();
+actualizeazaIconTema();
 
 // Reseteaza ecranul daca cineva incepe sa introduca un numar si pleaca fara sa termine,
 // ca urmatorul pacient sa gaseasca mereu tastatura goala, nu un ecran pe jumatate completat.

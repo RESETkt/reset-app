@@ -13,37 +13,84 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="tablet-manifest.json">
 <style>
+  :root {
+    --bg: #1e1e1d;
+    --card-bg: #262624;
+    --text: #ece9e2;
+    --text-sub: #9a988e;
+    --border: #45443f;
+    --sunken-bg: #1e1e1d;
+    --btn-bg: #ece9e2;
+    --btn-text: #1e1e1d;
+    --btn-secundar-bg: #1e1e1d;
+    --btn-secundar-border: #45443f;
+    --btn-secundar-text: #ece9e2;
+    --tastatura-secundar-bg: #34332f;
+    --tastatura-secundar-border: #57554e;
+    --principal-bg: #2b6cb0;
+    --principal-text: #ffffff;
+    --sugestie-bg: #1f3634;
+    --sugestie-border: #2d5049;
+    --icon-btn-bg: #262624;
+    --eroare: #b23b3b;
+  }
+  :root.zi {
+    --bg: #ece9e2;
+    --card-bg: #ffffff;
+    --text: #262624;
+    --text-sub: #7a786f;
+    --border: #ddd9cf;
+    --sunken-bg: #f2f0ea;
+    --btn-bg: #262624;
+    --btn-text: #ece9e2;
+    --btn-secundar-bg: #f2f0ea;
+    --btn-secundar-border: #ddd9cf;
+    --btn-secundar-text: #262624;
+    --tastatura-secundar-bg: #ddd9cf;
+    --tastatura-secundar-border: #c7c2b4;
+    --sugestie-bg: #d9f0ec;
+    --sugestie-border: #9ed4c8;
+    --icon-btn-bg: #ffffff;
+  }
   * { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   html, body { height: 100%; overscroll-behavior: none; touch-action: manipulation; }
   input { -webkit-user-select: text; user-select: text; }
-  body { font-family: -apple-system, sans-serif; background: #1e1e1d; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-top: calc(90px + env(safe-area-inset-top)); padding-bottom: env(safe-area-inset-bottom); overflow: hidden; }
-  .card { background: #262624; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); color: #ece9e2; }
-  input { width: 100%; padding: 10px; border: 1px solid #45443f; border-radius: 8px; font-size: 15px; margin-bottom: 10px; background: #1e1e1d; color: #ece9e2; }
-  button { -webkit-appearance: none; appearance: none; width: 100%; padding: 12px; border-radius: 8px; border: none; background: #ece9e2; color: #1e1e1d; font-size: 15px; cursor: pointer; font-weight: 500; text-align: center; }
+  body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-top: calc(90px + env(safe-area-inset-top)); padding-bottom: env(safe-area-inset-bottom); overflow: hidden; transition: background-color .2s; }
+  .card { background: var(--card-bg); border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); color: var(--text); transition: background-color .2s, color .2s; }
+  input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; margin-bottom: 10px; background: var(--sunken-bg); color: var(--text); }
+  button { -webkit-appearance: none; appearance: none; width: 100%; padding: 12px; border-radius: 8px; border: none; background: var(--btn-bg); color: var(--btn-text); font-size: 15px; cursor: pointer; font-weight: 500; text-align: center; }
   button:disabled { opacity: 0.35; cursor: not-allowed; }
-  button.secundar { background: #1e1e1d; border: 1px solid #45443f; color: #ece9e2; margin-top: 8px; }
-  button.principal { background: #2b6cb0; color: #ffffff; font-weight: 600; }
-  h2 { font-size: 24px; text-align: center; margin: 0 0 8px; color: #ece9e2; }
-  .sub { font-size: 16px; color: #9a988e; text-align: center; margin-bottom: 16px; }
-  .metric { background: #1e1e1d; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 16px; }
-  .metric .label { font-size: 12px; color: #9a988e; }
-  .metric .value { font-size: 26px; font-weight: 600; margin-top: 4px; color: #ece9e2; }
-  .afisaj-telefon { font-size: 26px; text-align: center; letter-spacing: 3px; padding: 12px; background: #1e1e1d; border-radius: 8px; margin-bottom: 10px; min-height: 24px; border: 1px solid #45443f; }
+  button.secundar { background: var(--btn-secundar-bg); border: 1px solid var(--btn-secundar-border); color: var(--btn-secundar-text); margin-top: 8px; }
+  button.principal { background: var(--principal-bg); color: var(--principal-text); font-weight: 600; }
+  h2 { font-size: 24px; text-align: center; margin: 0 0 8px; color: var(--text); }
+  .sub { font-size: 16px; color: var(--text-sub); text-align: center; margin-bottom: 16px; }
+  .metric { background: var(--sunken-bg); border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 16px; }
+  .metric .label { font-size: 12px; color: var(--text-sub); }
+  .metric .value { font-size: 26px; font-weight: 600; margin-top: 4px; color: var(--text); }
+  .afisaj-telefon { font-size: 26px; text-align: center; letter-spacing: 3px; padding: 12px; background: var(--sunken-bg); border-radius: 8px; margin-bottom: 10px; min-height: 24px; border: 1px solid var(--border); color: var(--text); }
   .tastatura { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
   .tastatura button { padding: 24px; font-size: 24px; margin-top: 0; min-width: 0; }
-  .tastatura button.principal { background: #2b6cb0; color: #ffffff; font-size: 18px; font-weight: 600; }
-  .tastatura button.secundar { background: #34332f; border: 1px solid #57554e; font-size: 22px; }
+  .tastatura button.principal { font-size: 18px; }
+  .tastatura button.secundar { background: var(--tastatura-secundar-bg); border: 1px solid var(--tastatura-secundar-border); color: var(--text); font-size: 22px; }
   .sugestii { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
-  .sugestie-btn { display: inline-block; width: auto; padding: 16px 22px; background: #1f3634; border: 2px solid #2d5049; border-radius: 12px; font-size: 20px; font-weight: 600; }
-  .buton-reincarcare { position: fixed; top: calc(24px + env(safe-area-inset-top)); right: 24px; width: 44px; height: 44px; border-radius: 50%; background: #262624; border: 1px solid #45443f; color: #9a988e; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
-  .banner-instalare { position: fixed; bottom: 0; left: 0; right: 0; background: #262624; border-top: 1px solid #45443f; color: #ece9e2; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); font-size: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 20; }
+  .sugestie-btn { display: inline-block; width: auto; padding: 16px 22px; background: var(--sugestie-bg); border: 2px solid var(--sugestie-border); border-radius: 12px; font-size: 20px; font-weight: 600; color: var(--text); }
+  .buton-reincarcare, .buton-tema { position: fixed; top: calc(24px + env(safe-area-inset-top)); width: 44px; height: 44px; border-radius: 50%; background: var(--icon-btn-bg); border: 1px solid var(--border); color: var(--text-sub); font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: background-color .2s, color .2s, border-color .2s; }
+  .buton-reincarcare { right: 24px; }
+  .buton-tema { left: 24px; }
+  .banner-instalare { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border); color: var(--text); padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); font-size: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 20; }
   .banner-instalare .txt { flex: 1; line-height: 1.4; }
-  .banner-instalare .txt b { color: #ece9e2; }
+  .banner-instalare .txt b { color: var(--text); }
   .banner-instalare button { width: auto; padding: 8px 14px; font-size: 13px; }
 </style>
+<script>
+  try {
+    if (localStorage.getItem('reset-tablet-tema') === 'zi') document.documentElement.classList.add('zi');
+  } catch (e) {}
+</script>
 </head>
 <body>
 
+<span class="buton-tema" id="buton-tema" onclick="comutaTema()" title="Schimba tema">&#9728;</span>
 <span class="buton-reincarcare" onclick="reincarcaAplicatia()" title="Reincarca">&#8635;</span>
 
 <div style="position:fixed;top:calc(24px + env(safe-area-inset-top));left:50%;transform:translateX(-50%)">
@@ -69,7 +116,7 @@
     <button onclick="apasaCifra('0')">0</button>
     <button class="principal" id="btn-continua" onclick="cautaProgramare()" disabled>Continua</button>
   </div>
-  <div id="eroare-cautare" style="color:#b23b3b;font-size:12px;margin-top:8px;text-align:center"></div>
+  <div id="eroare-cautare" style="color:var(--eroare);font-size:12px;margin-top:8px;text-align:center"></div>
 </div>
 
 <div class="card" id="pas-confirmare" style="display:none">
@@ -82,7 +129,7 @@
   <div class="sub" style="margin-bottom:6px">Apasa pentru a confirma prezenta la sedinta de azi</div>
   <button class="principal" id="btn-confirma-prezenta" onclick="trimiteConfirmareSedinta()">Confirma prezenta</button>
   <button class="secundar" onclick="inapoiLaCautare()">Nu sunt eu / Cauta alt numar</button>
-  <div id="eroare-confirmare" style="color:#b23b3b;font-size:12px;margin-top:8px;text-align:center"></div>
+  <div id="eroare-confirmare" style="color:var(--eroare);font-size:12px;margin-top:8px;text-align:center"></div>
 </div>
 
 <div class="card" id="pas-gata" style="display:none">
