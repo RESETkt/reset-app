@@ -59,11 +59,11 @@
         <img src="logo-icon.png" alt="Reset" style="height:28px">
         <span style="font-size:17px;font-weight:700;color:#ffffff;letter-spacing:0.5px">RESET</span>
       </div>
-      <div class="global-search-wrap">
-        <input id="global-cautare" type="text" placeholder="Cauta pacient dupa nume..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, false)" onkeydown="cautareGlobalaTasta(event, false)">
-        <div id="global-cautare-rezultate" class="global-cautare-dropdown"></div>
-      </div>
       <div class="desktop-topbar-actions">
+        <div class="global-search-wrap">
+          <input id="global-cautare" type="text" placeholder="Cauta pacient dupa nume..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, false)" onkeydown="cautareGlobalaTasta(event, false)">
+          <div id="global-cautare-rezultate" class="global-cautare-dropdown"></div>
+        </div>
         <button id="btn-notificari" class="btn btn-notificari" onclick="deschideNotificari()">
           Notificari
           <span id="badge-notificari" class="badge-notif" style="display:none">0</span>
