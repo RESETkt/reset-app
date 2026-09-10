@@ -1292,7 +1292,6 @@ const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii ===
 }
 
 async function marcheaza(id, status) {
-  if (status === 'absent' && !confirm('Marchezi acest pacient absent?')) return;
   await apel(`/api/programari/${id}/${status}`, { method: 'PATCH' });
   incarcaCalendarSaptamana();
 }
