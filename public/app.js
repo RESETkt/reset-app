@@ -1307,6 +1307,25 @@ async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
         <label>Data</label>
         <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataPresetata || dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
 
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="prog-recurenta" style="width:auto" onchange="toggleRecurentaProgramare()">
+          Repeta in fiecare saptamana
+        </label>
+
+        <div id="prog-recurenta-detalii" style="display:none;margin-top:8px">
+          <label>In zilele</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+            ${ZILE_SAPTAMANA.map((z, i) => `
+              <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
+                <input type="checkbox" class="prog-recurenta-zi" value="${i + 1}" style="width:auto">
+                ${z}
+              </label>
+            `).join('')}
+          </div>
+          <label>Pana la data (inclusiv)</label>
+          <input id="prog-recurenta-pana" type="date" style="width:100%;margin-bottom:10px" onclick="this.showPicker && this.showPicker()">
+        </div>
+
         <label>Ora</label>
         <select id="prog-ora" style="width:100%;margin-bottom:14px">
           ${ORE_DISPONIBILE.map(o => `<option value="${o}" ${o === oraPresetata ? 'selected' : ''}>${o}</option>`).join('')}
@@ -1348,6 +1367,25 @@ function inchideModalProgramare() {
   document.getElementById('modal-container').innerHTML = '';
 }
 
+function toggleRecurentaProgramare() {
+  const activ = document.getElementById('prog-recurenta').checked;
+  document.getElementById('prog-recurenta-detalii').style.display = activ ? 'block' : 'none';
+}
+
+// Genereaza sirul de date (YYYY-MM-DD) intre start si sfarsit (inclusiv) care cad in zileSaptamana (1=Luni..5=Vineri)
+function genereazaDateRecurente(start, sfarsit, zileSaptamana) {
+  const rezultat = [];
+  const curent = new Date(start + 'T00:00:00');
+  const limita = new Date(sfarsit + 'T00:00:00');
+  while (curent <= limita) {
+    if (zileSaptamana.includes(curent.getDay())) {
+      rezultat.push(dataLocala(curent));
+    }
+    curent.setDate(curent.getDate() + 1);
+  }
+  return rezultat;
+}
+
 async function salveazaProgramareNoua() {
   const pacient_id = document.getElementById('prog-pacient-id').value;
   const kineto_id = document.getElementById('prog-kineto').value || null;
@@ -1366,22 +1404,54 @@ async function salveazaProgramareNoua() {
   }
 const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii === 0 || ziSaptamanii === 6) { eroareEl.textContent = 'Nu se pot face programari sambata sau duminica.'; return; }
 
-  const data_ora = `${data} ${ora}:00`;
+  const recurenta = document.getElementById('prog-recurenta').checked;
+  let dateDeCreat = [data];
+
+  if (recurenta) {
+    const zileSelectate = Array.from(document.querySelectorAll('.prog-recurenta-zi:checked')).map(el => Number(el.value));
+    const panaLa = document.getElementById('prog-recurenta-pana').value;
+    if (!zileSelectate.length) {
+      eroareEl.textContent = 'Bifeaza cel putin o zi din saptamana.';
+      return;
+    }
+    if (!panaLa) {
+      eroareEl.textContent = 'Completeaza pana la ce data se repeta programarea.';
+      return;
+    }
+    if (panaLa < data) {
+      eroareEl.textContent = '"Pana la data" trebuie sa fie dupa data de inceput.';
+      return;
+    }
+    dateDeCreat = genereazaDateRecurente(data, panaLa, zileSelectate);
+  }
+
   const buton = event.target;
   buton.disabled = true;
-  const rezultat = await apel('/api/programari', {
-    method: 'POST',
-    body: JSON.stringify({ pacient_id, kineto_id, data_ora })
-  });
 
-  if (rezultat.eroare) {
-    eroareEl.textContent = rezultat.eroare;
+  const esuate = [];
+  for (const zi of dateDeCreat) {
+    const data_ora = `${zi} ${ora}:00`;
+    const rezultat = await apel('/api/programari', {
+      method: 'POST',
+      body: JSON.stringify({ pacient_id, kineto_id, data_ora })
+    });
+    if (rezultat.eroare) {
+      esuate.push(`${zi}: ${rezultat.eroare}`);
+    }
+  }
+
+  if (esuate.length === dateDeCreat.length) {
+    eroareEl.textContent = esuate[0];
     buton.disabled = false;
     return;
   }
 
   inchideModalProgramare();
   incarcaCalendarSaptamana();
+
+  if (esuate.length) {
+    alert(`${dateDeCreat.length - esuate.length} programari create. ${esuate.length} nu au putut fi create:\n${esuate.join('\n')}`);
+  }
 }
 
 async function marcheaza(id, status) {
