@@ -53,6 +53,30 @@ CREATE TABLE IF NOT EXISTS plati (
   data_plata timestamptz DEFAULT now()
 );
 
+-- Cheltuielile cabinetului (chirie, utilitati, salarii, materiale etc.) - vizibile doar
+-- pentru admin, ca sa avem si partea de profit, nu doar de incasari.
+CREATE TABLE IF NOT EXISTS cheltuieli (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  categorie text NOT NULL,
+  suma numeric(10,2) NOT NULL,
+  descriere text,
+  data_cheltuiala date NOT NULL DEFAULT CURRENT_DATE,
+  creat_la timestamptz DEFAULT now()
+);
+
+-- Sabloane de cheltuieli recurente: cele cu suma fixa (chirie, salarii) se genereaza automat
+-- in fiecare luna; cele variabile (utilitati) doar semnaleaza ca trebuie introdusa suma reala.
+CREATE TABLE IF NOT EXISTS cheltuieli_recurente (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  categorie text NOT NULL,
+  tip text NOT NULL CHECK (tip IN ('fixa','variabila')),
+  suma numeric(10,2),
+  activ boolean NOT NULL DEFAULT true,
+  creat_la timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cheltuieli_data ON cheltuieli(data_cheltuiala);
+
 CREATE TABLE IF NOT EXISTS programari (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   pacient_id uuid REFERENCES pacienti(id) ON DELETE CASCADE,

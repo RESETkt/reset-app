@@ -4,6 +4,22 @@ let pacientEditareAbonamentCurent = '';
 let pacientEditareAbonamentDetalii = null;
 let fisaOrigine = 'lista'; // 'lista' sau 'calendar' - de unde s-a deschis fisa, ca "inapoi" sa stie unde te duce
 
+// Rolul curent citit direct din token (acesta e mereu sursa de adevar - nu tinem o copie separata,
+// ca sa nu ramana "admin" agatat in variabila dupa delogare/schimbare de cont).
+function rolCurent() {
+  if (!token) return null;
+  try {
+    // token-ul e in format JWT, cu segmentele in base64url (nu base64 standard) -
+    // trebuie convertit inainte de atob(), la fel ca la cheia VAPID de push.
+    const segment = token.split('.')[1];
+    const padding = '='.repeat((4 - segment.length % 4) % 4);
+    const base64 = (segment + padding).replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64)).rol;
+  } catch {
+    return null;
+  }
+}
+
 async function login() {
   const email = document.getElementById('login-email').value;
   const parola = document.getElementById('login-parola').value;
@@ -1683,11 +1699,159 @@ async function incarcaStatistici() {
       </div>
       <div id="grafic-reinnoiri-luna" style="margin-top:10px"></div>
     </div>
+
+    ${rolCurent() === 'admin' ? '<div id="statistici-card-cheltuieli"></div>' : ''}
   `;
   egalizeazaColoaneStatistici();
   if (sumeDeblocate) deseneazaGraficBare('grafic-incasari-luna', s.incasari_pe_luna, '#EA532F', acum.getMonth(), formatLei);
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
+  if (rolCurent() === 'admin') incarcaCheltuieli();
+}
+
+// --- Cheltuieli si profit (doar admin - vezi services/../routes/expenses.js pentru gating pe server) ---
+
+function randCardCheltuieli(rez) {
+  return `
+    <div class="card" style="margin-top:16px">
+      <h2>Cheltuieli si profit (luna aceasta)</h2>
+      <div class="grid-3" style="margin-bottom:14px">
+        <div class="metric"><div class="label">Incasari</div><div class="value">${rez.incasari_luna} lei</div></div>
+        <div class="metric"><div class="label">Cheltuieli</div><div class="value">${rez.cheltuieli_luna} lei</div></div>
+        <div class="metric"><div class="label">Profit</div><div class="value" style="color:${rez.profit_luna >= 0 ? '#7fd9a8' : '#e08585'}">${rez.profit_luna} lei</div></div>
+      </div>
+
+      ${rez.recurente_variabile_lipsa.length
+        ? `<div style="background:#3a2f1f;color:#e0b85e;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:12px">Nu ai introdus inca suma din luna asta pentru: ${rez.recurente_variabile_lipsa.join(', ')}.</div>`
+        : ''}
+
+      <div style="font-weight:500;font-size:13px;margin-bottom:8px">Pe categorii</div>
+      ${rez.cheltuieli_pe_categorie.map(c => `
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span>${c.categorie}</span><span>${c.total} lei</span>
+        </div>
+      `).join('') || '<div style="font-size:13px;color:#9a988e;margin-bottom:8px">Nicio cheltuiala inregistrata.</div>'}
+
+      <div style="border-top:1px solid #3a3937;margin-top:12px;padding-top:12px">
+        <div style="font-weight:500;font-size:13px;margin-bottom:8px">Adauga cheltuiala</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="cheltuiala-categorie" placeholder="Categorie (ex: Chirie)" style="flex:1">
+          <input id="cheltuiala-suma" type="number" step="1" placeholder="Suma" style="width:100px">
+        </div>
+        <input id="cheltuiala-descriere" placeholder="Descriere (optional)" style="width:100%;margin-bottom:8px">
+        <button class="btn" style="width:100%" onclick="adaugaCheltuiala()">Adauga</button>
+        <div id="eroare-cheltuiala" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+
+      <div style="border-top:1px solid #3a3937;margin-top:12px;padding-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleListaCheltuieli()">
+          <div style="font-weight:500;font-size:13px">Cheltuielile lunii (${rez.cheltuieli.length})</div>
+          <span style="font-size:12px;color:#9a988e">arata/ascunde</span>
+        </div>
+        <div id="lista-cheltuieli-luna" style="display:none;margin-top:8px">
+          ${rez.cheltuieli.map(c => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #3a3937">
+              <div>
+                <div style="font-size:13px">${c.categorie} - ${Number(c.suma).toFixed(0)} lei</div>
+                <div style="font-size:11px;color:#9a988e">${c.descriere || ''} ${new Date(c.data_cheltuiala).toLocaleDateString('ro-RO')}</div>
+              </div>
+              <span style="cursor:pointer;color:#9a988e" onclick="stergeCheltuiala('${c.id}')" title="Sterge">&times;</span>
+            </div>
+          `).join('') || '<div style="font-size:13px;color:#9a988e">Nicio cheltuiala.</div>'}
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #3a3937;margin-top:12px;padding-top:12px">
+        <div style="font-weight:500;font-size:13px;margin-bottom:8px">Cheltuieli recurente</div>
+        ${rez.recurente.map(r => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #3a3937;${r.activ ? '' : 'opacity:0.5'}">
+            <div style="font-size:13px">${r.categorie} <span style="color:#9a988e">(${r.tip === 'fixa' ? Number(r.suma).toFixed(0) + ' lei/luna' : 'suma variabila'})</span></div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <span style="font-size:12px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="toggleRecurenta('${r.id}')">${r.activ ? 'dezactiveaza' : 'activeaza'}</span>
+              <span style="cursor:pointer;color:#9a988e" onclick="stergeRecurenta('${r.id}')" title="Sterge">&times;</span>
+            </div>
+          </div>
+        `).join('') || '<div style="font-size:13px;color:#9a988e;margin-bottom:8px">Nicio cheltuiala recurenta.</div>'}
+
+        <div style="display:flex;gap:8px;margin-top:10px;margin-bottom:8px">
+          <input id="recurenta-categorie" placeholder="Categorie (ex: Utilitati)" style="flex:1">
+          <select id="recurenta-tip" onchange="schimbaTipRecurenta(this.value)" style="width:110px">
+            <option value="fixa">Fixa</option>
+            <option value="variabila">Variabila</option>
+          </select>
+          <input id="recurenta-suma" type="number" step="1" placeholder="Suma" style="width:90px">
+        </div>
+        <button class="btn secundar" style="width:100%" onclick="adaugaRecurenta()">Adauga recurenta</button>
+        <div id="eroare-recurenta" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+}
+
+async function incarcaCheltuieli() {
+  const el = document.getElementById('statistici-card-cheltuieli');
+  if (!el) return;
+  const acum = new Date();
+  const rez = await apel(`/api/cheltuieli/rezumat?an=${acum.getFullYear()}&luna=${acum.getMonth() + 1}`);
+  if (rez.eroare) return;
+  el.innerHTML = randCardCheltuieli(rez);
+}
+
+function toggleListaCheltuieli() {
+  const el = document.getElementById('lista-cheltuieli-luna');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function adaugaCheltuiala() {
+  const categorie = document.getElementById('cheltuiala-categorie').value.trim();
+  const suma = document.getElementById('cheltuiala-suma').value;
+  const descriere = document.getElementById('cheltuiala-descriere').value.trim();
+  const eroareEl = document.getElementById('eroare-cheltuiala');
+  eroareEl.textContent = '';
+  if (!categorie || !suma || Number(suma) <= 0) {
+    eroareEl.textContent = 'Categoria si o suma valida sunt obligatorii.';
+    return;
+  }
+  const rezultat = await apel('/api/cheltuieli', { method: 'POST', body: JSON.stringify({ categorie, suma, descriere }) });
+  if (rezultat.eroare) { eroareEl.textContent = rezultat.eroare; return; }
+  incarcaCheltuieli();
+}
+
+async function stergeCheltuiala(id) {
+  if (!confirm('Stergi aceasta cheltuiala?')) return;
+  await apel(`/api/cheltuieli/${id}`, { method: 'DELETE' });
+  incarcaCheltuieli();
+}
+
+function schimbaTipRecurenta(tip) {
+  document.getElementById('recurenta-suma').style.display = tip === 'fixa' ? 'block' : 'none';
+}
+
+async function adaugaRecurenta() {
+  const categorie = document.getElementById('recurenta-categorie').value.trim();
+  const tip = document.getElementById('recurenta-tip').value;
+  const suma = document.getElementById('recurenta-suma').value;
+  const eroareEl = document.getElementById('eroare-recurenta');
+  eroareEl.textContent = '';
+  if (!categorie) { eroareEl.textContent = 'Categoria este obligatorie.'; return; }
+  if (tip === 'fixa' && (!suma || Number(suma) <= 0)) { eroareEl.textContent = 'Suma este obligatorie pentru o cheltuiala fixa.'; return; }
+  const rezultat = await apel('/api/cheltuieli/recurente', {
+    method: 'POST',
+    body: JSON.stringify({ categorie, tip, suma: tip === 'fixa' ? suma : null })
+  });
+  if (rezultat.eroare) { eroareEl.textContent = rezultat.eroare; return; }
+  incarcaCheltuieli();
+}
+
+async function toggleRecurenta(id) {
+  await apel(`/api/cheltuieli/recurente/${id}`, { method: 'PATCH' });
+  incarcaCheltuieli();
+}
+
+async function stergeRecurenta(id) {
+  if (!confirm('Stergi acest sablon recurent? (cheltuielile deja generate raman)')) return;
+  await apel(`/api/cheltuieli/recurente/${id}`, { method: 'DELETE' });
+  incarcaCheltuieli();
 }
 
 // Deseneaza un grafic cu bare in containerul dat, folosind latimea lui reala (masurata in

@@ -15,7 +15,9 @@ const scheduleRoutes = require('./routes/schedule');
 const notificariRoutes = require('./routes/notificari');
 const liveRoutes = require('./routes/live');
 const pushRoutes = require('./routes/push');
+const expensesRoutes = require('./routes/expenses');
 const { porneteReminderele } = require('./services/reminders');
+const { porneteCheltuieliRecurente } = require('./services/cheltuieliRecurente');
 const { trimiteTuturor } = require('./services/live');
 
 // Plasa de siguranta: o eroare care scapa neprinsa dintr-o ruta (ex. o interogare DB esuata)
@@ -65,6 +67,7 @@ app.use('/api/orar-kineto', scheduleRoutes);
 app.use('/api/notificari', notificariRoutes);
 app.use('/api/live', liveRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/cheltuieli', expensesRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -72,4 +75,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Reset ruleaza pe portul ${PORT}`);
   porneteReminderele();
+  porneteCheltuieliRecurente();
 });
