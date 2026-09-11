@@ -1534,12 +1534,14 @@ async function incarcaStatistici() {
       </div>
     </div>
 
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px">
-        <h2 style="margin:0">Sedinte pe luna</h2>
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <h2 style="margin:0 0 2px">Sedinte pe luna</h2>
+          <div style="font-size:11.5px;color:#6f6d64">Ultimele 12 luni</div>
+        </div>
         ${cardTendinta(s.sedinte_pe_luna)}
       </div>
-      <div style="font-size:11.5px;color:#6f6d64;margin-top:-8px;margin-bottom:10px">Ultimele 12 luni</div>
       ${graficBareSVG(s.sedinte_pe_luna, '#1FA1AB')}
     </div>
   `;
@@ -1549,28 +1551,28 @@ async function incarcaStatistici() {
 // Grafic simplu cu bare in SVG pentru o serie de 12 luni [{eticheta, total}].
 // Ultima luna e plina si etichetata cu valoarea; lunile vechi sunt tot mai transparente.
 function graficBareSVG(serie, culoare) {
-  const latimeBara = 36, spatiu = 20, sus = 20, jos = 25, inaltimeGrafic = 130;
-  const latime = serie.length * latimeBara + (serie.length - 1) * spatiu + 30;
+  const latimeBara = 20, spatiu = 10, sus = 20, jos = 18, inaltimeGrafic = 64;
+  const latime = serie.length * latimeBara + (serie.length - 1) * spatiu + 16;
   const inaltimeTotal = sus + inaltimeGrafic + jos;
   const yBaza = sus + inaltimeGrafic;
   const maxim = Math.max(...serie.map(l => l.total), 1);
 
   const bare = serie.map((l, i) => {
-    const x = 15 + i * (latimeBara + spatiu);
-    const h = Math.max((l.total / maxim) * inaltimeGrafic, l.total > 0 ? 4 : 1);
+    const x = 8 + i * (latimeBara + spatiu);
+    const h = Math.max((l.total / maxim) * inaltimeGrafic, l.total > 0 ? 3 : 1);
     const y = yBaza - h;
     const ultima = i === serie.length - 1;
     const opacitate = ultima ? 1 : 0.35 + (i / (serie.length - 1)) * 0.55;
     return `
-      <rect x="${x}" y="${y}" width="${latimeBara}" height="${h}" rx="4" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
-      ${ultima ? `<text x="${x + latimeBara / 2}" y="${y - 8}" text-anchor="middle" font-size="12" font-weight="600" fill="#ece9e2">${l.total}</text>` : ''}
-      <text x="${x + latimeBara / 2}" y="${yBaza + 16}" text-anchor="middle" font-size="10" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
+      <rect x="${x}" y="${y}" width="${latimeBara}" height="${h}" rx="3" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
+      ${ultima ? `<text x="${x + latimeBara / 2}" y="${y - 6}" text-anchor="middle" font-size="10" font-weight="600" fill="#ece9e2">${l.total}</text>` : ''}
+      <text x="${x + latimeBara / 2}" y="${yBaza + 13}" text-anchor="middle" font-size="8" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
     `;
   }).join('');
 
   return `
-    <svg viewBox="0 0 ${latime} ${inaltimeTotal}" style="display:block;width:100%;height:auto;overflow:visible">
-      <line x1="15" y1="${yBaza + 0.5}" x2="${latime - 15}" y2="${yBaza + 0.5}" stroke="#3a3937" stroke-width="1"/>
+    <svg viewBox="0 0 ${latime} ${inaltimeTotal}" preserveAspectRatio="none" style="display:block;width:100%;height:110px;margin-top:8px">
+      <line x1="8" y1="${yBaza + 0.5}" x2="${latime - 8}" y2="${yBaza + 0.5}" stroke="#3a3937" stroke-width="1"/>
       ${bare}
     </svg>
   `;
