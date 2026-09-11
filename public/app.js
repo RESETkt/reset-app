@@ -1204,11 +1204,11 @@ async function incarcaCalendarZi() {
       <button class="btn day-nav-arrow" onclick="schimbaZiuaMobil(1)">&rarr;</button>
       <input type="date" id="day-nav-date-input" class="day-nav-date-input" value="${ziuaMobilCurenta}" onchange="schimbaZiuaMobilData(this.value)">
     </div>
+    <button class="btn btn-adauga" style="width:100%;margin:10px 0" onclick="aratatFormularProgramareNoua('${ziuaMobilCurenta}', null)">+ Programare noua</button>
     <div class="global-search-wrap">
       <input id="global-cautare-mobil" type="text" placeholder="Cauta pacient..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, true)" onkeydown="cautareGlobalaTasta(event, true)">
       <div id="global-cautare-rezultate-mobil" class="global-cautare-dropdown"></div>
     </div>
-    <button class="btn btn-adauga" style="width:100%;margin:10px 0" onclick="aratatFormularProgramareNoua('${ziuaMobilCurenta}', null)">+ Programare noua</button>
     ${esteWeekendZi
       ? '<div class="card" style="text-align:center;color:#9a988e;font-size:13px">Cabinetul este inchis in weekend.</div>'
       : `<div class="day-view">
