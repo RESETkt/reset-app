@@ -1092,10 +1092,10 @@ async function incarcaCalendarSaptamana() {
 
   let html = `
     <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9a988e">
-        <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(-1)" title="Luna anterioara">&larr;</span>
-        <span style="min-width:90px;text-align:center">${LUNI_RO[dataCurenta.getMonth()]} ${dataCurenta.getFullYear()}</span>
-        <span style="cursor:pointer;padding:2px 4px" onclick="schimbaLuna(1)" title="Luna urmatoare">&rarr;</span>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9a988e">
+        <span style="cursor:pointer;padding:4px 6px" onclick="schimbaLuna(-1)" title="Luna anterioara">&larr;</span>
+        <span style="min-width:100px;text-align:center">${LUNI_RO[dataCurenta.getMonth()]} ${dataCurenta.getFullYear()}</span>
+        <span style="cursor:pointer;padding:4px 6px" onclick="schimbaLuna(1)" title="Luna urmatoare">&rarr;</span>
       </div>
       <div style="display:flex;justify-content:center">
         <div class="week-nav">
