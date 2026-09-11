@@ -1767,6 +1767,7 @@ function randCardCheltuieli(rez) {
           <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #3a3937;${r.activ ? '' : 'opacity:0.5'}">
             <div style="font-size:13px">${r.categorie} <span style="color:#9a988e">(${r.tip === 'fixa' ? Number(r.suma).toFixed(0) + ' lei/luna' : 'suma variabila'})</span></div>
             <div style="display:flex;gap:10px;align-items:center">
+              ${r.tip === 'fixa' ? `<span style="font-size:12px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="editeazaRecurenta('${r.id}','${r.categorie}',${r.suma})">editeaza</span>` : ''}
               <span style="font-size:12px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="toggleRecurenta('${r.id}')">${r.activ ? 'dezactiveaza' : 'activeaza'}</span>
               <span style="cursor:pointer;color:#9a988e" onclick="stergeRecurenta('${r.id}')" title="Sterge">&times;</span>
             </div>
@@ -1847,6 +1848,15 @@ async function adaugaRecurenta() {
     body: JSON.stringify({ categorie, tip, suma: tip === 'fixa' ? suma : null })
   });
   if (rezultat.eroare) { eroareEl.textContent = rezultat.eroare; return; }
+  incarcaCheltuieli();
+}
+
+async function editeazaRecurenta(id, categorie, sumaCurenta) {
+  const nou = prompt(`Noua suma lunara pentru "${categorie}":`, sumaCurenta);
+  if (nou === null) return;
+  if (!nou || Number(nou) <= 0) { alert('Introdu o suma valida.'); return; }
+  const rezultat = await apel(`/api/cheltuieli/recurente/${id}`, { method: 'PUT', body: JSON.stringify({ suma: nou }) });
+  if (rezultat.eroare) { alert(rezultat.eroare); return; }
   incarcaCheltuieli();
 }
 

@@ -106,6 +106,21 @@ router.patch('/recurente/:id', asincron(async (req, res) => {
   res.json(rows[0]);
 }));
 
+// Editeaza suma unui sablon recurent cu suma fixa (chirie, salarii) - poti sa o schimbi
+// oricand (ex: creste chiria), fara sa fie nevoie sa o retastezi in fiecare luna.
+router.put('/recurente/:id', asincron(async (req, res) => {
+  const { suma } = req.body;
+  if (!suma || Number(suma) <= 0) {
+    return res.status(400).json({ eroare: 'Introdu o suma valida.' });
+  }
+  const { rows } = await pool.query(
+    `UPDATE cheltuieli_recurente SET suma = $1 WHERE id = $2 AND tip = 'fixa' RETURNING *`,
+    [suma, req.params.id]
+  );
+  if (!rows[0]) return res.status(404).json({ eroare: 'Sablonul nu exista sau nu e de tip fixa.' });
+  res.json(rows[0]);
+}));
+
 router.delete('/recurente/:id', asincron(async (req, res) => {
   await pool.query('DELETE FROM cheltuieli_recurente WHERE id = $1', [req.params.id]);
   res.json({ sters: true });
