@@ -1546,27 +1546,42 @@ async function incarcaStatistici() {
       </div>
       <div id="grafic-sedinte-luna" style="margin-top:10px"></div>
     </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <h2 style="margin:0 0 2px">Incasari pe luna</h2>
+          <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()}</div>
+        </div>
+        ${sumeDeblocate ? cardTendinta(s.incasari_pe_luna, acum.getMonth()) : ''}
+      </div>
+      ${sumeDeblocate
+        ? `<div id="grafic-incasari-luna" style="margin-top:10px"></div>`
+        : '<div style="font-size:13px;color:#9a988e;margin-top:10px">Sumele sunt ascunse. Apasa "Arata sumele" din cardul de mai sus pentru a le vedea.</div>'}
+    </div>
   `;
   egalizeazaColoaneStatistici();
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
+  if (sumeDeblocate) deseneazaGraficBare('grafic-incasari-luna', s.incasari_pe_luna, '#EA532F', acum.getMonth(), formatLei);
 }
 
 // Deseneaza un grafic cu bare in containerul dat, folosind latimea lui reala (masurata in
 // DOM, ca la canvas-ul de semnatura GDPR) - nu scalare CSS, ca sa nu se deformeze barele.
 // indexCurent = indexul lunii curente in serie (celelalte de dupa el sunt viitoare, inca 0).
-function deseneazaGraficBare(idContainer, serie, culoare, indexCurent) {
+function deseneazaGraficBare(idContainer, serie, culoare, indexCurent, formatValoare) {
   const container = document.getElementById(idContainer);
   if (!container) return;
   requestAnimationFrame(() => {
     const latimeContainer = container.clientWidth;
     if (!latimeContainer) return;
-    container.innerHTML = svgGraficBare(serie, culoare, latimeContainer, indexCurent);
+    container.innerHTML = svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoare);
   });
 }
 
 // Grafic simplu cu bare, la latimea reala primita (in pixeli). Luna curenta e plina si
 // etichetata cu valoarea; lunile trecute sunt tot mai transparente, cele viitoare abia vizibile.
-function svgGraficBare(serie, culoare, latimeContainer, indexCurent) {
+function svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoare) {
+  formatValoare = formatValoare || (v => v);
   const marginLateral = 4, sus = 28, jos = 20, inaltimeGrafic = 180;
   const inaltimeTotal = sus + inaltimeGrafic + jos;
   const yBaza = sus + inaltimeGrafic;
@@ -1588,7 +1603,7 @@ function svgGraficBare(serie, culoare, latimeContainer, indexCurent) {
     const opacitate = viitor ? 0.12 : (ultima ? 1 : 0.35 + (i / Math.max(indexCurent, 1)) * 0.55);
     return `
       <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${latimeBara.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
-      ${ultima ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#ece9e2">${l.total}</text>` : ''}
+      ${ultima ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#ece9e2">${formatValoare(l.total)}</text>` : ''}
       <text x="${(x + latimeBara / 2).toFixed(1)}" y="${yBaza + 14}" text-anchor="middle" font-size="9" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
     `;
   }).join('');
@@ -1599,6 +1614,10 @@ function svgGraficBare(serie, culoare, latimeContainer, indexCurent) {
       ${bare}
     </svg>
   `;
+}
+
+function formatLei(suma) {
+  return `${Math.round(suma).toLocaleString('ro-RO')} lei`;
 }
 
 // Rezumat scurt al tendintei: compara media primei jumatati a anului (de pana acum) cu a doua.
@@ -1745,6 +1764,9 @@ window.addEventListener('resize', () => {
     }
     if (ultimeleStatisticiDate) {
       deseneazaGraficBare('grafic-sedinte-luna', ultimeleStatisticiDate.sedinte_pe_luna, '#1FA1AB', new Date().getMonth());
+      if (ultimeleStatisticiDate.incasari_pe_luna) {
+        deseneazaGraficBare('grafic-incasari-luna', ultimeleStatisticiDate.incasari_pe_luna, '#EA532F', new Date().getMonth(), formatLei);
+      }
     }
   }, 250);
 });

@@ -50,6 +50,7 @@ router.get('/', async (req, res) => {
   let incasari_saptamana = null;
   let incasari_luna = null;
   let incasari_dupa_metoda = null;
+  let incasari_pe_luna = null;
 
   if (parolaCorecta) {
     const incasariSaptamana = await pool.query(`
@@ -65,9 +66,28 @@ router.get('/', async (req, res) => {
       WHERE data_plata >= date_trunc('month', now())
       GROUP BY metoda
     `);
+    const incasariLunar = await pool.query(`
+      SELECT
+        EXTRACT(YEAR FROM gs.luna)::int AS an,
+        EXTRACT(MONTH FROM gs.luna)::int AS luna,
+        COALESCE(SUM(pl.suma), 0) AS total
+      FROM generate_series(
+        date_trunc('year', now()),
+        date_trunc('year', now()) + interval '11 months',
+        interval '1 month'
+      ) AS gs(luna)
+      LEFT JOIN plati pl ON date_trunc('month', pl.data_plata) = gs.luna
+      GROUP BY gs.luna
+      ORDER BY gs.luna
+    `);
     incasari_saptamana = Number(incasariSaptamana.rows[0].total);
     incasari_luna = Number(incasariLuna.rows[0].total);
     incasari_dupa_metoda = dupaMetoda.rows;
+    incasari_pe_luna = incasariLunar.rows.map(r => ({
+      luna: `${r.an}-${String(r.luna).padStart(2, '0')}`,
+      eticheta: LUNI_RO[r.luna - 1].slice(0, 3),
+      total: Number(r.total)
+    }));
   }
 
   res.json({
@@ -76,6 +96,7 @@ router.get('/', async (req, res) => {
     incasari_saptamana,
     incasari_luna,
     incasari_dupa_metoda,
+    incasari_pe_luna,
     sedinte_pe_luna
   });
 });
