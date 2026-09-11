@@ -182,7 +182,7 @@ router.patch('/:id/absent', async (req, res) => {
 });
 
 function formateazaDataOra(data_ora) {
-  return new Date(data_ora).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return new Date(data_ora).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' });
 }
 
 router.patch('/:id/reprogrameaza', async (req, res) => {

@@ -207,7 +207,7 @@ router.get('/pdf', async (req, res) => {
     doc.text('Nicio plata inregistrata in aceasta luna.');
   } else {
     plati.rows.forEach(p => {
-      const data = new Date(p.data_plata).toLocaleDateString('ro-RO');
+      const data = new Date(p.data_plata).toLocaleDateString('ro-RO', { timeZone: 'Europe/Bucharest' });
       doc.text(`${data}  -  ${p.nume} ${p.prenume}  -  ${Number(p.suma).toFixed(2)} lei (${p.metoda === 'cash' ? 'cash' : 'card'}, ${p.tip_plata})  -  ${p.motiv || 'fara motiv specificat'}`);
     });
   }

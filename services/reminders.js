@@ -15,7 +15,7 @@ function porneteReminderele() {
     `);
 
     for (const r of rows) {
-      const ora = new Date(r.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+      const ora = new Date(r.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' });
       const mesaj = `Salut ${r.prenume}, iti reamintim de programarea de maine la ora ${ora} la Reset. Pe curand!`;
 
       if (r.telefon) {
@@ -48,7 +48,8 @@ function porneteReminderele() {
         }
       }
     }
-  });
+  // timezone explicit ca ora 18:00 sa fie ora Romaniei, indiferent de fusul orar al serverului
+  }, { timezone: 'Europe/Bucharest' });
 }
 
 module.exports = { porneteReminderele };
