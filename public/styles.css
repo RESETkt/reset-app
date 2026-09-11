@@ -137,8 +137,6 @@ th, td { text-align: left; }
 .mobile-topbar-header { display: flex; align-items: center; justify-content: space-between; }
 .topbar-icon-btn { cursor: pointer; color: #c9c7bd; }
 .topbar-icon-btn:active { color: #ece9e2; }
-.mobile-topbar .global-search-wrap { flex: 1 1 auto; max-width: 190px; margin: 0; min-width: 90px; }
-.mobile-topbar .global-search-wrap input { padding: 6px 12px; font-size: 12.5px; }
 
 .bottom-nav {
   display: flex;
@@ -181,8 +179,8 @@ th, td { text-align: left; }
   padding-top: env(safe-area-inset-top);
   z-index: 30;
 }
-.desktop-topbar-row1 { display: flex; align-items: center; gap: 20px; padding: 10px 24px; }
-.desktop-topbar-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.desktop-topbar-row1 { display: flex; align-items: center; gap: 28px; padding: 16px 28px; }
+.desktop-topbar-brand { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .desktop-topbar .global-search-wrap { flex: 0 1 220px; margin: 0; }
 .desktop-topbar .global-search-wrap input { padding: 7px 12px; font-size: 13px; }
 .desktop-topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
@@ -255,13 +253,14 @@ th, td { text-align: left; }
 .global-cautare-gol { padding: 10px; font-size: 12px; color: #9a988e; }
 
 /* --- Vizualizare zilnica calendar (folosita doar pe mobil) --- */
-.day-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.day-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; position: relative; }
 .day-nav-arrow { padding: 8px 14px; flex-shrink: 0; }
-.day-nav-info { flex: 1; text-align: center; }
+.day-nav-info { flex: 1; text-align: center; cursor: pointer; }
 .day-nav-titlu { font-size: 14px; font-weight: 600; text-transform: capitalize; }
 .day-nav-azi { font-size: 11px; color: #9a988e; margin-top: 2px; }
 .day-nav-azi.clickabil { cursor: pointer; text-decoration: underline; }
-.day-nav-date-input { width: 100%; margin-bottom: 10px; text-align: center; color: #9a988e; background: #262624; }
+/* Inputul de tip data ramane in DOM (pentru showPicker), dar vizual ascuns - se deschide din click pe day-nav-info */
+.day-nav-date-input { position: absolute; left: 50%; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .day-view { display: flex; flex-direction: column; gap: 8px; }
 .day-view-row { display: flex; gap: 10px; background: #262624; border: 1px solid #3a3937; border-radius: 10px; padding: 10px; align-items: flex-start; }
 .day-view-ora { font-size: 13px; font-weight: 600; color: #7fd9a8; width: 48px; flex-shrink: 0; padding-top: 2px; }

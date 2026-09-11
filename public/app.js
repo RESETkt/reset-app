@@ -1171,6 +1171,13 @@ function schimbaZiuaMobilData(valoare) {
   incarcaCalendarZi();
 }
 
+function deschideCalendarZi() {
+  const input = document.getElementById('day-nav-date-input');
+  if (!input) return;
+  if (input.showPicker) input.showPicker();
+  else input.focus();
+}
+
 async function incarcaCalendarZi() {
   const astazi = dataLocala(new Date());
   const d = new Date(ziuaMobilCurenta + 'T00:00:00');
@@ -1190,13 +1197,17 @@ async function incarcaCalendarZi() {
   const html = `
     <div class="day-nav">
       <button class="btn day-nav-arrow" onclick="schimbaZiuaMobil(-1)">&larr;</button>
-      <div class="day-nav-info">
+      <div class="day-nav-info" onclick="deschideCalendarZi()">
         <div class="day-nav-titlu">${numeZi}, ${d.toLocaleDateString('ro-RO', { day: '2-digit', month: 'long' })}</div>
-        ${ziuaMobilCurenta === astazi ? '<div class="day-nav-azi">azi</div>' : '<div class="day-nav-azi clickabil" onclick="ziuaMobilAstazi()">&larr; inapoi la azi</div>'}
+        ${ziuaMobilCurenta === astazi ? '<div class="day-nav-azi">azi</div>' : '<div class="day-nav-azi clickabil" onclick="event.stopPropagation(); ziuaMobilAstazi()">&larr; inapoi la azi</div>'}
       </div>
       <button class="btn day-nav-arrow" onclick="schimbaZiuaMobil(1)">&rarr;</button>
+      <input type="date" id="day-nav-date-input" class="day-nav-date-input" value="${ziuaMobilCurenta}" onchange="schimbaZiuaMobilData(this.value)">
     </div>
-    <input type="date" class="day-nav-date-input" value="${ziuaMobilCurenta}" onchange="schimbaZiuaMobilData(this.value)" onclick="this.showPicker && this.showPicker()">
+    <div class="global-search-wrap">
+      <input id="global-cautare-mobil" type="text" placeholder="Cauta pacient..." autocomplete="off" oninput="cautaGlobalDebounced(this.value, true)" onkeydown="cautareGlobalaTasta(event, true)">
+      <div id="global-cautare-rezultate-mobil" class="global-cautare-dropdown"></div>
+    </div>
     <button class="btn btn-adauga" style="width:100%;margin:10px 0" onclick="aratatFormularProgramareNoua('${ziuaMobilCurenta}', null)">+ Programare noua</button>
     ${esteWeekendZi
       ? '<div class="card" style="text-align:center;color:#9a988e;font-size:13px">Cabinetul este inchis in weekend.</div>'
