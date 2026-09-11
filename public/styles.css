@@ -283,6 +283,9 @@ th, td { text-align: left; }
   }
 
   .pacient-tooltip { left: auto; right: 0; top: calc(100% + 4px); white-space: normal; max-width: 220px; }
+
+  /* Programari si Echipa nu au continut suficient de inalt cat sa justifice scroll - il blocam ca sa nu "joace" pagina */
+  body.pagina-fara-scroll { overflow: hidden; height: 100vh; overscroll-behavior: none; }
 }
 
 @media (max-width: 420px) {

@@ -362,6 +362,7 @@ function aratapanel(nume) {
     document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
   });
   marcheazaActiv(nume);
+  document.body.classList.toggle('pagina-fara-scroll', nume === 'calendar' || nume === 'echipa');
   if (nume === 'calendar') incarcaCalendarSaptamana();
   if (nume === 'echipa') incarcaEchipa();
   if (nume === 'statistici') incarcaStatistici();
