@@ -1250,7 +1250,7 @@ function randPacientRand(p) {
       <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
         <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="aratatFormularPrezenta('${p.id}','${p.prenume}',${p.total_sedinte ?? 'null'},${p.sedinte_efectuate ?? 'null'},'${p.status}')">Prezent</div>
         <div style="padding:7px 12px;font-size:12px;color:#c14343;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="marcheaza('${p.id}','absent')">Absent</div>
-        <div style="padding:7px 12px;font-size:12px;color:#2b2a26;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="fisaOrigine='calendar'; deschideFisa('${p.id}')">Fisa</div>
+        <div style="padding:7px 12px;font-size:12px;color:#2b2a26;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="fisaOrigine='calendar'; deschideFisa('${p.pacient_id}')">Fisa</div>
       </div>
       <div id="${tooltipId}" class="pacient-tooltip">
         <div style="font-weight:500;margin-bottom:4px">${p.nume} ${p.prenume}</div>
