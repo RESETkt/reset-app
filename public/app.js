@@ -1542,37 +1542,38 @@ async function incarcaStatistici() {
           <h2 style="margin:0 0 2px">Sedinte pe luna</h2>
           <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()}</div>
         </div>
-        ${cardTendinta(s.sedinte_pe_luna)}
+        ${cardTendinta(s.sedinte_pe_luna, acum.getMonth())}
       </div>
       <div id="grafic-sedinte-luna" style="margin-top:10px"></div>
     </div>
   `;
   egalizeazaColoaneStatistici();
-  deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB');
+  deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
 }
 
 // Deseneaza un grafic cu bare in containerul dat, folosind latimea lui reala (masurata in
 // DOM, ca la canvas-ul de semnatura GDPR) - nu scalare CSS, ca sa nu se deformeze barele.
-function deseneazaGraficBare(idContainer, serie, culoare) {
+// indexCurent = indexul lunii curente in serie (celelalte de dupa el sunt viitoare, inca 0).
+function deseneazaGraficBare(idContainer, serie, culoare, indexCurent) {
   const container = document.getElementById(idContainer);
   if (!container) return;
   requestAnimationFrame(() => {
     const latimeContainer = container.clientWidth;
     if (!latimeContainer) return;
-    container.innerHTML = svgGraficBare(serie, culoare, latimeContainer);
+    container.innerHTML = svgGraficBare(serie, culoare, latimeContainer, indexCurent);
   });
 }
 
-// Grafic simplu cu bare, la latimea reala primita (in pixeli). Ultima luna e plina si
-// etichetata cu valoarea; lunile vechi sunt tot mai transparente.
-function svgGraficBare(serie, culoare, latimeContainer) {
+// Grafic simplu cu bare, la latimea reala primita (in pixeli). Luna curenta e plina si
+// etichetata cu valoarea; lunile trecute sunt tot mai transparente, cele viitoare abia vizibile.
+function svgGraficBare(serie, culoare, latimeContainer, indexCurent) {
   const marginLateral = 4, sus = 28, jos = 20, inaltimeGrafic = 180;
   const inaltimeTotal = sus + inaltimeGrafic + jos;
   const yBaza = sus + inaltimeGrafic;
   const n = serie.length;
   const spatiuUtil = latimeContainer - marginLateral * 2;
-  const raportGol = 0.55; // spatiul dintre bare = 55% din latimea unei bare
-  const latimeBara = Math.min(spatiuUtil / (n + (n - 1) * raportGol), 64); // bare late cand sunt putine luni (ex. ianuarie)
+  const raportGol = 0.8; // spatiul dintre bare = 80% din latimea unei bare - coloane inguste
+  const latimeBara = Math.min(spatiuUtil / (n + (n - 1) * raportGol), 34);
   const pasBara = latimeBara * (1 + raportGol);
   const latimeContinut = n * pasBara - latimeBara * raportGol;
   const start = marginLateral + Math.max(0, (spatiuUtil - latimeContinut) / 2);
@@ -1582,10 +1583,11 @@ function svgGraficBare(serie, culoare, latimeContainer) {
     const x = start + i * pasBara;
     const h = Math.max((l.total / maxim) * inaltimeGrafic, l.total > 0 ? 3 : 1);
     const y = yBaza - h;
-    const ultima = i === n - 1;
-    const opacitate = ultima ? 1 : 0.35 + (i / (n - 1)) * 0.55;
+    const ultima = i === indexCurent;
+    const viitor = i > indexCurent;
+    const opacitate = viitor ? 0.12 : (ultima ? 1 : 0.35 + (i / Math.max(indexCurent, 1)) * 0.55);
     return `
-      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${latimeBara.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${latimeBara.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
       ${ultima ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#ece9e2">${l.total}</text>` : ''}
       <text x="${(x + latimeBara / 2).toFixed(1)}" y="${yBaza + 14}" text-anchor="middle" font-size="9" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
     `;
@@ -1599,9 +1601,10 @@ function svgGraficBare(serie, culoare, latimeContainer) {
   `;
 }
 
-// Rezumat scurt al tendintei: compara media primei jumatati a anului cu media celei de-a doua.
-// Cu mai putin de 2 luni de date (ex. ianuarie) nu are sens o tendinta.
-function cardTendinta(serie) {
+// Rezumat scurt al tendintei: compara media primei jumatati a anului (de pana acum) cu a doua.
+// Ignora lunile viitoare (dupa indexCurent), care sunt mereu 0 pentru ca inca nu au avut loc.
+function cardTendinta(serieCompleta, indexCurent) {
+  const serie = serieCompleta.slice(0, indexCurent + 1);
   let stare, text;
   if (serie.length < 2) {
     stare = 'stabil'; text = 'Inceput de an';
@@ -1741,7 +1744,7 @@ window.addEventListener('resize', () => {
       if (panelCalendar && panelCalendar.style.display !== 'none') incarcaCalendarSaptamana();
     }
     if (ultimeleStatisticiDate) {
-      deseneazaGraficBare('grafic-sedinte-luna', ultimeleStatisticiDate.sedinte_pe_luna, '#1FA1AB');
+      deseneazaGraficBare('grafic-sedinte-luna', ultimeleStatisticiDate.sedinte_pe_luna, '#1FA1AB', new Date().getMonth());
     }
   }, 250);
 });

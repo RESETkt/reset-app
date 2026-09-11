@@ -24,8 +24,8 @@ router.get('/', async (req, res) => {
     WHERE data_ora >= date_trunc('month', now()) AND data_ora < date_trunc('month', now()) + interval '1 month' AND status = 'prezent'
   `);
 
-  // Anul curent, de la ianuarie pana in luna curenta (nu ultimele 12 luni "rulante") -
-  // asa se citeste natural, ca un calendar, si in ianuarie porneste din nou de la o singura luna.
+  // Intotdeauna cele 12 luni ale anului curent, ianuarie->decembrie (ca un calendar) -
+  // lunile viitoare apar cu 0, pentru ca inca nu au avut loc.
   const sedinteLunar = await pool.query(`
     SELECT
       EXTRACT(YEAR FROM gs.luna)::int AS an,
@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
       COUNT(p.id) AS total
     FROM generate_series(
       date_trunc('year', now()),
-      date_trunc('month', now()),
+      date_trunc('year', now()) + interval '11 months',
       interval '1 month'
     ) AS gs(luna)
     LEFT JOIN programari p
