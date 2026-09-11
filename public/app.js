@@ -1486,15 +1486,15 @@ async function incarcaStatistici() {
   const acum = new Date();
   document.getElementById('panel-statistici').innerHTML = `
     <div class="panel-cols-2">
-      <div style="display:flex;flex-direction:column">
-        <div class="card" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div id="statistici-coloana-stanga" style="display:flex;flex-direction:column">
+        <div class="card">
           <h2>Saptamana aceasta</h2>
           <div class="grid-2">
             <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_saptamana}</div></div>
             <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_saptamana + ' lei' : '••• lei'}</div></div>
           </div>
         </div>
-        <div class="card" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+        <div class="card">
           <h2>Luna aceasta</h2>
           <div class="grid-2">
             <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
@@ -1502,7 +1502,7 @@ async function incarcaStatistici() {
           </div>
         </div>
       </div>
-      <div class="card">
+      <div id="statistici-card-incasari" class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <h2 style="margin:0">Incasari dupa metoda (luna aceasta)</h2>
           <button class="btn" onclick="${sumeDeblocate ? 'blocheazaSume()' : 'cereParolaSume()'}">${sumeDeblocate ? 'Blocheaza sumele' : 'Arata sumele'}</button>
@@ -1525,6 +1525,20 @@ async function incarcaStatistici() {
       </div>
     </div>
   `;
+  egalizeazaColoaneStatistici();
+}
+
+function egalizeazaColoaneStatistici() {
+  const stanga = document.getElementById('statistici-coloana-stanga');
+  const dreapta = document.getElementById('statistici-card-incasari');
+  if (!stanga || !dreapta) return;
+  const carduriStanga = Array.from(stanga.children);
+  carduriStanga.forEach(c => c.style.minHeight = '');
+  requestAnimationFrame(() => {
+    const gapTotal = (carduriStanga.length - 1) * 16;
+    const fiecare = (dreapta.offsetHeight - gapTotal) / carduriStanga.length;
+    if (fiecare > 0) carduriStanga.forEach(c => c.style.minHeight = fiecare + 'px');
+  });
 }
 
 async function descarcaPdfStatistici() {
