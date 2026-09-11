@@ -1487,14 +1487,14 @@ async function incarcaStatistici() {
   document.getElementById('panel-statistici').innerHTML = `
     <div class="panel-cols-2">
       <div style="display:flex;flex-direction:column">
-        <div class="card">
+        <div class="card" style="flex:1;display:flex;flex-direction:column;justify-content:center">
           <h2>Saptamana aceasta</h2>
           <div class="grid-2">
             <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_saptamana}</div></div>
             <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_saptamana + ' lei' : '••• lei'}</div></div>
           </div>
         </div>
-        <div class="card">
+        <div class="card" style="flex:1;display:flex;flex-direction:column;justify-content:center">
           <h2>Luna aceasta</h2>
           <div class="grid-2">
             <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
