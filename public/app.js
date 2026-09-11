@@ -1436,11 +1436,17 @@ const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii ===
     return;
   }
 
-  inchideModalProgramare();
   incarcaCalendarSaptamana();
 
   if (esuate.length) {
-    alert(`${dateDeCreat.length - esuate.length} programari create. ${esuate.length} nu au putut fi create:\n${esuate.join('\n')}`);
+    aratatPopupInfo({
+      icon: '&#9888;',
+      iconColor: '#e0b85e',
+      titlu: `${dateDeCreat.length - esuate.length} din ${dateDeCreat.length} programari create`,
+      mesaj: esuate.join('\n')
+    });
+  } else {
+    inchideModalProgramare();
   }
 }
 
@@ -1488,6 +1494,21 @@ function aratatPopupSedinteRamase(prenume) {
       <div class="card" style="max-width:340px;width:90%;text-align:center;padding:32px 26px">
         <div style="font-size:38px;margin-bottom:16px">&#9203;</div>
         <div style="font-size:25px;font-weight:700;line-height:1.35;margin-bottom:22px">${prenume} mai are <span style="color:#e0b85e">2 sedinte</span></div>
+        <button class="btn" style="width:100%" onclick="inchideModalProgramare()">Am inteles</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+// Popup informativ generic (inlocuieste alert() nativ) - folosit pentru confirmari si avertismente
+function aratatPopupInfo({ icon = '&#10003;', iconColor = '#4fb3a0', titlu = '', mesaj = '' }) {
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:360px;width:90%;text-align:center;padding:32px 26px">
+        <div style="font-size:38px;margin-bottom:16px;color:${iconColor}">${icon}</div>
+        ${titlu ? `<div style="font-size:20px;font-weight:700;line-height:1.35;margin-bottom:14px">${titlu}</div>` : ''}
+        ${mesaj ? `<div style="font-size:13px;line-height:1.6;color:#c9c7bd;white-space:pre-line;margin-bottom:22px;text-align:left">${mesaj}</div>` : ''}
         <button class="btn" style="width:100%" onclick="inchideModalProgramare()">Am inteles</button>
       </div>
     </div>
