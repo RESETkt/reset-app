@@ -1792,9 +1792,16 @@ async function incarcaCheltuieli() {
   const el = document.getElementById('statistici-card-cheltuieli');
   if (!el) return;
   const acum = new Date();
-  const rez = await apel(`/api/cheltuieli/rezumat?an=${acum.getFullYear()}&luna=${acum.getMonth() + 1}`);
-  if (rez.eroare) return;
-  el.innerHTML = randCardCheltuieli(rez);
+  try {
+    const rez = await apel(`/api/cheltuieli/rezumat?an=${acum.getFullYear()}&luna=${acum.getMonth() + 1}`);
+    if (rez.eroare) {
+      el.innerHTML = `<div class="card" style="margin-top:16px;color:#e08585;font-size:13px">Nu am putut incarca cheltuielile: ${rez.eroare}</div>`;
+      return;
+    }
+    el.innerHTML = randCardCheltuieli(rez);
+  } catch (e) {
+    el.innerHTML = `<div class="card" style="margin-top:16px;color:#e08585;font-size:13px">Nu am putut incarca cheltuielile: ${e.message}</div>`;
+  }
 }
 
 function toggleListaCheltuieli() {

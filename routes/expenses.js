@@ -6,9 +6,16 @@ const router = express.Router();
 // Toate rutele de cheltuieli sunt doar pentru admin - colegii kineto nu au ce cauta in ele.
 router.use(ceareAutentificare, ceareAdmin);
 
+// Prinde orice eroare dintr-un handler async si raspunde cu JSON (nu lasa cererea agatata) -
+// util mai ales acum, cat timp tabelele noi (cheltuieli, cheltuieli_recurente) nu exista inca
+// pe o baza de date pe care nu s-a rulat migrarea.
+function asincron(handler) {
+  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+}
+
 // Rezumatul lunii: incasari, cheltuieli, profit, cheltuieli pe categorie, lista cheltuielilor
 // si sabloanele recurente (plus cele variabile pentru care inca nu s-a introdus suma lunii asta).
-router.get('/rezumat', async (req, res) => {
+router.get('/rezumat', asincron(async (req, res) => {
   const acum = new Date();
   const an = parseInt(req.query.an, 10) || acum.getFullYear();
   const luna = parseInt(req.query.luna, 10) || (acum.getMonth() + 1);
@@ -54,9 +61,9 @@ router.get('/rezumat', async (req, res) => {
     recurente: recurente.rows,
     recurente_variabile_lipsa: recurenteVariabileLipsa
   });
-});
+}));
 
-router.post('/', async (req, res) => {
+router.post('/', asincron(async (req, res) => {
   const { categorie, suma, descriere, data_cheltuiala } = req.body;
   if (!categorie || !suma) {
     return res.status(400).json({ eroare: 'Categoria si suma sunt obligatorii.' });
@@ -67,16 +74,16 @@ router.post('/', async (req, res) => {
     [categorie, suma, descriere || null, data_cheltuiala || null]
   );
   res.status(201).json(rows[0]);
-});
+}));
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', asincron(async (req, res) => {
   await pool.query('DELETE FROM cheltuieli WHERE id = $1', [req.params.id]);
   res.json({ sters: true });
-});
+}));
 
 // Sabloane recurente: chirie/salarii cu suma fixa (generate automat in fiecare luna),
 // sau utilitati cu suma variabila (doar o reamintire, fara suma presetata).
-router.post('/recurente', async (req, res) => {
+router.post('/recurente', asincron(async (req, res) => {
   const { categorie, tip, suma } = req.body;
   if (!categorie || !tip || !['fixa', 'variabila'].includes(tip)) {
     return res.status(400).json({ eroare: 'Categoria si tipul (fixa/variabila) sunt obligatorii.' });
@@ -89,19 +96,27 @@ router.post('/recurente', async (req, res) => {
     [categorie, tip, tip === 'fixa' ? suma : null]
   );
   res.status(201).json(rows[0]);
-});
+}));
 
-router.patch('/recurente/:id', async (req, res) => {
+router.patch('/recurente/:id', asincron(async (req, res) => {
   const { rows } = await pool.query(
     `UPDATE cheltuieli_recurente SET activ = NOT activ WHERE id = $1 RETURNING *`,
     [req.params.id]
   );
   res.json(rows[0]);
-});
+}));
 
-router.delete('/recurente/:id', async (req, res) => {
+router.delete('/recurente/:id', asincron(async (req, res) => {
   await pool.query('DELETE FROM cheltuieli_recurente WHERE id = $1', [req.params.id]);
   res.json({ sters: true });
+}));
+
+// Trebuie inregistrat DUPA rute, ca sa prinda erorile lor (Express le propaga prin next(err)
+// spre urmatorul middleware din lant, nu invers) - fara asta, o eroare de SQL ar lasa cererea
+// agatata la infinit in loc sa raspunda cu un JSON de eroare.
+router.use((err, req, res, next) => {
+  console.error('Eroare in rutele de cheltuieli:', err.message);
+  res.status(500).json({ eroare: 'A esuat operatia pe cheltuieli: ' + err.message });
 });
 
 module.exports = router;
