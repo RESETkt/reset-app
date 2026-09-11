@@ -1155,7 +1155,7 @@ async function incarcaCalendarSaptamana() {
   const dataCurenta = new Date(saptamanaCurenta + 'T00:00:00');
 
   let html = `
-    <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:12px">
+    <div class="calendar-toolbar" style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px">
       <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9a988e">
         <span style="cursor:pointer;padding:4px 6px" onclick="schimbaLuna(-1)" title="Luna anterioara">&larr;</span>
         <span style="min-width:100px;text-align:center">${LUNI_RO[dataCurenta.getMonth()]} ${dataCurenta.getFullYear()}</span>
@@ -1173,7 +1173,7 @@ async function incarcaCalendarSaptamana() {
       </div>
     </div>
     <div class="card" style="padding:0;background:#ffffff;border-color:#dcdad4">
-      <table style="border-collapse:collapse;table-layout:fixed;width:100%">
+      <table class="calendar-table" style="border-collapse:collapse;table-layout:fixed;width:100%">
         <tr>
           <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b6a63;width:60px;border:1px solid #e2e0d9;background:#f4f3ef">Ora</th>
           ${zile.map((z, i) => `<th style="text-align:left;padding:10px 8px;font-size:12px;color:${z === astazi ? '#ffffff' : '#6b6a63'};border:1px solid #e2e0d9;background:${z === astazi ? '#1f8a7a' : '#f4f3ef'}">${ZILE_SAPTAMANA[i]}<br><span style="font-size:11px">${new Date(z).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</span></th>`).join('')}
@@ -1206,6 +1206,12 @@ async function incarcaCalendarSaptamana() {
   `;
 
   document.getElementById('panel-calendar').innerHTML = html;
+  // Masuram inaltimea barei cu Azi/Programare noua ca antetul tabelului sa stie
+  // exact sub ce inaltime sa se lipeasca (stivuit sub bara fixa de sus).
+  requestAnimationFrame(() => {
+    const toolbar = document.querySelector('.calendar-toolbar');
+    if (toolbar) document.documentElement.style.setProperty('--calendar-toolbar-h', toolbar.offsetHeight + 'px');
+  });
 }
 
 let ziuaMobilCurenta = dataLocala(new Date());
@@ -2120,6 +2126,10 @@ window.addEventListener('resize', () => {
       const panelCalendar = document.getElementById('panel-calendar');
       if (panelCalendar && panelCalendar.style.display !== 'none') incarcaCalendarSaptamana();
     }
+    // Bara de calendar poate sa se "rupa" pe doua randuri la latimi mai inguste - remasuram
+    // inaltimea ca antetul tabelului sa ramana lipit exact sub ea, nu suprapus sau cu gol.
+    const calendarToolbar = document.querySelector('.calendar-toolbar');
+    if (calendarToolbar) document.documentElement.style.setProperty('--calendar-toolbar-h', calendarToolbar.offsetHeight + 'px');
     if (ultimeleStatisticiDate) {
       deseneazaGraficBare('grafic-sedinte-luna', ultimeleStatisticiDate.sedinte_pe_luna, '#1FA1AB', new Date().getMonth());
       if (ultimeleStatisticiDate.incasari_pe_luna) {
