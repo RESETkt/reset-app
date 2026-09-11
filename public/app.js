@@ -1322,8 +1322,7 @@ async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
               </label>
             `).join('')}
           </div>
-          <label>Pana la data (inclusiv)</label>
-          <input id="prog-recurenta-pana" type="date" style="width:100%;margin-bottom:10px" onclick="this.showPicker && this.showPicker()">
+          <div style="font-size:12px;color:#9a988e;margin-bottom:10px">Se creeaza programari pana la finalul lunii selectate mai sus.</div>
         </div>
 
         <label>Ora</label>
@@ -1372,11 +1371,11 @@ function toggleRecurentaProgramare() {
   document.getElementById('prog-recurenta-detalii').style.display = activ ? 'block' : 'none';
 }
 
-// Genereaza sirul de date (YYYY-MM-DD) intre start si sfarsit (inclusiv) care cad in zileSaptamana (1=Luni..5=Vineri)
-function genereazaDateRecurente(start, sfarsit, zileSaptamana) {
+// Genereaza sirul de date (YYYY-MM-DD) de la start pana la finalul lunii lui start, care cad in zileSaptamana (1=Luni..5=Vineri)
+function genereazaDateRecurente(start, zileSaptamana) {
   const rezultat = [];
   const curent = new Date(start + 'T00:00:00');
-  const limita = new Date(sfarsit + 'T00:00:00');
+  const limita = new Date(curent.getFullYear(), curent.getMonth() + 1, 0);
   while (curent <= limita) {
     if (zileSaptamana.includes(curent.getDay())) {
       rezultat.push(dataLocala(curent));
@@ -1409,20 +1408,11 @@ const ziSaptamanii = new Date(data + 'T00:00:00').getDay(); if (ziSaptamanii ===
 
   if (recurenta) {
     const zileSelectate = Array.from(document.querySelectorAll('.prog-recurenta-zi:checked')).map(el => Number(el.value));
-    const panaLa = document.getElementById('prog-recurenta-pana').value;
     if (!zileSelectate.length) {
       eroareEl.textContent = 'Bifeaza cel putin o zi din saptamana.';
       return;
     }
-    if (!panaLa) {
-      eroareEl.textContent = 'Completeaza pana la ce data se repeta programarea.';
-      return;
-    }
-    if (panaLa < data) {
-      eroareEl.textContent = '"Pana la data" trebuie sa fie dupa data de inceput.';
-      return;
-    }
-    dateDeCreat = genereazaDateRecurente(data, panaLa, zileSelectate);
+    dateDeCreat = genereazaDateRecurente(data, zileSelectate);
   }
 
   const buton = event.target;
