@@ -19,6 +19,7 @@ body {
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .panel-cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
 .panel-cols-2 > .card { margin-bottom: 0; display: flex; flex-direction: column; }
+#statistici-coloana-stanga > .card { margin-bottom: 0; }
 @media (max-width: 760px) {
   .panel-cols-2 { grid-template-columns: 1fr; }
 }

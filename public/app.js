@@ -1487,7 +1487,7 @@ async function incarcaStatistici() {
   const acum = new Date();
   document.getElementById('panel-statistici').innerHTML = `
     <div class="panel-cols-2">
-      <div id="statistici-coloana-stanga" style="display:flex;flex-direction:column">
+      <div id="statistici-coloana-stanga" style="display:flex;flex-direction:column;gap:16px">
         <div class="card">
           <h2>Saptamana aceasta</h2>
           <div class="grid-2">
