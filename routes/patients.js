@@ -70,11 +70,11 @@ router.post('/:id/plati', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { nume, prenume, telefon, email, diagnostic } = req.body;
+  const { nume, prenume, telefon, email, diagnostic, cum_a_aflat } = req.body;
   const { rows } = await pool.query(
-    `INSERT INTO pacienti (nume, prenume, telefon, email, diagnostic)
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [nume, prenume, telefon, email, diagnostic]
+    `INSERT INTO pacienti (nume, prenume, telefon, email, diagnostic, cum_a_aflat)
+     VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+    [nume, prenume, telefon, email, diagnostic, cum_a_aflat || null]
   );
   try {
     await creeazaNotificare({
@@ -102,10 +102,10 @@ router.get('/:id/sedinte', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  const { nume, prenume, telefon, email, diagnostic } = req.body;
+  const { nume, prenume, telefon, email, diagnostic, cum_a_aflat } = req.body;
   const { rows } = await pool.query(
-    `UPDATE pacienti SET nume=$1, prenume=$2, telefon=$3, email=$4, diagnostic=$5 WHERE id=$6 RETURNING *`,
-    [nume, prenume, telefon, email, diagnostic, req.params.id]
+    `UPDATE pacienti SET nume=$1, prenume=$2, telefon=$3, email=$4, diagnostic=$5, cum_a_aflat=$6 WHERE id=$7 RETURNING *`,
+    [nume, prenume, telefon, email, diagnostic, cum_a_aflat || null, req.params.id]
   );
   res.json(rows[0]);
 });

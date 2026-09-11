@@ -455,6 +455,30 @@ async function stergeKineto(id, nume) {
   incarcaEchipa();
 }
 
+const SURSE_PACIENT_NOU = ['Recomandare de la cineva', 'Cautare online (Google)', 'Retele sociale (Facebook/Instagram)', 'A trecut pe langa cabinet', 'Recomandare medic'];
+
+function randSelectCumAAflat(idSelect, idLiber, valoareCurenta) {
+  const eCustom = !!valoareCurenta && !SURSE_PACIENT_NOU.includes(valoareCurenta);
+  return `
+    <select id="${idSelect}" onchange="schimbaSursaCumAAflat(this.value,'${idLiber}')" style="width:100%;margin-bottom:6px">
+      <option value="" ${!valoareCurenta ? 'selected' : ''}>Nespecificat</option>
+      ${SURSE_PACIENT_NOU.map(s => `<option value="${s}" ${valoareCurenta === s ? 'selected' : ''}>${s}</option>`).join('')}
+      <option value="altceva" ${eCustom ? 'selected' : ''}>Altceva</option>
+    </select>
+    <input id="${idLiber}" placeholder="Descrie pe scurt" value="${eCustom ? valoareCurenta : ''}" style="width:100%;margin-bottom:14px;display:${eCustom ? 'block' : 'none'}">
+  `;
+}
+
+function schimbaSursaCumAAflat(valoare, idLiber) {
+  document.getElementById(idLiber).style.display = valoare === 'altceva' ? 'block' : 'none';
+}
+
+function citesteCumAAflat(idSelect, idLiber) {
+  const valoare = document.getElementById(idSelect).value;
+  if (!valoare) return null;
+  return valoare === 'altceva' ? (document.getElementById(idLiber).value.trim() || null) : valoare;
+}
+
 function aratatFormularPacientNou() {
   ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
@@ -474,6 +498,9 @@ function aratatFormularPacientNou() {
       <input id="nou-email" type="email" style="width:100%;margin-bottom:10px">
       <label>Diagnostic</label>
       <input id="nou-diagnostic" style="width:100%;margin-bottom:14px">
+
+      <label>Cum ne-a gasit?</label>
+      ${randSelectCumAAflat('nou-cum-a-aflat', 'nou-cum-a-aflat-liber', null)}
 
       <label>Abonament (optional, il poti adauga si mai tarziu)</label>
       <select id="nou-abonament" style="width:100%;margin-bottom:14px">
@@ -495,6 +522,7 @@ async function salveazaPacientNou() {
   const telefon = document.getElementById('nou-telefon').value.trim();
   const email = document.getElementById('nou-email').value.trim();
   const diagnostic = document.getElementById('nou-diagnostic').value.trim();
+  const cum_a_aflat = citesteCumAAflat('nou-cum-a-aflat', 'nou-cum-a-aflat-liber');
   const tipAbonament = document.getElementById('nou-abonament').value;
 
   const eroareEl = document.getElementById('eroare-pacient-nou');
@@ -509,7 +537,7 @@ async function salveazaPacientNou() {
   buton.disabled = true;
   const pacient = await apel('/api/pacienti', {
     method: 'POST',
-    body: JSON.stringify({ nume, prenume, telefon, email, diagnostic })
+    body: JSON.stringify({ nume, prenume, telefon, email, diagnostic, cum_a_aflat })
   });
 
   if (pacient.eroare) {
@@ -576,6 +604,7 @@ async function deschideFisa(id) {
         <div style="font-weight:500;font-size:13px;margin-bottom:8px">Contact</div>
         <div style="font-size:13px">Telefon: ${p.telefon || '-'}</div>
         <div style="font-size:13px">Email: ${p.email || '-'}</div>
+        <div style="font-size:13px">Cum ne-a gasit: ${p.cum_a_aflat || '-'}</div>
       </div>
 
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
@@ -839,6 +868,8 @@ function aratatFormularEditarePacient(id) {
           <input id="edit-email" type="email" value="${p.email || ''}" style="width:100%;margin-bottom:10px">
           <label>Diagnostic</label>
           <input id="edit-diagnostic" value="${p.diagnostic || ''}" style="width:100%;margin-bottom:14px">
+          <label>Cum ne-a gasit?</label>
+          ${randSelectCumAAflat('edit-cum-a-aflat', 'edit-cum-a-aflat-liber', p.cum_a_aflat)}
           <label>Abonament</label>
           <select id="edit-abonament" onchange="actualizeazaInfoAbonament(this.value)" style="width:100%;margin-bottom:6px">
             <option value="" ${!ab ? 'selected' : ''}>Fara abonament</option>
@@ -878,13 +909,14 @@ async function salveazaEditarePacient(id) {
   const telefon = document.getElementById('edit-telefon').value.trim();
   const email = document.getElementById('edit-email').value.trim();
   const diagnostic = document.getElementById('edit-diagnostic').value.trim();
+  const cum_a_aflat = citesteCumAAflat('edit-cum-a-aflat', 'edit-cum-a-aflat-liber');
   const abonamentEl = document.getElementById('edit-abonament');
   const tipAbonament = abonamentEl ? abonamentEl.value : '';
 
   event.target.disabled = true;
   await apel(`/api/pacienti/${id}`, {
     method: 'PUT',
-    body: JSON.stringify({ nume, prenume, telefon, email, diagnostic })
+    body: JSON.stringify({ nume, prenume, telefon, email, diagnostic, cum_a_aflat })
   });
 
   if (tipAbonament && tipAbonament !== pacientEditareAbonamentCurent) {

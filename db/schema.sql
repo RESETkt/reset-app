@@ -16,11 +16,13 @@ CREATE TABLE IF NOT EXISTS pacienti (
   telefon text,
   email text,
   diagnostic text,
+  cum_a_aflat text,
   activ boolean NOT NULL DEFAULT true,
   creat_la timestamptz DEFAULT now()
 );
 
 ALTER TABLE pacienti DROP COLUMN IF EXISTS cnp;
+ALTER TABLE pacienti ADD COLUMN IF NOT EXISTS cum_a_aflat text;
 
 CREATE TABLE IF NOT EXISTS consimtaminte_gdpr (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
