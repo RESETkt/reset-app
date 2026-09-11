@@ -1534,7 +1534,10 @@ function egalizeazaColoaneStatistici() {
   if (!stanga || !dreapta) return;
   const carduriStanga = Array.from(stanga.children);
   carduriStanga.forEach(c => c.style.minHeight = '');
+  // Sub 760px, .panel-cols-2 devine 1 coloana (totul stivuit) - pe telefon nu egalizam nimic
+  if (window.innerWidth <= 760) return;
   requestAnimationFrame(() => {
+    if (window.innerWidth <= 760) return;
     const gapTotal = (carduriStanga.length - 1) * 16;
     const fiecare = (dreapta.offsetHeight - gapTotal) / carduriStanga.length;
     if (fiecare > 0) carduriStanga.forEach(c => c.style.minHeight = fiecare + 'px');
