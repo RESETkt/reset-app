@@ -974,11 +974,14 @@ function aratatConfirmareAbonamentNou(pacientId) {
         <h2>Abonament nou</h2>
         <div style="font-size:13px;color:#c9c7bd;margin-bottom:14px">Atentie: aceasta actiune inchide abonamentul curent si porneste unul nou, cu sedintele efectuate resetate la 0. Foloseste doar cand pacientul chiar incepe un abonament nou (nu la o plata obisnuita in mijlocul abonamentului).</div>
         <label>Tip abonament nou</label>
-        <select id="abonament-nou-tip" style="width:100%;margin-bottom:14px">
+        <select id="abonament-nou-tip" style="width:100%;margin-bottom:10px">
           <option value="8">8 sedinte</option>
           <option value="12">12 sedinte</option>
           <option value="individual">Sedinta individuala</option>
         </select>
+        <label>Sedinte deja efectuate (optional)</label>
+        <input id="abonament-nou-efectuate" type="number" min="0" step="1" placeholder="0" style="width:100%;margin-bottom:6px">
+        <div style="font-size:11px;color:#9a988e;margin-bottom:14px">Completeaza doar daca pacientul a facut deja sedinte inainte sa existe acest abonament (ex: istoric de dinainte).</div>
         <button class="btn" style="width:100%" onclick="confirmaAbonamentNou('${pacientId}')">Da, porneste abonament nou</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
       </div>
@@ -989,10 +992,11 @@ function aratatConfirmareAbonamentNou(pacientId) {
 
 async function confirmaAbonamentNou(pacientId) {
   const tip = document.getElementById('abonament-nou-tip').value;
+  const sedinte_efectuate = document.getElementById('abonament-nou-efectuate').value || 0;
   event.target.disabled = true;
   await apel('/api/abonamente', {
     method: 'POST',
-    body: JSON.stringify({ pacient_id: pacientId, tip })
+    body: JSON.stringify({ pacient_id: pacientId, tip, sedinte_efectuate })
   });
   inchideModalProgramare();
   deschideFisa(pacientId);
