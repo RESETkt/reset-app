@@ -1559,10 +1559,22 @@ async function incarcaStatistici() {
         ? `<div id="grafic-incasari-luna" style="margin-top:10px"></div>`
         : '<div style="font-size:13px;color:#9a988e;margin-top:10px">Sumele sunt ascunse. Apasa "Arata sumele" din cardul de mai sus pentru a le vedea.</div>'}
     </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <h2 style="margin:0 0 2px">Rata de reinnoire a abonamentelor</h2>
+          <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()} &middot; pachete 8/12 sedinte</div>
+        </div>
+        ${cardTendintaRata(s.reinnoiri_pe_luna, acum.getMonth())}
+      </div>
+      <div id="grafic-reinnoiri-luna" style="margin-top:10px"></div>
+    </div>
   `;
   egalizeazaColoaneStatistici();
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   if (sumeDeblocate) deseneazaGraficBare('grafic-incasari-luna', s.incasari_pe_luna, '#EA532F', acum.getMonth(), formatLei);
+  deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
 }
 
 // Deseneaza un grafic cu bare in containerul dat, folosind latimea lui reala (masurata in
@@ -1581,7 +1593,7 @@ function deseneazaGraficBare(idContainer, serie, culoare, indexCurent, formatVal
 // Grafic simplu cu bare, la latimea reala primita (in pixeli). Luna curenta e plina si
 // etichetata cu valoarea; lunile trecute sunt tot mai transparente, cele viitoare abia vizibile.
 function svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoare) {
-  formatValoare = formatValoare || (v => v);
+  formatValoare = formatValoare || (l => l.total);
   const marginLateral = 4, sus = 28, jos = 20, inaltimeGrafic = 180;
   const inaltimeTotal = sus + inaltimeGrafic + jos;
   const yBaza = sus + inaltimeGrafic;
@@ -1603,7 +1615,7 @@ function svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoa
     const opacitate = viitor ? 0.12 : (ultima ? 1 : 0.35 + (i / Math.max(indexCurent, 1)) * 0.55);
     return `
       <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${latimeBara.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
-      ${ultima ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#ece9e2">${formatValoare(l.total)}</text>` : ''}
+      ${ultima ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#ece9e2">${formatValoare(l)}</text>` : ''}
       <text x="${(x + latimeBara / 2).toFixed(1)}" y="${yBaza + 14}" text-anchor="middle" font-size="9" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
     `;
   }).join('');
@@ -1616,8 +1628,12 @@ function svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoa
   `;
 }
 
-function formatLei(suma) {
-  return `${Math.round(suma).toLocaleString('ro-RO')} lei`;
+function formatLei(l) {
+  return `${Math.round(l.total).toLocaleString('ro-RO')} lei`;
+}
+
+function formatRata(l) {
+  return l.total_finalizate > 0 ? `${l.total}%` : '—';
 }
 
 // Rezumat scurt al tendintei: compara media primei jumatati a anului (de pana acum) cu a doua.
@@ -1643,6 +1659,46 @@ function cardTendinta(serieCompleta, indexCurent) {
       else { stare = 'stabil'; text = 'Stagnare'; }
     }
   }
+  return randeazaBadgeTendinta(stare, text);
+}
+
+// Aceeasi idee ca cardTendinta, dar pentru o rata (reinnoiri/finalizate), nu o suma -
+// media pe jumatate de an trebuie ponderata (cate reinnoiri la cate finalizari in total),
+// nu media simpla a procentelor lunare, altfel lunile fara nicio finalizare ar trage gresit tendinta in jos.
+function cardTendintaRata(serieCompleta, indexCurent) {
+  const serie = serieCompleta.slice(0, indexCurent + 1);
+  let stare, text;
+  if (serie.length < 2) {
+    stare = 'stabil'; text = 'Inceput de an';
+  } else {
+    const mijloc = Math.ceil(serie.length / 2);
+    const prima = serie.slice(0, mijloc);
+    const aDoua = serie.slice(mijloc);
+    const finalizatePrima = prima.reduce((s, l) => s + l.total_finalizate, 0);
+    const reinnoitePrima = prima.reduce((s, l) => s + l.total_reinnoite, 0);
+    const finalizateADoua = aDoua.reduce((s, l) => s + l.total_finalizate, 0);
+    const reinnoiteADoua = aDoua.reduce((s, l) => s + l.total_reinnoite, 0);
+
+    if (finalizatePrima === 0 && finalizateADoua === 0) {
+      stare = 'stabil'; text = 'Inca fara abonamente finalizate';
+    } else if (finalizatePrima === 0) {
+      stare = reinnoiteADoua > 0 ? 'sus' : 'stabil';
+      text = reinnoiteADoua > 0 ? 'In crestere' : 'Fara reinnoiri inca';
+    } else if (finalizateADoua === 0) {
+      stare = 'stabil'; text = 'Inca prea putine date';
+    } else {
+      const rataPrima = reinnoitePrima / finalizatePrima;
+      const rataADoua = reinnoiteADoua / finalizateADoua;
+      const variatiePuncte = rataADoua - rataPrima;
+      if (variatiePuncte >= 0.08) { stare = 'sus'; text = 'In crestere'; }
+      else if (variatiePuncte <= -0.08) { stare = 'jos'; text = 'In scadere'; }
+      else { stare = 'stabil'; text = 'Stagnare'; }
+    }
+  }
+  return randeazaBadgeTendinta(stare, text);
+}
+
+function randeazaBadgeTendinta(stare, text) {
   const culori = { sus: '#7fd9a8', jos: '#e08585', stabil: '#9a988e' };
   const iconuri = {
     sus: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
@@ -1767,6 +1823,7 @@ window.addEventListener('resize', () => {
       if (ultimeleStatisticiDate.incasari_pe_luna) {
         deseneazaGraficBare('grafic-incasari-luna', ultimeleStatisticiDate.incasari_pe_luna, '#EA532F', new Date().getMonth(), formatLei);
       }
+      deseneazaGraficBare('grafic-reinnoiri-luna', ultimeleStatisticiDate.reinnoiri_pe_luna, '#E9B44C', new Date().getMonth(), formatRata);
     }
   }, 250);
 });

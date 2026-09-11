@@ -47,6 +47,55 @@ router.get('/', async (req, res) => {
     total: Number(r.total)
   }));
 
+  // Rata de reinnoire a abonamentelor (8/12 sedinte - individualele nu se "reinnoiesc").
+  // Un abonament e considerat "finalizat" cand sedinte_efectuate >= total_sedinte; data
+  // finalizarii e ultima programare cu prezenta legata de el (nu avem un camp dedicat).
+  // "Reinnoit" = pacientul are alt abonament creat dupa acea data.
+  const reinnoiriLunar = await pool.query(`
+    WITH finalizate AS (
+      SELECT
+        a.id,
+        a.pacient_id,
+        (SELECT MAX(p.data_ora) FROM programari p WHERE p.abonament_id = a.id AND p.status = 'prezent') AS data_finalizare
+      FROM abonamente a
+      WHERE a.sedinte_efectuate >= a.total_sedinte AND a.tip IN ('8', '12')
+    ),
+    finalizate_cu_data AS (
+      SELECT
+        f.*,
+        EXISTS (
+          SELECT 1 FROM abonamente a2
+          WHERE a2.pacient_id = f.pacient_id AND a2.id <> f.id AND a2.creat_la > f.data_finalizare
+        ) AS reinnoit
+      FROM finalizate f
+      WHERE f.data_finalizare IS NOT NULL
+    )
+    SELECT
+      EXTRACT(YEAR FROM gs.luna)::int AS an,
+      EXTRACT(MONTH FROM gs.luna)::int AS luna,
+      COUNT(fv.id) AS total_finalizate,
+      COUNT(fv.id) FILTER (WHERE fv.reinnoit) AS total_reinnoite
+    FROM generate_series(
+      date_trunc('year', now()),
+      date_trunc('year', now()) + interval '11 months',
+      interval '1 month'
+    ) AS gs(luna)
+    LEFT JOIN finalizate_cu_data fv ON date_trunc('month', fv.data_finalizare) = gs.luna
+    GROUP BY gs.luna
+    ORDER BY gs.luna
+  `);
+  const reinnoiri_pe_luna = reinnoiriLunar.rows.map(r => {
+    const totalFinalizate = Number(r.total_finalizate);
+    const totalReinnoite = Number(r.total_reinnoite);
+    return {
+      luna: `${r.an}-${String(r.luna).padStart(2, '0')}`,
+      eticheta: LUNI_RO[r.luna - 1].slice(0, 3),
+      total_finalizate: totalFinalizate,
+      total_reinnoite: totalReinnoite,
+      total: totalFinalizate > 0 ? Math.round((totalReinnoite / totalFinalizate) * 100) : 0
+    };
+  });
+
   let incasari_saptamana = null;
   let incasari_luna = null;
   let incasari_dupa_metoda = null;
@@ -97,7 +146,8 @@ router.get('/', async (req, res) => {
     incasari_luna,
     incasari_dupa_metoda,
     incasari_pe_luna,
-    sedinte_pe_luna
+    sedinte_pe_luna,
+    reinnoiri_pe_luna
   });
 });
 
