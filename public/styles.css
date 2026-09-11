@@ -8,7 +8,7 @@ body {
 }
 .app { display: block; min-height: 100vh; }
 .desktop-topbar { display: none; }
-.main { margin-left: 0; padding: 10px; padding-top: calc(48px + env(safe-area-inset-top) + 8px); padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
+.main { margin-left: 0; padding: 10px; padding-top: calc(var(--mobile-topbar-h, 64px) + 8px); padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
 .patient-row { padding: 10px 8px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; }
 .patient-row:hover, .patient-row.activ { background: #33322e; }
 .patient-row .nume { font-size: 13px; font-weight: 500; }

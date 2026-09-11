@@ -24,6 +24,8 @@ async function login() {
 function ajusteazaInaltimeTopbar() {
   const bara = document.querySelector('.desktop-topbar');
   if (bara) document.documentElement.style.setProperty('--topbar-h', bara.offsetHeight + 'px');
+  const baraMobil = document.querySelector('.mobile-topbar');
+  if (baraMobil) document.documentElement.style.setProperty('--mobile-topbar-h', baraMobil.offsetHeight + 'px');
 }
 
 function aratatApp() {
