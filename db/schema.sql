@@ -35,12 +35,17 @@ CREATE TABLE IF NOT EXISTS consimtaminte_gdpr (
 CREATE TABLE IF NOT EXISTS abonamente (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   pacient_id uuid REFERENCES pacienti(id) ON DELETE CASCADE,
-  tip text NOT NULL CHECK (tip IN ('8','12','individual')),
+  tip text NOT NULL CHECK (tip IN ('8','12','individual','functional')),
   total_sedinte int NOT NULL,
   sedinte_efectuate int NOT NULL DEFAULT 0,
   activ boolean DEFAULT true,
   creat_la timestamptz DEFAULT now()
 );
+
+-- Abonamentul "Functional" (8 sedinte de 1h, in loc de 1h30 la celelalte) - constraint-ul
+-- de mai sus nu se aplica retroactiv pe un tabel deja existent, trebuie extins explicit.
+ALTER TABLE abonamente DROP CONSTRAINT IF EXISTS abonamente_tip_check;
+ALTER TABLE abonamente ADD CONSTRAINT abonamente_tip_check CHECK (tip IN ('8','12','individual','functional'));
 
 CREATE TABLE IF NOT EXISTS plati (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

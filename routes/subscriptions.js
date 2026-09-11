@@ -5,7 +5,7 @@ const { ceareAutentificare } = require('../services/auth');
 const router = express.Router();
 router.use(ceareAutentificare);
 
-const TOTAL_SEDINTE = { '8': 8, '12': 12, individual: 1 };
+const TOTAL_SEDINTE = { '8': 8, '12': 12, functional: 8, individual: 1 };
 
 router.post('/', async (req, res) => {
   const { pacient_id, tip, sedinte_efectuate } = req.body;

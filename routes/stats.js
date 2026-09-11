@@ -47,7 +47,8 @@ router.get('/', async (req, res) => {
     total: Number(r.total)
   }));
 
-  // Rata de reinnoire a abonamentelor (8/12 sedinte - individualele nu se "reinnoiesc").
+  // Rata de reinnoire a abonamentelor (pachete cu mai multe sedinte - 8/12/functional -
+  // individualele nu se "reinnoiesc", sunt o singura sedinta oricum).
   // Un abonament e considerat "finalizat" cand sedinte_efectuate >= total_sedinte; data
   // finalizarii e ultima programare cu prezenta legata de el (nu avem un camp dedicat).
   // "Reinnoit" = pacientul are alt abonament creat dupa acea data.
@@ -58,7 +59,7 @@ router.get('/', async (req, res) => {
         a.pacient_id,
         (SELECT MAX(p.data_ora) FROM programari p WHERE p.abonament_id = a.id AND p.status = 'prezent') AS data_finalizare
       FROM abonamente a
-      WHERE a.sedinte_efectuate >= a.total_sedinte AND a.tip IN ('8', '12')
+      WHERE a.sedinte_efectuate >= a.total_sedinte AND a.tip IN ('8', '12', 'functional')
     ),
     finalizate_cu_data AS (
       SELECT

@@ -523,6 +523,7 @@ function aratatFormularPacientNou() {
         <option value="">Fara abonament</option>
         <option value="8">8 sedinte</option>
         <option value="12">12 sedinte</option>
+        <option value="functional">Functional</option>
         <option value="individual">Sedinta individuala</option>
       </select>
 
@@ -891,6 +892,7 @@ function aratatFormularEditarePacient(id) {
             <option value="" ${!ab ? 'selected' : ''}>Fara abonament</option>
             <option value="8" ${ab && ab.tip === '8' ? 'selected' : ''}>8 sedinte</option>
             <option value="12" ${ab && ab.tip === '12' ? 'selected' : ''}>12 sedinte</option>
+            <option value="functional" ${ab && ab.tip === 'functional' ? 'selected' : ''}>Functional</option>
             <option value="individual" ${ab && ab.tip === 'individual' ? 'selected' : ''}>Sedinta individuala</option>
           </select>
           <div id="abonament-info" style="font-size:12px;color:#9a988e;margin-bottom:14px">${ab ? `Are deja ${ab.sedinte_efectuate}/${ab.total_sedinte} sedinte efectuate.` : 'Pacientul nu are niciun abonament momentan.'}</div>
@@ -904,7 +906,7 @@ function aratatFormularEditarePacient(id) {
 }
 
 function textAbonament(tip) {
-  return tip === '8' ? '8 sedinte' : tip === '12' ? '12 sedinte' : tip === 'individual' ? 'Sedinta individuala' : '';
+  return tip === '8' ? '8 sedinte' : tip === '12' ? '12 sedinte' : tip === 'functional' ? 'Functional' : tip === 'individual' ? 'Sedinta individuala' : '';
 }
 
 function actualizeazaInfoAbonament(tip) {
@@ -977,6 +979,7 @@ function aratatConfirmareAbonamentNou(pacientId) {
         <select id="abonament-nou-tip" style="width:100%;margin-bottom:10px">
           <option value="8">8 sedinte</option>
           <option value="12">12 sedinte</option>
+          <option value="functional">Functional</option>
           <option value="individual">Sedinta individuala</option>
         </select>
         <label>Sedinte deja efectuate (optional)</label>
@@ -1027,6 +1030,7 @@ async function aratatFormularPlataNoua(pacientId) {
         <select id="plata-motiv-select" style="width:100%;margin-bottom:6px" onchange="schimbaMotivPlata(this.value)">
           <option value="8">Abonament 8 sedinte</option>
           <option value="12">Abonament 12 sedinte</option>
+          <option value="functional">Functional</option>
           <option value="individual">Sedinta individuala</option>
           <option value="altceva">Altceva (scriu eu)</option>
         </select>
@@ -1062,7 +1066,7 @@ async function salveazaPlataNoua(pacientId) {
     return;
   }
 
-  const NUME_MOTIV = { '8': 'Abonament 8 sedinte', '12': 'Abonament 12 sedinte', individual: 'Sedinta individuala' };
+  const NUME_MOTIV = { '8': 'Abonament 8 sedinte', '12': 'Abonament 12 sedinte', functional: 'Functional', individual: 'Sedinta individuala' };
   const motiv = motivSelect === 'altceva' ? document.getElementById('plata-motiv-liber').value.trim() : NUME_MOTIV[motivSelect];
 
   const buton = event.target;
@@ -1697,7 +1701,7 @@ async function incarcaStatistici() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
         <div>
           <h2 style="margin:0 0 2px">Rata de reinnoire a abonamentelor</h2>
-          <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()} &middot; pachete 8/12 sedinte</div>
+          <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()} &middot; pachete 8/12/Functional</div>
         </div>
         ${cardTendintaRata(s.reinnoiri_pe_luna, acum.getMonth())}
       </div>
