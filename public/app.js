@@ -1652,17 +1652,6 @@ async function incarcaStatistici() {
     <div class="card" style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
         <div>
-          <h2 style="margin:0 0 2px">Sedinte pe luna</h2>
-          <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()}</div>
-        </div>
-        ${cardTendinta(s.sedinte_pe_luna, acum.getMonth())}
-      </div>
-      <div id="grafic-sedinte-luna" style="margin-top:10px"></div>
-    </div>
-
-    <div class="card" style="margin-top:16px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-        <div>
           <h2 style="margin:0 0 2px">Incasari pe luna</h2>
           <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()}</div>
         </div>
@@ -1671,6 +1660,17 @@ async function incarcaStatistici() {
       ${sumeDeblocate
         ? `<div id="grafic-incasari-luna" style="margin-top:10px"></div>`
         : '<div style="font-size:13px;color:#9a988e;margin-top:10px">Sumele sunt ascunse. Apasa "Arata sumele" din cardul de mai sus pentru a le vedea.</div>'}
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <h2 style="margin:0 0 2px">Sedinte pe luna</h2>
+          <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()}</div>
+        </div>
+        ${cardTendinta(s.sedinte_pe_luna, acum.getMonth())}
+      </div>
+      <div id="grafic-sedinte-luna" style="margin-top:10px"></div>
     </div>
 
     <div class="card" style="margin-top:16px">
@@ -1685,8 +1685,8 @@ async function incarcaStatistici() {
     </div>
   `;
   egalizeazaColoaneStatistici();
-  deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   if (sumeDeblocate) deseneazaGraficBare('grafic-incasari-luna', s.incasari_pe_luna, '#EA532F', acum.getMonth(), formatLei);
+  deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
 }
 
