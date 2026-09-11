@@ -24,6 +24,27 @@ router.get('/', async (req, res) => {
     WHERE data_ora >= date_trunc('month', now()) AND data_ora < date_trunc('month', now()) + interval '1 month' AND status = 'prezent'
   `);
 
+  const sedinteLunar = await pool.query(`
+    SELECT
+      EXTRACT(YEAR FROM gs.luna)::int AS an,
+      EXTRACT(MONTH FROM gs.luna)::int AS luna,
+      COUNT(p.id) AS total
+    FROM generate_series(
+      date_trunc('month', now()) - interval '11 months',
+      date_trunc('month', now()),
+      interval '1 month'
+    ) AS gs(luna)
+    LEFT JOIN programari p
+      ON date_trunc('month', p.data_ora) = gs.luna AND p.status = 'prezent'
+    GROUP BY gs.luna
+    ORDER BY gs.luna
+  `);
+  const sedinte_pe_luna = sedinteLunar.rows.map(r => ({
+    luna: `${r.an}-${String(r.luna).padStart(2, '0')}`,
+    eticheta: LUNI_RO[r.luna - 1].slice(0, 3),
+    total: Number(r.total)
+  }));
+
   let incasari_saptamana = null;
   let incasari_luna = null;
   let incasari_dupa_metoda = null;
@@ -52,7 +73,8 @@ router.get('/', async (req, res) => {
     pacienti_luna: Number(pacientiLuna.rows[0].count),
     incasari_saptamana,
     incasari_luna,
-    incasari_dupa_metoda
+    incasari_dupa_metoda,
+    sedinte_pe_luna
   });
 });
 

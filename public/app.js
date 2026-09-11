@@ -1533,8 +1533,75 @@ async function incarcaStatistici() {
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px">
+        <h2 style="margin:0">Sedinte pe luna</h2>
+        ${cardTendinta(s.sedinte_pe_luna)}
+      </div>
+      <div style="font-size:11.5px;color:#6f6d64;margin-top:-8px;margin-bottom:10px">Ultimele 12 luni</div>
+      ${graficBareSVG(s.sedinte_pe_luna, '#1FA1AB')}
+    </div>
   `;
   egalizeazaColoaneStatistici();
+}
+
+// Grafic simplu cu bare in SVG pentru o serie de 12 luni [{eticheta, total}].
+// Ultima luna e plina si etichetata cu valoarea; lunile vechi sunt tot mai transparente.
+function graficBareSVG(serie, culoare) {
+  const latimeBara = 36, spatiu = 20, sus = 20, jos = 25, inaltimeGrafic = 130;
+  const latime = serie.length * latimeBara + (serie.length - 1) * spatiu + 30;
+  const inaltimeTotal = sus + inaltimeGrafic + jos;
+  const yBaza = sus + inaltimeGrafic;
+  const maxim = Math.max(...serie.map(l => l.total), 1);
+
+  const bare = serie.map((l, i) => {
+    const x = 15 + i * (latimeBara + spatiu);
+    const h = Math.max((l.total / maxim) * inaltimeGrafic, l.total > 0 ? 4 : 1);
+    const y = yBaza - h;
+    const ultima = i === serie.length - 1;
+    const opacitate = ultima ? 1 : 0.35 + (i / (serie.length - 1)) * 0.55;
+    return `
+      <rect x="${x}" y="${y}" width="${latimeBara}" height="${h}" rx="4" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
+      ${ultima ? `<text x="${x + latimeBara / 2}" y="${y - 8}" text-anchor="middle" font-size="12" font-weight="600" fill="#ece9e2">${l.total}</text>` : ''}
+      <text x="${x + latimeBara / 2}" y="${yBaza + 16}" text-anchor="middle" font-size="10" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
+    `;
+  }).join('');
+
+  return `
+    <svg viewBox="0 0 ${latime} ${inaltimeTotal}" style="display:block;width:100%;height:auto;overflow:visible">
+      <line x1="15" y1="${yBaza + 0.5}" x2="${latime - 15}" y2="${yBaza + 0.5}" stroke="#3a3937" stroke-width="1"/>
+      ${bare}
+    </svg>
+  `;
+}
+
+// Rezumat scurt al tendintei: compara media ultimelor 3 luni cu media primelor 3 din fereastra de 12 luni.
+function cardTendinta(serie) {
+  const primele = serie.slice(0, 3).reduce((s, l) => s + l.total, 0) / 3;
+  const ultimele = serie.slice(-3).reduce((s, l) => s + l.total, 0) / 3;
+  let stare, text;
+  if (primele === 0) {
+    stare = ultimele > 0 ? 'sus' : 'stabil';
+    text = ultimele > 0 ? 'In crestere' : 'Fara activitate inca';
+  } else {
+    const variatie = (ultimele - primele) / primele;
+    if (variatie >= 0.08) { stare = 'sus'; text = 'In crestere'; }
+    else if (variatie <= -0.08) { stare = 'jos'; text = 'In scadere'; }
+    else { stare = 'stabil'; text = 'Stagnare'; }
+  }
+  const culori = { sus: '#7fd9a8', jos: '#e08585', stabil: '#9a988e' };
+  const iconuri = {
+    sus: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
+    jos: '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/>',
+    stabil: '<line x1="5" y1="12" x2="19" y2="12"/>'
+  };
+  return `
+    <span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;color:${culori[stare]};background:${culori[stare]}24">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${iconuri[stare]}</svg>
+      ${text}
+    </span>
+  `;
 }
 
 function egalizeazaColoaneStatistici() {
