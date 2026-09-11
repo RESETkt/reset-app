@@ -548,7 +548,7 @@ async function deschideFisa(id) {
 
   document.getElementById('panel-fisa').innerHTML = `
     <div style="margin-bottom:12px">
-      <span style="font-size:12px;color:#9a988e;cursor:pointer" onclick="inapoiDinFisa()">&larr; ${fisaOrigine === 'calendar' ? 'Calendar' : 'Toti pacientii'}</span>
+      <button class="btn secundar" onclick="inapoiDinFisa()">&larr; ${fisaOrigine === 'calendar' ? 'Calendar' : 'Toti pacientii'}</button>
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
