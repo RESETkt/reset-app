@@ -1485,11 +1485,13 @@ async function stergeProgramare(id) {
 }
 
 let parolaSumeCurenta = null;
+let ultimeleStatisticiDate = null;
 const LUNI_RO_STATS = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
 
 async function incarcaStatistici() {
   const query = parolaSumeCurenta ? `?parola=${encodeURIComponent(parolaSumeCurenta)}` : '';
   const s = await apel(`/api/statistici${query}`);
+  ultimeleStatisticiDate = s;
   const sumeDeblocate = s.incasari_luna != null;
   if (parolaSumeCurenta && !sumeDeblocate) parolaSumeCurenta = null;
   const acum = new Date();
@@ -1542,37 +1544,54 @@ async function incarcaStatistici() {
         </div>
         ${cardTendinta(s.sedinte_pe_luna)}
       </div>
-      ${graficBareSVG(s.sedinte_pe_luna, '#1FA1AB')}
+      <div id="grafic-sedinte-luna" style="margin-top:10px"></div>
     </div>
   `;
   egalizeazaColoaneStatistici();
+  deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB');
 }
 
-// Grafic simplu cu bare in SVG pentru o serie de 12 luni [{eticheta, total}].
-// Ultima luna e plina si etichetata cu valoarea; lunile vechi sunt tot mai transparente.
-function graficBareSVG(serie, culoare) {
-  const latimeBara = 20, spatiu = 10, sus = 20, jos = 18, inaltimeGrafic = 64;
-  const latime = serie.length * latimeBara + (serie.length - 1) * spatiu + 16;
+// Deseneaza un grafic cu bare in containerul dat, folosind latimea lui reala (masurata in
+// DOM, ca la canvas-ul de semnatura GDPR) - nu scalare CSS, ca sa nu se deformeze barele.
+function deseneazaGraficBare(idContainer, serie, culoare) {
+  const container = document.getElementById(idContainer);
+  if (!container) return;
+  requestAnimationFrame(() => {
+    const latimeContainer = container.clientWidth;
+    if (!latimeContainer) return;
+    container.innerHTML = svgGraficBare(serie, culoare, latimeContainer);
+  });
+}
+
+// Grafic simplu cu bare, la latimea reala primita (in pixeli). Ultima luna e plina si
+// etichetata cu valoarea; lunile vechi sunt tot mai transparente.
+function svgGraficBare(serie, culoare, latimeContainer) {
+  const marginLateral = 4, sus = 22, jos = 18, inaltimeGrafic = 84;
   const inaltimeTotal = sus + inaltimeGrafic + jos;
   const yBaza = sus + inaltimeGrafic;
+  const n = serie.length;
+  const spatiuUtil = latimeContainer - marginLateral * 2;
+  const raportGol = 0.55; // spatiul dintre bare = 55% din latimea unei bare
+  const latimeBara = spatiuUtil / (n + (n - 1) * raportGol);
+  const pasBara = latimeBara * (1 + raportGol);
   const maxim = Math.max(...serie.map(l => l.total), 1);
 
   const bare = serie.map((l, i) => {
-    const x = 8 + i * (latimeBara + spatiu);
+    const x = marginLateral + i * pasBara;
     const h = Math.max((l.total / maxim) * inaltimeGrafic, l.total > 0 ? 3 : 1);
     const y = yBaza - h;
-    const ultima = i === serie.length - 1;
-    const opacitate = ultima ? 1 : 0.35 + (i / (serie.length - 1)) * 0.55;
+    const ultima = i === n - 1;
+    const opacitate = ultima ? 1 : 0.35 + (i / (n - 1)) * 0.55;
     return `
-      <rect x="${x}" y="${y}" width="${latimeBara}" height="${h}" rx="3" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
-      ${ultima ? `<text x="${x + latimeBara / 2}" y="${y - 6}" text-anchor="middle" font-size="10" font-weight="600" fill="#ece9e2">${l.total}</text>` : ''}
-      <text x="${x + latimeBara / 2}" y="${yBaza + 13}" text-anchor="middle" font-size="8" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${latimeBara.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
+      ${ultima ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#ece9e2">${l.total}</text>` : ''}
+      <text x="${(x + latimeBara / 2).toFixed(1)}" y="${yBaza + 14}" text-anchor="middle" font-size="9" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
     `;
   }).join('');
 
   return `
-    <svg viewBox="0 0 ${latime} ${inaltimeTotal}" preserveAspectRatio="none" style="display:block;width:100%;height:110px;margin-top:8px">
-      <line x1="8" y1="${yBaza + 0.5}" x2="${latime - 8}" y2="${yBaza + 0.5}" stroke="#3a3937" stroke-width="1"/>
+    <svg width="${latimeContainer}" height="${inaltimeTotal}" viewBox="0 0 ${latimeContainer} ${inaltimeTotal}" style="display:block">
+      <line x1="${marginLateral}" y1="${yBaza + 0.5}" x2="${latimeContainer - marginLateral}" y2="${yBaza + 0.5}" stroke="#3a3937" stroke-width="1"/>
       ${bare}
     </svg>
   `;
@@ -1710,6 +1729,9 @@ window.addEventListener('resize', () => {
       esteMobilAnterior = esteMobil();
       const panelCalendar = document.getElementById('panel-calendar');
       if (panelCalendar && panelCalendar.style.display !== 'none') incarcaCalendarSaptamana();
+    }
+    if (ultimeleStatisticiDate) {
+      deseneazaGraficBare('grafic-sedinte-luna', ultimeleStatisticiDate.sedinte_pe_luna, '#1FA1AB');
     }
   }, 250);
 });
