@@ -1526,26 +1526,158 @@ async function marcheaza(id, status) {
   incarcaCalendarSaptamana();
 }
 
+// Protocolul de Mobilitate e aproape mereu acelasi (ordine fixa) - se bifeaza in bloc,
+// iar la nevoie un pas se debifeaza si se noteaza ce s-a modificat/de ce s-a renuntat.
+const PROTOCOL_MOBILITATE = [
+  { nume: 'Respirații diafragmatice', detaliu: '3 min' },
+  { nume: 'Detensionare posterior', detaliu: 'foam roller + mingiuțe, talpă → cervical' },
+  { nume: 'Detensionare anterior', detaliu: 'tibial anterior → umeri' },
+  { nume: 'Frog Stretch', detaliu: 'deschidere șolduri pe saltea' },
+  { nume: 'Stick mobility', detaliu: 'rotații și înclinări laterale cu stick mobility la piept, din fandare sau șezut' },
+  { nume: 'Lotus', detaliu: 'talpă în talpă, deschidere șolduri' },
+  { nume: 'Deschidere torace', detaliu: 'genunchi pe foam roller, mâini întinse înainte, rotații' },
+];
+
+// Stabilitate & Forta: text liber pe 3 zone ale corpului, nu bifat exercitiu cu exercitiu -
+// mult mai rapid de completat intre pacienti, si tot ramane organizat pe zone.
+const PROTOCOL_GRUPE = [
+  { nume: 'Lower Body', placeholder: 'ex: squats cu ladă, fandări în mers, ridicare bazin, clamshell...' },
+  { nume: 'Trunk', placeholder: 'ex: plank, minge medicinală, rotații, cumpănă stick mobility...' },
+  { nume: 'Upper Body', placeholder: 'ex: flotări, Y/T fly, biceps la TRX, cervical...' },
+];
+
+let prezentaMobilitate = [];
+let prezentaGrupe = [];
+let prezentaCardio = { activ: false, tip: 'Bicicletă', durata: '' };
+
 function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
+  prezentaMobilitate = PROTOCOL_MOBILITATE.map(p => ({ ...p, bifat: true, nota: '' }));
+  prezentaGrupe = PROTOCOL_GRUPE.map(g => ({ ...g, valoare: '' }));
+  prezentaCardio = { activ: false, tip: 'Bicicletă', durata: '' };
+
   const html = `
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px" onclick="if(event.target===this) inchideModalProgramare()">
-      <div class="card" style="max-width:380px;width:90%">
-        <h2>Prezenta - ${prenume}</h2>
-        <label>Exercitii</label>
-        <textarea id="prezenta-exercitii" rows="3" style="width:100%;margin-bottom:10px"></textarea>
-        <label>Cum s-a simtit / Observatii</label>
-        <textarea id="prezenta-observatii" rows="3" style="width:100%;margin-bottom:14px"></textarea>
-        <button class="btn" style="width:100%" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salveaza</button>
-        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:200" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:420px;width:90%;max-height:calc(100vh - 48px);overflow-y:auto">
+        <h2>Prezență &ndash; ${prenume}</h2>
+
+        <div class="prot-sectiune">
+          <div class="prot-sectiune-head">
+            <h3>Mobilitate</h3>
+            <button class="prot-btn-toate" type="button" onclick="bifeazaToatePrezentaMobilitate()">Bifează tot ca de obicei</button>
+          </div>
+          <div id="prezenta-mobilitate-lista"></div>
+        </div>
+
+        <div class="prot-sectiune">
+          <div class="prot-sectiune-head">
+            <h3>Stabilitate &amp; Forță</h3>
+          </div>
+          <div id="prezenta-grupe"></div>
+        </div>
+
+        <div class="prot-sectiune">
+          <div class="prot-sectiune-head">
+            <h3>Cardio</h3>
+            <span class="prot-durata-chip">opțional</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:13px">S-a făcut cardio azi</span>
+            <div class="prot-switch off" id="prezenta-cardio-switch" onclick="togglePrezentaCardio()"><div class="prot-buliniu"></div></div>
+          </div>
+          <div id="prezenta-cardio-detalii" style="display:none;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">
+            <div class="prot-chip activ" onclick="alegePrezentaCardioTip(this,'Bicicletă')">Bicicletă</div>
+            <div class="prot-chip" onclick="alegePrezentaCardioTip(this,'Scăriță')">Scăriță</div>
+            <div class="prot-chip" onclick="alegePrezentaCardioTip(this,'Altceva')">Altceva</div>
+            <span style="flex-grow:1"></span>
+            <input class="prot-durata" id="prezenta-cardio-durata" placeholder="min" inputmode="numeric">
+            <span style="font-size:11px;color:#706e66">min</span>
+          </div>
+        </div>
+
+        <div class="prot-nota-box">
+          <div class="prot-nota-box-cap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e0b85e" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span>Cum s-a simțit azi</span>
+            <em>&mdash; nu exerciții, ci starea pacientului</em>
+          </div>
+          <textarea id="prezenta-nota" rows="2" placeholder="ex: obosit azi, genunchi drept sensibil, dispoziție bună..."></textarea>
+        </div>
+
+        <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anulează</button>
       </div>
     </div>
   `;
   document.getElementById('modal-container').innerHTML = html;
+  randPrezentaMobilitate();
+  randPrezentaGrupe();
+}
+
+function randPrezentaMobilitate() {
+  document.getElementById('prezenta-mobilitate-lista').innerHTML = prezentaMobilitate.map((p, i) => `
+    <div class="prot-pas ${p.bifat ? 'bifat' : ''}">
+      <div class="prot-check" onclick="togglePrezentaMobilitate(${i})">${p.bifat ? '&#10003;' : ''}</div>
+      <div class="prot-continut">
+        <div class="prot-nume" onclick="togglePrezentaMobilitate(${i})">${p.nume}</div>
+        <div class="prot-detaliu">${p.detaliu}</div>
+        ${!p.bifat ? `<input class="prot-nota" placeholder="ce s-a modificat sau de ce s-a renunțat..." value="${p.nota}" oninput="prezentaMobilitate[${i}].nota=this.value">` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+function togglePrezentaMobilitate(i) { prezentaMobilitate[i].bifat = !prezentaMobilitate[i].bifat; randPrezentaMobilitate(); }
+function bifeazaToatePrezentaMobilitate() { prezentaMobilitate.forEach(p => { p.bifat = true; p.nota = ''; }); randPrezentaMobilitate(); }
+
+function randPrezentaGrupe() {
+  document.getElementById('prezenta-grupe').innerHTML = prezentaGrupe.map((g, i) => `
+    <div class="prot-grup">
+      <label>${g.nume}</label>
+      <textarea rows="2" placeholder="${g.placeholder}" oninput="prezentaGrupe[${i}].valoare=this.value"></textarea>
+    </div>
+  `).join('');
+}
+
+function togglePrezentaCardio() {
+  prezentaCardio.activ = !prezentaCardio.activ;
+  document.getElementById('prezenta-cardio-switch').classList.toggle('off', !prezentaCardio.activ);
+  document.getElementById('prezenta-cardio-detalii').style.display = prezentaCardio.activ ? 'flex' : 'none';
+}
+function alegePrezentaCardioTip(el, tip) {
+  prezentaCardio.tip = tip;
+  el.parentElement.querySelectorAll('.prot-chip').forEach(c => c.classList.remove('activ'));
+  el.classList.add('activ');
+}
+
+// Compune textul salvat in coloana "exercitii" din starea structurata a formularului -
+// ramane text simplu, ca sa nu stricam istoricul/PDF-ul care afiseaza deja acest camp ca atare.
+function formateazaExercitiiProtocol() {
+  const parti = [];
+
+  const nebifate = prezentaMobilitate.filter(p => !p.bifat);
+  if (!nebifate.length) {
+    parti.push('Mobilitate: toate ca de obicei');
+  } else {
+    const exceptii = nebifate.map(p => p.nota ? `${p.nume} (${p.nota})` : p.nume).join(', ');
+    parti.push(`Mobilitate: toate ca de obicei, cu excepția: ${exceptii}`);
+  }
+
+  prezentaGrupe.forEach(g => {
+    const valoare = g.valoare.trim();
+    if (valoare) parti.push(`${g.nume}: ${valoare}`);
+  });
+
+  if (prezentaCardio.activ) {
+    const durata = prezentaCardio.durata ? `, ${prezentaCardio.durata} min` : '';
+    parti.push(`Cardio: ${prezentaCardio.tip}${durata}`);
+  }
+
+  return parti.join('\n');
 }
 
 async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
-  const exercitii = document.getElementById('prezenta-exercitii').value.trim();
-  const observatii = document.getElementById('prezenta-observatii').value.trim();
+  prezentaCardio.durata = document.getElementById('prezenta-cardio-durata').value.trim();
+  const observatii = document.getElementById('prezenta-nota').value.trim();
+  const exercitii = formateazaExercitiiProtocol();
   await apel(`/api/programari/${id}/prezent`, { method: 'PATCH', body: JSON.stringify({ exercitii, observatii }) });
 
   const areMaiPutinDe3 = statusCurent !== 'prezent' && totalSedinte != null && sedinteEfectuate != null
