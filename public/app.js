@@ -1557,50 +1557,55 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
 
   const html = `
     <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:200" onclick="if(event.target===this) inchideModalProgramare()">
-      <div class="card" style="max-width:420px;width:90%;max-height:calc(100vh - 48px);overflow-y:auto">
+      <div class="card" style="max-width:680px;width:90%;max-height:calc(100vh - 48px);overflow-y:auto">
         <h2>Prezență &ndash; ${prenume}</h2>
 
-        <div class="prot-sectiune">
-          <div class="prot-sectiune-head">
-            <h3>Mobilitate</h3>
-            <button class="prot-btn-toate" type="button" onclick="bifeazaToatePrezentaMobilitate()">Bifează tot ca de obicei</button>
+        <div class="prot-doua-coloane">
+          <div class="prot-coloana">
+            <div class="prot-sectiune">
+              <div class="prot-sectiune-head">
+                <h3>Mobilitate</h3>
+              </div>
+              <button class="prot-btn-toate" type="button" onclick="bifeazaToatePrezentaMobilitate()" style="margin-bottom:6px">Bifează tot ca de obicei</button>
+              <div id="prezenta-mobilitate-lista"></div>
+            </div>
           </div>
-          <div id="prezenta-mobilitate-lista"></div>
-        </div>
 
-        <div class="prot-sectiune">
-          <div class="prot-sectiune-head">
-            <h3>Stabilitate &amp; Forță</h3>
-          </div>
-          <div id="prezenta-grupe"></div>
-        </div>
+          <div class="prot-coloana">
+            <div class="prot-sectiune">
+              <div class="prot-sectiune-head">
+                <h3>Stabilitate &amp; Forță</h3>
+              </div>
+              <div id="prezenta-grupe"></div>
+            </div>
 
-        <div class="prot-sectiune">
-          <div class="prot-sectiune-head">
-            <h3>Cardio</h3>
-            <span class="prot-durata-chip">opțional</span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:13px">S-a făcut cardio azi</span>
-            <div class="prot-switch off" id="prezenta-cardio-switch" onclick="togglePrezentaCardio()"><div class="prot-buliniu"></div></div>
-          </div>
-          <div id="prezenta-cardio-detalii" style="display:none;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">
-            <div class="prot-chip activ" onclick="alegePrezentaCardioTip(this,'Bicicletă')">Bicicletă</div>
-            <div class="prot-chip" onclick="alegePrezentaCardioTip(this,'Scăriță')">Scăriță</div>
-            <div class="prot-chip" onclick="alegePrezentaCardioTip(this,'Altceva')">Altceva</div>
-            <span style="flex-grow:1"></span>
-            <input class="prot-durata" id="prezenta-cardio-durata" placeholder="min" inputmode="numeric">
-            <span style="font-size:11px;color:#706e66">min</span>
+            <div class="prot-sectiune">
+              <div class="prot-sectiune-head">
+                <h3>Cardio</h3>
+                <span class="prot-durata-chip">opțional</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:13px">S-a făcut cardio azi</span>
+                <div class="prot-switch off" id="prezenta-cardio-switch" onclick="togglePrezentaCardio()"><div class="prot-buliniu"></div></div>
+              </div>
+              <div id="prezenta-cardio-detalii" style="display:none;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">
+                <div class="prot-chip activ" onclick="alegePrezentaCardioTip(this,'Bicicletă')">Bicicletă</div>
+                <div class="prot-chip" onclick="alegePrezentaCardioTip(this,'Scăriță')">Scăriță</div>
+                <div class="prot-chip" onclick="alegePrezentaCardioTip(this,'Altceva')">Altceva</div>
+                <span style="flex-grow:1"></span>
+                <input class="prot-durata" id="prezenta-cardio-durata" placeholder="min" inputmode="numeric">
+                <span style="font-size:11px;color:#706e66">min</span>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="prot-nota-box">
           <div class="prot-nota-box-cap">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e0b85e" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            <span>Cum s-a simțit azi</span>
-            <em>&mdash; nu exerciții, ci starea pacientului</em>
+            <span>Cum s-a simțit azi?</span>
           </div>
-          <textarea id="prezenta-nota" rows="2" placeholder="ex: obosit azi, genunchi drept sensibil, dispoziție bună..."></textarea>
+          <textarea id="prezenta-nota" rows="1" placeholder="ex: obosit azi, genunchi drept sensibil, totul ok..."></textarea>
         </div>
 
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
