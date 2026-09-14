@@ -9,13 +9,41 @@ router.use(ceareAutentificare);
 
 const LUNI_RO = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
 
+function dataISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Numarul de pacienti dintr-o saptamana la alegere (offset in saptamani fata de cea curenta,
+// 0 = saptamana asta, -1 = saptamana trecuta etc) - fara nicio suma, ca sa poata fi vazut de
+// oricine e logat, nu doar de admin cu parola de sume.
+router.get('/saptamana', async (req, res) => {
+  const offset = parseInt(req.query.offset, 10) || 0;
+
+  const azi = new Date();
+  const ziSaptamana = (azi.getDay() + 6) % 7; // 0=luni .. 6=duminica
+  const ziInceputLuni = azi.getDate() - ziSaptamana + offset * 7;
+  // Constructia asta (an, luna, zi separat) rezolva corect trecerea intre luni/ani si nu e
+  // afectata de ora de vara/iarna, spre deosebire de adunarea bruta a 24h in milisecunde.
+  const inceput = new Date(azi.getFullYear(), azi.getMonth(), ziInceputLuni);
+  const sfarsitExclusiv = new Date(azi.getFullYear(), azi.getMonth(), ziInceputLuni + 7);
+  const ultimaZi = new Date(azi.getFullYear(), azi.getMonth(), ziInceputLuni + 6);
+
+  const { rows } = await pool.query(
+    `SELECT COUNT(*) FROM programari WHERE data_ora >= $1 AND data_ora < $2 AND status = 'prezent'`,
+    [inceput, sfarsitExclusiv]
+  );
+
+  res.json({
+    pacienti: Number(rows[0].count),
+    inceput: dataISO(inceput),
+    sfarsit: dataISO(ultimaZi),
+    esteSaptamanaCurenta: offset === 0
+  });
+});
+
 router.get('/', async (req, res) => {
   const parolaCorecta = req.query.parola === PAROLA_SUME;
 
-  const pacientiSaptamana = await pool.query(`
-    SELECT COUNT(*) FROM programari
-    WHERE data_ora >= date_trunc('week', now()) AND data_ora < date_trunc('week', now()) + interval '7 days' AND status = 'prezent'
-  `);
   const pacientiLuna = await pool.query(`
     SELECT COUNT(*) FROM programari
     WHERE data_ora >= date_trunc('month', now()) AND data_ora < date_trunc('month', now()) + interval '1 month' AND status = 'prezent'
@@ -94,16 +122,11 @@ router.get('/', async (req, res) => {
     };
   });
 
-  let incasari_saptamana = null;
   let incasari_luna = null;
   let incasari_dupa_metoda = null;
   let incasari_pe_luna = null;
 
   if (parolaCorecta) {
-    const incasariSaptamana = await pool.query(`
-      SELECT COALESCE(SUM(suma),0) AS total FROM plati
-      WHERE data_plata >= date_trunc('week', now())
-    `);
     const incasariLuna = await pool.query(`
       SELECT COALESCE(SUM(suma),0) AS total FROM plati
       WHERE data_plata >= date_trunc('month', now())
@@ -127,7 +150,6 @@ router.get('/', async (req, res) => {
       GROUP BY gs.luna
       ORDER BY gs.luna
     `);
-    incasari_saptamana = Number(incasariSaptamana.rows[0].total);
     incasari_luna = Number(incasariLuna.rows[0].total);
     incasari_dupa_metoda = dupaMetoda.rows;
     incasari_pe_luna = incasariLunar.rows.map(r => ({
@@ -138,9 +160,7 @@ router.get('/', async (req, res) => {
   }
 
   res.json({
-    pacienti_saptamana: Number(pacientiSaptamana.rows[0].count),
     pacienti_luna: Number(pacientiLuna.rows[0].count),
-    incasari_saptamana,
     incasari_luna,
     incasari_dupa_metoda,
     incasari_pe_luna,

@@ -1852,13 +1852,7 @@ async function incarcaStatistici() {
   document.getElementById('panel-statistici').innerHTML = `
     <div class="panel-cols-2">
       <div id="statistici-coloana-stanga" style="display:flex;flex-direction:column;gap:16px">
-        <div class="card">
-          <h2>Saptamana aceasta</h2>
-          <div class="grid-2">
-            <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_saptamana}</div></div>
-            <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_saptamana + ' lei' : '••• lei'}</div></div>
-          </div>
-        </div>
+        <div class="card" id="statistici-card-saptamana"></div>
         <div class="card">
           <h2>Luna aceasta</h2>
           <div class="grid-2">
@@ -1932,6 +1926,51 @@ async function incarcaStatistici() {
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
   if (rolCurent() === 'admin') incarcaCheltuieli();
+  randSaptamanaStats();
+}
+
+// --- Numar de pacienti pe saptamana, navigabil inainte/inapoi - fara nicio suma, vizibil
+// oricui e logat, nu doar admin cu parola de sume (vezi /api/statistici/saptamana). ---
+
+let offsetSaptamanaStats = 0;
+const LUNI_SCURT = ['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul', 'aug', 'sep', 'oct', 'noi', 'dec'];
+
+function formateazaZiLuna(dataISO) {
+  const [, luna, zi] = dataISO.split('-').map(Number);
+  return `${zi} ${LUNI_SCURT[luna - 1]}`;
+}
+
+async function randSaptamanaStats() {
+  const el = document.getElementById('statistici-card-saptamana');
+  if (!el) return;
+  const s = await apel(`/api/statistici/saptamana?offset=${offsetSaptamanaStats}`);
+  if (s.eroare) {
+    el.innerHTML = `<div style="color:#e08585;font-size:13px">Nu am putut incarca saptamana: ${s.eroare}</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">${s.esteSaptamanaCurenta ? 'Saptamana aceasta' : 'Saptamana'}</h2>
+      <div style="display:flex;align-items:center;gap:2px">
+        <span style="cursor:pointer;color:#9a988e;font-size:15px;padding:2px 7px" onclick="schimbaSaptamanaStats(-1)" title="Saptamana trecuta">&#8249;</span>
+        <span style="font-size:11px;color:#9a988e;min-width:64px;text-align:center">${formateazaZiLuna(s.inceput)} - ${formateazaZiLuna(s.sfarsit)}</span>
+        <span style="cursor:pointer;color:${s.esteSaptamanaCurenta ? '#4a4844' : '#9a988e'};font-size:15px;padding:2px 7px" onclick="schimbaSaptamanaStats(1)" title="Saptamana urmatoare">&#8250;</span>
+      </div>
+    </div>
+    <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti}</div></div>
+    ${!s.esteSaptamanaCurenta ? `<div style="text-align:center;margin-top:10px"><span style="font-size:11px;color:#7fd9a8;cursor:pointer;text-decoration:underline" onclick="saptamanaStatsAcum()">inapoi la saptamana asta</span></div>` : ''}
+  `;
+}
+
+function schimbaSaptamanaStats(delta) {
+  if (offsetSaptamanaStats + delta > 0) return; // fara saptamani din viitor
+  offsetSaptamanaStats += delta;
+  randSaptamanaStats();
+}
+
+function saptamanaStatsAcum() {
+  offsetSaptamanaStats = 0;
+  randSaptamanaStats();
 }
 
 // --- Cheltuieli si profit (doar admin, plus parolate - vezi routes/expenses.js pentru gating pe server) ---
