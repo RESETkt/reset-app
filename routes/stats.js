@@ -2,15 +2,12 @@ const express = require('express');
 const PDFDocument = require('pdfkit');
 const pool = require('../db/pool');
 const { ceareAutentificare } = require('../services/auth');
+const { PAROLA_SUME } = require('../services/parolaSume');
 
 const router = express.Router();
 router.use(ceareAutentificare);
 
 const LUNI_RO = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
-
-// Parola care ascunde sumele incasate de privirile curioase - verificata aici, pe server,
-// nu doar mascata vizual in client (altfel oricine se uita in codul sursa vede sumele oricum).
-const PAROLA_SUME = 'resetcash';
 
 router.get('/', async (req, res) => {
   const parolaCorecta = req.query.parola === PAROLA_SUME;

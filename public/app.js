@@ -1934,12 +1934,31 @@ async function incarcaStatistici() {
   if (rolCurent() === 'admin') incarcaCheltuieli();
 }
 
-// --- Cheltuieli si profit (doar admin - vezi services/../routes/expenses.js pentru gating pe server) ---
+// --- Cheltuieli si profit (doar admin, plus parolate - vezi routes/expenses.js pentru gating pe server) ---
+
+let cheltuieliLunaCache = [];
 
 function randCardCheltuieli(rez) {
+  const sumeDeblocate = rez.cheltuieli_luna != null;
+
+  if (!sumeDeblocate) {
+    return `
+      <div class="card" style="margin-top:16px">
+        <h2>Cheltuieli si profit (luna aceasta)</h2>
+        <div style="font-size:13px;color:#9a988e;margin-bottom:12px">Sumele sunt ascunse. Apasa "Arata sumele" pentru a le vedea.</div>
+        <button class="btn" onclick="cereParolaSume()">Arata sumele</button>
+      </div>
+    `;
+  }
+
+  cheltuieliLunaCache = rez.cheltuieli;
+
   return `
     <div class="card" style="margin-top:16px">
-      <h2>Cheltuieli si profit (luna aceasta)</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h2 style="margin:0">Cheltuieli si profit (luna aceasta)</h2>
+        <button class="btn secundar" onclick="blocheazaSume()">Blocheaza sumele</button>
+      </div>
       <div class="grid-3" style="margin-bottom:14px">
         <div class="metric"><div class="label">Incasari</div><div class="value">${rez.incasari_luna} lei</div></div>
         <div class="metric"><div class="label">Cheltuieli</div><div class="value">${rez.cheltuieli_luna} lei</div></div>
@@ -1980,7 +1999,10 @@ function randCardCheltuieli(rez) {
                 <div style="font-size:13px">${c.categorie} - ${Number(c.suma).toFixed(0)} lei</div>
                 <div style="font-size:11px;color:#9a988e">${c.descriere || ''} ${new Date(c.data_cheltuiala).toLocaleDateString('ro-RO')}</div>
               </div>
-              <span style="cursor:pointer;color:#9a988e" onclick="stergeCheltuiala('${c.id}')" title="Sterge">&times;</span>
+              <div style="display:flex;gap:10px;align-items:center;flex-shrink:0">
+                <span style="font-size:12px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="editeazaCheltuiala('${c.id}')">editeaza</span>
+                <span style="cursor:pointer;color:#9a988e" onclick="stergeCheltuiala('${c.id}')" title="Sterge">&times;</span>
+              </div>
             </div>
           `).join('') || '<div style="font-size:13px;color:#9a988e">Nicio cheltuiala.</div>'}
         </div>
@@ -2018,16 +2040,55 @@ async function incarcaCheltuieli() {
   const el = document.getElementById('statistici-card-cheltuieli');
   if (!el) return;
   const acum = new Date();
+  const query = parolaSumeCurenta ? `&parola=${encodeURIComponent(parolaSumeCurenta)}` : '';
   try {
-    const rez = await apel(`/api/cheltuieli/rezumat?an=${acum.getFullYear()}&luna=${acum.getMonth() + 1}`);
+    const rez = await apel(`/api/cheltuieli/rezumat?an=${acum.getFullYear()}&luna=${acum.getMonth() + 1}${query}`);
     if (rez.eroare) {
       el.innerHTML = `<div class="card" style="margin-top:16px;color:#e08585;font-size:13px">Nu am putut incarca cheltuielile: ${rez.eroare}</div>`;
       return;
     }
+    if (parolaSumeCurenta && rez.cheltuieli_luna == null) parolaSumeCurenta = null;
     el.innerHTML = randCardCheltuieli(rez);
   } catch (e) {
     el.innerHTML = `<div class="card" style="margin-top:16px;color:#e08585;font-size:13px">Nu am putut incarca cheltuielile: ${e.message}</div>`;
   }
+}
+
+function editeazaCheltuiala(id) {
+  const c = cheltuieliLunaCache.find(c => c.id === id);
+  if (!c) return;
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:360px;width:90%">
+        <h2>Editeaza cheltuiala</h2>
+        <label>Categorie</label>
+        <input id="cheltuiala-editare-categorie" style="width:100%;margin-bottom:10px" value="${c.categorie}">
+        <label>Suma</label>
+        <input id="cheltuiala-editare-suma" type="number" step="1" style="width:100%;margin-bottom:10px" value="${c.suma}">
+        <label>Descriere (optional)</label>
+        <input id="cheltuiala-editare-descriere" style="width:100%;margin-bottom:10px" value="${c.descriere || ''}">
+        <label>Data</label>
+        <input id="cheltuiala-editare-data" type="date" style="width:100%;margin-bottom:8px" value="${dataLocala(new Date(c.data_cheltuiala))}" onclick="this.showPicker && this.showPicker()">
+        <div id="eroare-cheltuiala-editare" style="color:#e08585;font-size:12px;margin-bottom:8px"></div>
+        <button class="btn" style="width:100%" onclick="salveazaEditareCheltuiala('${id}')">Salveaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function salveazaEditareCheltuiala(id) {
+  const categorie = document.getElementById('cheltuiala-editare-categorie').value.trim();
+  const suma = document.getElementById('cheltuiala-editare-suma').value;
+  const descriere = document.getElementById('cheltuiala-editare-descriere').value.trim();
+  const data_cheltuiala = document.getElementById('cheltuiala-editare-data').value;
+  const eroareEl = document.getElementById('eroare-cheltuiala-editare');
+  if (!categorie || !suma || Number(suma) <= 0) { eroareEl.textContent = 'Categoria si o suma valida sunt obligatorii.'; return; }
+  const rezultat = await apel(`/api/cheltuieli/${id}`, { method: 'PUT', body: JSON.stringify({ categorie, suma, descriere, data_cheltuiala }) });
+  if (rezultat.eroare) { eroareEl.textContent = rezultat.eroare; return; }
+  inchideModalProgramare();
+  incarcaCheltuieli();
 }
 
 function toggleListaCheltuieli() {
@@ -2337,6 +2398,7 @@ async function confirmaParolaSume() {
   parolaSumeCurenta = parola;
   inchideModalProgramare();
   incarcaStatistici();
+  incarcaCheltuieli();
   const cb = _parolaSumeCallback;
   _parolaSumeCallback = null;
   if (cb) cb();
@@ -2345,6 +2407,7 @@ async function confirmaParolaSume() {
 function blocheazaSume() {
   parolaSumeCurenta = null;
   incarcaStatistici();
+  incarcaCheltuieli();
 }
 
 function delogare() {

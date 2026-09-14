@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { ceareAutentificare, ceareAdmin } = require('../services/auth');
+const { PAROLA_SUME } = require('../services/parolaSume');
 
 const router = express.Router();
 // Toate rutele de cheltuieli sunt doar pentru admin - colegii kineto nu au ce cauta in ele.
@@ -15,7 +16,22 @@ function asincron(handler) {
 
 // Rezumatul lunii: incasari, cheltuieli, profit, cheltuieli pe categorie, lista cheltuielilor
 // si sabloanele recurente (plus cele variabile pentru care inca nu s-a introdus suma lunii asta).
+// Chiar daca ruta e deja doar pentru admin, sumele raman ascunse pana se introduce parola -
+// aceeasi parola folosita si la incasari, ca sa nu fie vizibile din prima ocazie in care se
+// deschide tab-ul, ci doar cand cineva chiar vrea sa le vada.
 router.get('/rezumat', asincron(async (req, res) => {
+  if (req.query.parola !== PAROLA_SUME) {
+    return res.json({
+      incasari_luna: null,
+      cheltuieli_luna: null,
+      profit_luna: null,
+      cheltuieli_pe_categorie: null,
+      cheltuieli: null,
+      recurente: null,
+      recurente_variabile_lipsa: null
+    });
+  }
+
   const acum = new Date();
   const an = parseInt(req.query.an, 10) || acum.getFullYear();
   const luna = parseInt(req.query.luna, 10) || (acum.getMonth() + 1);
@@ -74,6 +90,22 @@ router.post('/', asincron(async (req, res) => {
     [categorie, suma, descriere || null, data_cheltuiala || null]
   );
   res.status(201).json(rows[0]);
+}));
+
+// Editeaza o cheltuiala deja introdusa (categorie/suma/descriere/data gresite) - fara asta,
+// singura cale de a corecta o greseala era sa o stergi si sa o retastezi de la zero.
+router.put('/:id', asincron(async (req, res) => {
+  const { categorie, suma, descriere, data_cheltuiala } = req.body;
+  if (!categorie || !suma || Number(suma) <= 0) {
+    return res.status(400).json({ eroare: 'Categoria si o suma valida sunt obligatorii.' });
+  }
+  const { rows } = await pool.query(
+    `UPDATE cheltuieli SET categorie=$1, suma=$2, descriere=$3, data_cheltuiala=COALESCE($4::date, data_cheltuiala)
+     WHERE id=$5 RETURNING *`,
+    [categorie, suma, descriere || null, data_cheltuiala || null, req.params.id]
+  );
+  if (!rows[0]) return res.status(404).json({ eroare: 'Cheltuiala nu exista.' });
+  res.json(rows[0]);
 }));
 
 router.delete('/:id', asincron(async (req, res) => {
