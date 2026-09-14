@@ -5,8 +5,42 @@ const ruleazaInstalat = window.navigator.standalone === true
   || window.matchMedia('(display-mode: standalone)').matches;
 
 function reincarcaAplicatia() {
-  if ((telefonTastat || dateCheckin) && !confirm('Reincarci aplicatia? Se pierde ce e completat acum pe ecran.')) return;
-  location.reload();
+  if (!(telefonTastat || dateCheckin)) { location.reload(); return; }
+  aratatPopupConfirmare({
+    titlu: 'Reincarci aplicatia?',
+    mesaj: 'Se pierde ce e completat acum pe ecran.',
+    textConfirma: 'Reincarca', periculos: true
+  }, () => location.reload());
+}
+
+let _confirmarePopupCallback = null;
+function aratatPopupConfirmare({ titlu = '', mesaj = '', textConfirma = 'Da', textAnuleaza = 'Anuleaza', periculos = false }, onConfirm) {
+  _confirmarePopupCallback = onConfirm;
+  const culoare = periculos ? 'var(--eroare)' : 'var(--text)';
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px" onclick="if(event.target===this) inchidePopupConfirmare()">
+      <div class="card" style="text-align:center">
+        <div style="font-size:38px;margin-bottom:16px;color:${culoare}">&#9888;</div>
+        ${titlu ? `<div style="font-size:22px;font-weight:700;line-height:1.35;margin-bottom:14px;color:var(--text)">${titlu}</div>` : ''}
+        ${mesaj ? `<div style="font-size:14px;line-height:1.6;color:var(--text-sub);margin-bottom:10px">${mesaj}</div>` : ''}
+        <button class="${periculos ? '' : 'principal'}" style="${periculos ? 'background:var(--eroare);color:#fff' : ''}" onclick="_confirmaPopupConfirmare()">${textConfirma}</button>
+        <button class="secundar" onclick="inchidePopupConfirmare()">${textAnuleaza}</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function _confirmaPopupConfirmare() {
+  const callback = _confirmarePopupCallback;
+  _confirmarePopupCallback = null;
+  inchidePopupConfirmare();
+  if (callback) callback();
+}
+
+function inchidePopupConfirmare() {
+  _confirmarePopupCallback = null;
+  document.getElementById('modal-container').innerHTML = '';
 }
 
 function comutaTema() {

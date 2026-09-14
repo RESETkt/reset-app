@@ -462,13 +462,18 @@ async function adaugaKineto() {
 }
 
 async function stergeKineto(id, nume) {
-  if (!confirm(`Sigur vrei sa stergi \"${nume}\" din echipa? Programarile lui vechi raman, dar devin nealocate.`)) return;
-  const rezultat = await apel(`/api/utilizatori/${id}`, { method: 'DELETE' });
-  if (rezultat.eroare) {
-    document.getElementById('eroare-echipa').textContent = rezultat.eroare;
-    return;
-  }
-  incarcaEchipa();
+  aratatPopupConfirmare({
+    titlu: 'Stergi din echipa?',
+    mesaj: `Sigur vrei sa stergi "${nume}" din echipa? Programarile lui vechi raman, dar devin nealocate.`,
+    textConfirma: 'Sterge', periculos: true
+  }, async () => {
+    const rezultat = await apel(`/api/utilizatori/${id}`, { method: 'DELETE' });
+    if (rezultat.eroare) {
+      document.getElementById('eroare-echipa').textContent = rezultat.eroare;
+      return;
+    }
+    incarcaEchipa();
+  });
 }
 
 const SURSE_PACIENT_NOU = ['Recomandare de la cineva', 'Cautare online (Google)', 'Retele sociale (Facebook/Instagram)', 'A trecut pe langa cabinet', 'Recomandare medic'];
@@ -950,10 +955,15 @@ async function salveazaEditarePacient(id) {
 }
 
 async function arhiveazaPacient(id) {
-  if (!confirm('Arhivezi acest pacient? Nu va mai aparea in lista activa, dar tot istoricul lui ramane salvat.')) return;
-  await apel(`/api/pacienti/${id}/arhiveaza`, { method: 'PATCH' });
-  cautaPacienti(document.getElementById('cautare')?.value || '');
-  deschideFisa(id);
+  aratatPopupConfirmare({
+    titlu: 'Arhivezi pacientul?',
+    mesaj: 'Nu va mai aparea in lista activa, dar tot istoricul lui ramane salvat.',
+    textConfirma: 'Arhiveaza'
+  }, async () => {
+    await apel(`/api/pacienti/${id}/arhiveaza`, { method: 'PATCH' });
+    cautaPacienti(document.getElementById('cautare')?.value || '');
+    deschideFisa(id);
+  });
 }
 
 async function reactiveazaPacient(id) {
@@ -963,10 +973,15 @@ async function reactiveazaPacient(id) {
 }
 
 async function stergePacientDefinitiv(id, nume) {
-  if (!confirm(`ATENTIE: stergi definitiv pe "${nume}" - se sterg si toate programarile, platile si abonamentele lui. Nu se mai poate recupera. Esti sigur?`)) return;
-  pacientCurent = null;
-  await apel(`/api/pacienti/${id}`, { method: 'DELETE' });
-  aratatListaPacienti();
+  aratatPopupConfirmare({
+    titlu: 'Stergere definitiva',
+    mesaj: `ATENTIE: stergi definitiv pe "${nume}" - se sterg si toate programarile, platile si abonamentele lui. Nu se mai poate recupera.`,
+    textConfirma: 'Sterge definitiv', periculos: true
+  }, async () => {
+    pacientCurent = null;
+    await apel(`/api/pacienti/${id}`, { method: 'DELETE' });
+    aratatListaPacienti();
+  });
 }
 
 function aratatConfirmareAbonamentNou(pacientId) {
@@ -1572,6 +1587,37 @@ function aratatPopupInfo({ icon = '&#10003;', iconColor = '#4fb3a0', titlu = '',
   document.getElementById('modal-container').innerHTML = html;
 }
 
+// Popup de confirmare generic (inlocuieste confirm() nativ)
+let _confirmarePopupCallback = null;
+function aratatPopupConfirmare({ titlu = '', mesaj = '', textConfirma = 'Da', textAnuleaza = 'Anuleaza', periculos = false }, onConfirm) {
+  _confirmarePopupCallback = onConfirm;
+  const culoare = periculos ? '#e08585' : '#e0b85e';
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px" onclick="if(event.target===this) inchidePopupConfirmare()">
+      <div class="card" style="max-width:360px;width:90%;text-align:center;padding:32px 26px">
+        <div style="font-size:38px;margin-bottom:16px;color:${culoare}">&#9888;</div>
+        ${titlu ? `<div style="font-size:20px;font-weight:700;line-height:1.35;margin-bottom:14px">${titlu}</div>` : ''}
+        ${mesaj ? `<div style="font-size:13px;line-height:1.6;color:#c9c7bd;margin-bottom:22px">${mesaj}</div>` : ''}
+        <button class="btn" style="width:100%;${periculos ? 'background:#c2504a;border-color:#a13f3a' : ''}" onclick="_confirmaPopupConfirmare()">${textConfirma}</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchidePopupConfirmare()">${textAnuleaza}</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function _confirmaPopupConfirmare() {
+  const callback = _confirmarePopupCallback;
+  _confirmarePopupCallback = null;
+  inchideModalProgramare();
+  if (callback) callback();
+}
+
+function inchidePopupConfirmare() {
+  _confirmarePopupCallback = null;
+  inchideModalProgramare();
+}
+
 function aratatMeniuProgramare(id, prenume) {
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
@@ -1615,10 +1661,15 @@ async function salveazaReprogramare(id) {
 }
 
 async function stergeProgramare(id) {
-  if (!confirm('Sigur stergi aceasta programare?')) return;
-  await apel(`/api/programari/${id}`, { method: 'DELETE' });
-  inchideModalProgramare();
-  incarcaCalendarSaptamana();
+  aratatPopupConfirmare({
+    titlu: 'Stergi programarea?',
+    mesaj: 'Sigur stergi aceasta programare?',
+    textConfirma: 'Sterge', periculos: true
+  }, async () => {
+    await apel(`/api/programari/${id}`, { method: 'DELETE' });
+    inchideModalProgramare();
+    incarcaCalendarSaptamana();
+  });
 }
 
 let parolaSumeCurenta = null;
@@ -1834,9 +1885,14 @@ async function adaugaCheltuiala() {
 }
 
 async function stergeCheltuiala(id) {
-  if (!confirm('Stergi aceasta cheltuiala?')) return;
-  await apel(`/api/cheltuieli/${id}`, { method: 'DELETE' });
-  incarcaCheltuieli();
+  aratatPopupConfirmare({
+    titlu: 'Stergi cheltuiala?',
+    mesaj: 'Stergi aceasta cheltuiala?',
+    textConfirma: 'Sterge', periculos: true
+  }, async () => {
+    await apel(`/api/cheltuieli/${id}`, { method: 'DELETE' });
+    incarcaCheltuieli();
+  });
 }
 
 function schimbaTipRecurenta(tip) {
@@ -1859,12 +1915,30 @@ async function adaugaRecurenta() {
   incarcaCheltuieli();
 }
 
-async function editeazaRecurenta(id, categorie, sumaCurenta) {
-  const nou = prompt(`Noua suma lunara pentru "${categorie}":`, sumaCurenta);
-  if (nou === null) return;
-  if (!nou || Number(nou) <= 0) { alert('Introdu o suma valida.'); return; }
+function editeazaRecurenta(id, categorie, sumaCurenta) {
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:340px;width:90%">
+        <h2>Editeaza suma</h2>
+        <div style="font-size:13px;color:#c9c7bd;margin-bottom:14px">Noua suma lunara pentru "${categorie}":</div>
+        <label>Suma (lei)</label>
+        <input id="recurenta-editare-suma" type="number" style="width:100%;margin-bottom:8px" value="${sumaCurenta}">
+        <div id="eroare-recurenta-editare" style="color:#e08585;font-size:12px;margin-bottom:8px"></div>
+        <button class="btn" style="width:100%" onclick="salveazaEditareRecurenta('${id}')">Salveaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function salveazaEditareRecurenta(id) {
+  const nou = document.getElementById('recurenta-editare-suma').value;
+  const eroareEl = document.getElementById('eroare-recurenta-editare');
+  if (!nou || Number(nou) <= 0) { eroareEl.textContent = 'Introdu o suma valida.'; return; }
   const rezultat = await apel(`/api/cheltuieli/recurente/${id}`, { method: 'PUT', body: JSON.stringify({ suma: nou }) });
-  if (rezultat.eroare) { alert(rezultat.eroare); return; }
+  if (rezultat.eroare) { eroareEl.textContent = rezultat.eroare; return; }
+  inchideModalProgramare();
   incarcaCheltuieli();
 }
 
@@ -1874,9 +1948,14 @@ async function toggleRecurenta(id) {
 }
 
 async function stergeRecurenta(id) {
-  if (!confirm('Stergi acest sablon recurent? (cheltuielile deja generate raman)')) return;
-  await apel(`/api/cheltuieli/recurente/${id}`, { method: 'DELETE' });
-  incarcaCheltuieli();
+  aratatPopupConfirmare({
+    titlu: 'Stergi sablonul recurent?',
+    mesaj: 'Cheltuielile deja generate raman neschimbate.',
+    textConfirma: 'Sterge', periculos: true
+  }, async () => {
+    await apel(`/api/cheltuieli/recurente/${id}`, { method: 'DELETE' });
+    incarcaCheltuieli();
+  });
 }
 
 // Deseneaza un grafic cu bare in containerul dat, folosind latimea lui reala (masurata in
@@ -2031,15 +2110,18 @@ function egalizeazaColoaneStatistici() {
   });
 }
 
-async function descarcaPdfStatistici() {
+function descarcaPdfStatistici() {
   const luna = document.getElementById('pdf-luna').value;
   const an = document.getElementById('pdf-an').value;
 
   if (!parolaSumeCurenta) {
-    await cereParolaSume();
-    if (!parolaSumeCurenta) return;
+    cereParolaSume(() => descarcaPdfStatisticiCuParola(luna, an));
+    return;
   }
+  descarcaPdfStatisticiCuParola(luna, an);
+}
 
+async function descarcaPdfStatisticiCuParola(luna, an) {
   const r = await fetch(`/api/statistici/pdf?an=${an}&luna=${luna}&parola=${encodeURIComponent(parolaSumeCurenta)}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -2059,17 +2141,39 @@ async function descarcaPdfStatistici() {
   URL.revokeObjectURL(url);
 }
 
-async function cereParolaSume() {
-  const parola = prompt('Introdu parola pentru a vedea sumele incasate:');
-  if (parola === null) return;
+let _parolaSumeCallback = null;
+function cereParolaSume(onSuccess) {
+  _parolaSumeCallback = onSuccess || null;
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:320px;width:90%">
+        <h2>Parola sume</h2>
+        <label>Introdu parola pentru a vedea sumele incasate</label>
+        <input id="parola-sume-input" type="password" style="width:100%;margin-bottom:8px" onkeydown="if(event.key==='Enter') confirmaParolaSume()">
+        <div id="eroare-parola-sume-modal" style="color:#e08585;font-size:12px;margin-bottom:8px"></div>
+        <button class="btn" style="width:100%" onclick="confirmaParolaSume()">Confirma</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+  document.getElementById('parola-sume-input').focus();
+}
+
+async function confirmaParolaSume() {
+  const parola = document.getElementById('parola-sume-input').value;
+  const eroareEl = document.getElementById('eroare-parola-sume-modal');
   const s = await apel(`/api/statistici?parola=${encodeURIComponent(parola)}`);
   if (s.incasari_luna == null) {
-    const eroareEl = document.getElementById('eroare-parola-sume');
-    if (eroareEl) eroareEl.textContent = 'Parola gresita.';
+    eroareEl.textContent = 'Parola gresita.';
     return;
   }
   parolaSumeCurenta = parola;
+  inchideModalProgramare();
   incarcaStatistici();
+  const cb = _parolaSumeCallback;
+  _parolaSumeCallback = null;
+  if (cb) cb();
 }
 
 function blocheazaSume() {
