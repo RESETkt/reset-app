@@ -2,6 +2,12 @@
 // facute de cineva sa apara instant la ceilalti, fara sa mai fie nevoie de refresh manual.
 let clienti = [];
 
+// Un id unic generat la pornirea procesului - se schimba la fiecare deploy (procesul repor-
+// neste). Trimis fiecarui client conectat, ca sa poata detecta instant o versiune noua a
+// aplicatiei si sa se reincarce singur, fara sa astepte un refresh manual sau verificarea
+// interna (rara) a browserului pentru service worker.
+const VERSIUNE_SERVER = String(Date.now());
+
 function adaugaClient(res) {
   clienti.push(res);
 }
@@ -21,4 +27,4 @@ function trimiteTuturor(eveniment) {
   });
 }
 
-module.exports = { adaugaClient, eliminaClient, trimiteTuturor };
+module.exports = { adaugaClient, eliminaClient, trimiteTuturor, VERSIUNE_SERVER };

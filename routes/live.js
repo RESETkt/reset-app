@@ -1,7 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { SECRET } = require('../services/auth');
-const { adaugaClient, eliminaClient } = require('../services/live');
+const { adaugaClient, eliminaClient, VERSIUNE_SERVER } = require('../services/live');
 
 const router = express.Router();
 
@@ -26,6 +26,9 @@ router.get('/', (req, res) => {
     Connection: 'keep-alive'
   });
   res.write('retry: 3000\n\n');
+  // Trimis imediat la fiecare conectare (inclusiv la reconectarea automata dupa un deploy) -
+  // clientul compara aceasta versiune cu cea stiuta si se reincarca singur daca difera.
+  res.write(`data: ${JSON.stringify({ tip: 'versiune', versiune: VERSIUNE_SERVER })}\n\n`);
   if (res.flushHeaders) res.flushHeaders();
 
   adaugaClient(res);

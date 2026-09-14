@@ -64,12 +64,41 @@ function aratatApp() {
 // Conexiune live cu serverul (Server-Sent Events): la orice modificare facuta de oricine,
 // oriunde in aplicatie, reimprospatam ce se vede pe ecran - fara refresh manual.
 let sseConexiune = null;
+let versiuneServerCunoscuta = null;
 
 function initLive() {
   if (sseConexiune) return;
   sseConexiune = new EventSource(`/api/live?token=${encodeURIComponent(token)}`);
-  sseConexiune.onmessage = reimprospateazaDupaSchimbare;
+  sseConexiune.onmessage = (e) => {
+    let date = {};
+    try { date = JSON.parse(e.data); } catch { date = {}; }
+
+    // Un deploy porneste un proces nou de server, cu o versiune noua - o aflam instant, la
+    // (re)conectare, si nu la o verificare periodica. Daca versiunea a fost deja cunoscuta si
+    // acum e alta, cineva a facut deploy cat timp tab-ul era deschis - ne reincarcam singuri.
+    if (date.tip === 'versiune') {
+      if (versiuneServerCunoscuta && versiuneServerCunoscuta !== date.versiune) reincarcaAplicatiaSigur();
+      versiuneServerCunoscuta = date.versiune;
+      return;
+    }
+
+    reimprospateazaDupaSchimbare();
+  };
   sseConexiune.onerror = () => {}; // EventSource reincearca singur reconectarea
+}
+
+// Reincarcare automata, o singura data, amanata daca exact atunci e deschis un formular
+// (modal-container nu e gol) - ca sa nu se piarda ceva completat pe jumatate.
+let reincarcatDupaActualizare = false;
+function reincarcaAplicatiaSigur() {
+  if (reincarcatDupaActualizare) return;
+  const incearcaReincarcare = () => {
+    const modal = document.getElementById('modal-container');
+    if (modal && modal.children.length) { setTimeout(incearcaReincarcare, 5000); return; }
+    reincarcatDupaActualizare = true;
+    window.location.reload();
+  };
+  incearcaReincarcare();
 }
 
 function reimprospateazaDupaSchimbare() {
@@ -2372,3 +2401,18 @@ window.addEventListener('resize', () => {
 });
 
 if (token) aratatApp();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(inregistrare => {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') inregistrare.update().catch(() => {});
+      });
+      setInterval(() => inregistrare.update().catch(() => {}), 60 * 60 * 1000);
+    }).catch(() => {});
+  });
+
+  // Plasa de siguranta pentru reincarcare: SSE-ul de mai sus e calea rapida (instant, la
+  // reconectare), asta ramane rezerva daca dintr-un motiv oarecare SSE nu e conectat.
+  navigator.serviceWorker.addEventListener('controllerchange', reincarcaAplicatiaSigur);
+}
