@@ -69,7 +69,29 @@ function initInstalare() {
 }
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw-tablet.js').catch(() => {}));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw-tablet.js').then(inregistrare => {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') inregistrare.update().catch(() => {});
+      });
+      setInterval(() => inregistrare.update().catch(() => {}), 60 * 60 * 1000);
+    }).catch(() => {});
+  });
+
+  // Un deploy nou activeaza service worker-ul in fundal, dar tableta ramasa deschisa in
+  // receptie tot ruleaza javascript-ul vechi pana la un refresh - il facem automat, o singura
+  // data, ca sa nu depindem de cineva care isi aminteste sa reincarce tableta. Amanam
+  // reincarcarea daca un pacient tasteaza chiar atunci, ca sa nu-i sara ecranul din mana.
+  let reincarcatDupaActualizare = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reincarcatDupaActualizare) return;
+    const incearcaReincarcare = () => {
+      if (telefonTastat || dateCheckin) { setTimeout(incearcaReincarcare, 5000); return; }
+      reincarcatDupaActualizare = true;
+      window.location.reload();
+    };
+    incearcaReincarcare();
+  });
 }
 
 initInstalare();

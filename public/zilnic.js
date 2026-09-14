@@ -489,7 +489,24 @@ function initInstalare() {
 
 // ---------- Pornire ----------
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw-zilnic.js').catch(() => {}));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw-zilnic.js').then(inregistrare => {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') inregistrare.update().catch(() => {});
+      });
+      setInterval(() => inregistrare.update().catch(() => {}), 60 * 60 * 1000);
+    }).catch(() => {});
+  });
+
+  // Un deploy nou activeaza service worker-ul in fundal, dar fara reincarcare tab-ul ramas
+  // deschis tot ruleaza javascript-ul vechi - de-aici nevoia de refresh manual ca sa apara
+  // noutatile. Reincarcam automat o singura data cand se schimba.
+  let reincarcatDupaActualizare = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reincarcatDupaActualizare) return;
+    reincarcatDupaActualizare = true;
+    window.location.reload();
+  });
 }
 
 renderAcasa();

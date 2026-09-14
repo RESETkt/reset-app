@@ -127,7 +127,31 @@
 <script src="app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(inregistrare => {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') inregistrare.update().catch(() => {});
+      });
+      setInterval(() => inregistrare.update().catch(() => {}), 60 * 60 * 1000);
+    }).catch(() => {});
+  });
+
+  // Un deploy nou activeaza service worker-ul in fundal (skipWaiting + clients.claim), dar
+  // fara reincarcare tab-ul ramas deschis tot ruleaza javascript-ul vechi - de-aici nevoia de
+  // refresh manual ca sa apara noutatile. Reincarcam automat o singura data cand se schimba,
+  // dar amanam daca exact atunci e deschis un formular (modal-container nu e gol), ca sa nu
+  // se piarda ceva completat pe jumatate (ex. prezenta unui pacient).
+  let reincarcatDupaActualizare = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reincarcatDupaActualizare) return;
+    const incearcaReincarcare = () => {
+      const modal = document.getElementById('modal-container');
+      if (modal && modal.children.length) { setTimeout(incearcaReincarcare, 5000); return; }
+      reincarcatDupaActualizare = true;
+      window.location.reload();
+    };
+    incearcaReincarcare();
+  });
 }
 </script>
 </body>
