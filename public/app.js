@@ -1567,21 +1567,18 @@ const PROTOCOL_MOBILITATE = [
   { nume: 'Deschidere torace', detaliu: 'genunchi pe foam roller, mâini întinse înainte, rotații' },
 ];
 
-// Stabilitate & Forta: text liber pe 3 zone ale corpului, nu bifat exercitiu cu exercitiu -
-// mult mai rapid de completat intre pacienti, si tot ramane organizat pe zone.
-const PROTOCOL_GRUPE = [
-  { nume: 'Lower Body', placeholder: 'ex: squats cu ladă, fandări în mers, ridicare bazin, clamshell...' },
-  { nume: 'Trunk', placeholder: 'ex: plank, minge medicinală, rotații, cumpănă stick mobility...' },
-  { nume: 'Upper Body', placeholder: 'ex: flotări, Y/T fly, biceps la TRX, cervical...' },
-];
+// Stabilitate & Forta: un singur camp de text liber pentru tot ce s-a facut (nu mai e impartit
+// pe Lower/Trunk/Upper) - mult mai rapid de completat intre pacienti, iar kinetoterapeutii scriu
+// oricum tot ce au facut intr-un singur loc, nu pe zone separate.
+const PLACEHOLDER_STABILITATE = 'ex: fandări în mers, plank, rotații trunchi, flotări TRX, stretching activ/pasiv, stick mobility...';
 
 let prezentaMobilitate = [];
-let prezentaGrupe = [];
+let prezentaGrupe = '';
 let prezentaCardio = { activ: false, tip: 'Bicicletă', durata: '' };
 
 function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
   prezentaMobilitate = PROTOCOL_MOBILITATE.map(p => ({ ...p, bifat: true, nota: '' }));
-  prezentaGrupe = PROTOCOL_GRUPE.map(g => ({ ...g, valoare: '' }));
+  prezentaGrupe = '';
   prezentaCardio = { activ: false, tip: 'Bicicletă', durata: '' };
 
   const html = `
@@ -1663,12 +1660,11 @@ function togglePrezentaMobilitate(i) { prezentaMobilitate[i].bifat = !prezentaMo
 function bifeazaToatePrezentaMobilitate() { prezentaMobilitate.forEach(p => { p.bifat = true; p.nota = ''; }); randPrezentaMobilitate(); }
 
 function randPrezentaGrupe() {
-  document.getElementById('prezenta-grupe').innerHTML = prezentaGrupe.map((g, i) => `
+  document.getElementById('prezenta-grupe').innerHTML = `
     <div class="prot-grup">
-      <label>${g.nume}</label>
-      <textarea rows="2" placeholder="${g.placeholder}" oninput="prezentaGrupe[${i}].valoare=this.value"></textarea>
+      <textarea rows="6" placeholder="${PLACEHOLDER_STABILITATE}" oninput="prezentaGrupe=this.value">${prezentaGrupe}</textarea>
     </div>
-  `).join('');
+  `;
 }
 
 function togglePrezentaCardio() {
@@ -1695,10 +1691,8 @@ function formateazaExercitiiProtocol() {
     parti.push(`Mobilitate: toate ca de obicei, cu excepția: ${exceptii}`);
   }
 
-  prezentaGrupe.forEach(g => {
-    const valoare = g.valoare.trim();
-    if (valoare) parti.push(`${g.nume}: ${valoare}`);
-  });
+  const stabilitate = prezentaGrupe.trim();
+  if (stabilitate) parti.push(`Stabilitate & Forță: ${stabilitate}`);
 
   if (prezentaCardio.activ) {
     const durata = prezentaCardio.durata ? `, ${prezentaCardio.durata} min` : '';

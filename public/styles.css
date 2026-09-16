@@ -327,11 +327,14 @@ th, td { text-align: left; }
 .prot-grup:last-child { margin-bottom: 0; }
 .prot-grup label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #9a988e; margin-bottom: 4px; }
 .prot-grup textarea {
-  width: 100%; background: #1e1e1d; border: 1px solid #45443f; border-radius: 7px; padding: 8px 9px;
-  font-size: 12.5px; line-height: 1.4; color: #ece9e2; font-family: inherit; resize: none; min-height: 44px;
+  width: 100%; box-sizing: border-box; background: #1e1e1d; border: 1px solid #45443f; border-radius: 7px; padding: 8px 9px;
+  font-size: 12.5px; line-height: 1.4; color: #ece9e2; font-family: inherit; resize: vertical; min-height: 110px;
 }
 .prot-grup textarea:focus { outline: none; border-color: #e0b85e; }
 .prot-grup textarea:not(:placeholder-shown) { border-color: #3d4a3f; }
+@media (max-width: 640px) {
+  .prot-grup textarea { min-height: 90px; }
+}
 
 .prot-switch { width: 36px; height: 21px; border-radius: 20px; background: #1f8a7a; position: relative; cursor: pointer; flex-shrink: 0; }
 .prot-switch .prot-buliniu { position: absolute; top: 2.5px; left: 17px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
