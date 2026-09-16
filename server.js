@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const pool = require('./db/pool');
 
 const authRoutes = require('./routes/auth');
 const patientsRoutes = require('./routes/patients');
@@ -72,10 +74,22 @@ app.use('/api/cheltuieli', expensesRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Aplica schema.sql la fiecare pornire, ca modificarile viitoare de baza de date sa
+// ajunga singure in productie la urmatorul deploy, fara un pas manual separat de
+// migrare (schema.sql e scris idempotent - CREATE ... IF NOT EXISTS / DROP+ADD CONSTRAINT).
+async function aplicaSchema() {
+  const sql = fs.readFileSync(path.join(__dirname, 'db', 'schema.sql'), 'utf8');
+  await pool.query(sql);
+}
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Reset ruleaza pe portul ${PORT}`);
-  porneteReminderele();
-  porneteCheltuieliRecurente();
-  porneteVerificareSedinteUitate();
-});
+aplicaSchema()
+  .catch((e) => console.error('Nu am putut aplica schema bazei de date la pornire:', e.message))
+  .finally(() => {
+    app.listen(PORT, () => {
+      console.log(`Reset ruleaza pe portul ${PORT}`);
+      porneteReminderele();
+      porneteCheltuieliRecurente();
+      porneteVerificareSedinteUitate();
+    });
+  });
