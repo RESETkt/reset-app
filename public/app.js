@@ -183,6 +183,7 @@ let notificariAratatRezolvate = false;
 function iconaNotificare(tip) {
   if (tip === 'reprogramare') return '📅';
   if (tip === 'pacient_nou') return '🆕';
+  if (tip === 'sedinta_uitata') return '⚠️';
   return '📝';
 }
 

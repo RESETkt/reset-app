@@ -132,6 +132,12 @@ CREATE TABLE IF NOT EXISTS notificari_echipa (
 
 CREATE INDEX IF NOT EXISTS idx_notificari_rezolvat ON notificari_echipa(rezolvat);
 
+-- Notificarea de sedinta uitata (programare ramasa "programat" la sfarsit de saptamana,
+-- nimeni n-a marcat-o prezent/absent) - constraint-ul de mai sus nu se aplica retroactiv
+-- pe un tabel deja existent, trebuie extins explicit.
+ALTER TABLE notificari_echipa DROP CONSTRAINT IF EXISTS notificari_echipa_tip_check;
+ALTER TABLE notificari_echipa ADD CONSTRAINT notificari_echipa_tip_check CHECK (tip IN ('manual','reprogramare','pacient_nou','sedinta_uitata'));
+
 -- Abonamentele push ale fiecarui telefon/browser autentificat, ca sa putem trimite notificari
 -- chiar si cand aplicatia e inchisa (notificari noi in echipa, reprogramari, etc.)
 CREATE TABLE IF NOT EXISTS push_subscriptions (

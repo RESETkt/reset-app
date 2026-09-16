@@ -18,6 +18,7 @@ const pushRoutes = require('./routes/push');
 const expensesRoutes = require('./routes/expenses');
 const { porneteReminderele } = require('./services/reminders');
 const { porneteCheltuieliRecurente } = require('./services/cheltuieliRecurente');
+const { porneteVerificareSedinteUitate } = require('./services/sedinteUitate');
 const { trimiteTuturor } = require('./services/live');
 
 // Plasa de siguranta: o eroare care scapa neprinsa dintr-o ruta (ex. o interogare DB esuata)
@@ -76,4 +77,5 @@ app.listen(PORT, () => {
   console.log(`Reset ruleaza pe portul ${PORT}`);
   porneteReminderele();
   porneteCheltuieliRecurente();
+  porneteVerificareSedinteUitate();
 });
