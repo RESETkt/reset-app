@@ -1631,7 +1631,7 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e0b85e" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             <span>Cum s-a simțit azi?</span>
           </div>
-          <textarea id="prezenta-nota" rows="1" placeholder="ex: obosit azi, genunchi drept sensibil, totul ok..."></textarea>
+          <input type="text" id="prezenta-nota" placeholder="ex: obosit azi, genunchi drept sensibil, totul ok...">
         </div>
 
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>

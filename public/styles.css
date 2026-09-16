@@ -348,10 +348,10 @@ th, td { text-align: left; }
 .prot-durata { width: 58px; background: #1e1e1d; border: 1px solid #45443f; border-radius: 7px; padding: 5px 7px; font-size: 12px; color: #ece9e2; font-family: inherit; }
 .prot-durata:focus { outline: none; border-color: #e0b85e; }
 
-.prot-nota-box { margin: 14px auto 0; max-width: 340px; background: rgba(224, 184, 94, 0.07); border: 1px solid rgba(224, 184, 94, 0.2); border-radius: 8px; padding: 6px 10px; }
-.prot-nota-box-cap { display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 2px; }
-.prot-nota-box-cap svg { width: 11px; height: 11px; flex-shrink: 0; }
-.prot-nota-box-cap span { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #e0b85e; }
-.prot-nota-box textarea { width: 100%; background: none; border: none; padding: 0; font-size: 11.5px; line-height: 1.3; color: #ece9e2; font-family: inherit; resize: none; min-height: 16px; text-align: center; }
-.prot-nota-box textarea:focus { outline: none; }
-.prot-nota-box textarea::placeholder { color: #706e66; }
+.prot-nota-box { margin-top: 14px; background: rgba(224, 184, 94, 0.07); border: 1px solid rgba(224, 184, 94, 0.25); border-radius: 10px; padding: 14px; }
+.prot-nota-box-cap { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.prot-nota-box-cap svg { width: 14px; height: 14px; flex-shrink: 0; }
+.prot-nota-box-cap span { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: #e0b85e; }
+.prot-nota-box input { width: 100%; box-sizing: border-box; background: #1e1e1d; border: 1px solid #45443f; border-radius: 7px; padding: 8px 10px; font-size: 12.5px; color: #ece9e2; font-family: inherit; }
+.prot-nota-box input:focus { outline: none; border-color: #e0b85e; }
+.prot-nota-box input::placeholder { color: #706e66; }
