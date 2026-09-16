@@ -84,7 +84,16 @@ function initLive() {
 
     reimprospateazaDupaSchimbare();
   };
-  sseConexiune.onerror = () => {}; // EventSource reincearca singur reconectarea
+  // La o eroare fatala (nu o simpla pierdere de semnal, la care EventSource reincearca singur),
+  // readyState ramane CLOSED definitiv si browserul nu se mai reconecteaza de la sine - golim
+  // referinta, ca urmatorul initLive() (de la vizibilitate sau timeout-ul de mai jos) sa poata
+  // crea o conexiune noua, in loc sa ramana blocat pe cea moarta la nesfarsit.
+  sseConexiune.onerror = () => {
+    if (sseConexiune && sseConexiune.readyState === EventSource.CLOSED) {
+      sseConexiune = null;
+      setTimeout(initLive, 3000);
+    }
+  };
 }
 
 // Reincarcare automata, o singura data, amanata daca exact atunci e deschis un formular
