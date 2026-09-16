@@ -203,7 +203,11 @@ router.patch('/:id/reprogrameaza', async (req, res) => {
   if (vechi.rows[0]) {
     try {
       const v = vechi.rows[0];
-      const text = `${v.nume} ${v.prenume}: programare mutata din ${formateazaDataOra(v.data_ora)} in ${formateazaDataOra(data_ora_noua)}`;
+      // Folosim ora din randul actualizat (citita din baza de date, deci corecta pe fusul Romaniei),
+      // nu string-ul brut trimis de calendar - "new Date(string_fara_fus)" l-ar interpreta gresit
+      // ca ora locala a serverului, decalandu-l cu diferenta UTC / Romania.
+      const notaNoua = rows[0]?.data_ora || data_ora_noua;
+      const text = `${v.nume} ${v.prenume}: programare mutata din ${formateazaDataOra(v.data_ora)} in ${formateazaDataOra(notaNoua)}`;
       await creeazaNotificare({ tip: 'reprogramare', text, pacient_id: v.pacient_id, creat_de: req.user.id });
     } catch (e) {
       console.error('Nu am putut adauga notificarea de reprogramare:', e.message);
