@@ -1235,22 +1235,20 @@ async function incarcaCalendarSaptamana() {
         ${ORE_DISPONIBILE.map(ora => `
           <tr>
             <td style="padding:8px;font-size:13px;font-weight:500;vertical-align:top;border:1px solid #e2e0d9;background:#e6f2ef;color:#175e52">
-              <div class="ora-cell">
-                ${ora}
-                <div class="ora-add-btn" onclick="aratatFormularProgramareNoua(null,'${ora}')">+ adauga</div>
-              </div>
+              ${ora}
             </td>
             ${zile.map(z => {
               const toate = pePeriada[`${z}_${ora}`] || [];
               const randuri = [];
               for (let i = 0; i < toate.length; i += 3) randuri.push(toate.slice(i, i + 3));
               const fundalZi = z === astazi ? 'background:#eafaf6' : 'background:#ffffff';
-              return `<td style="padding:6px 8px;vertical-align:top;border:1px solid #e2e0d9;${fundalZi}">
+              return `<td class="zi-cell" style="padding:6px 8px;vertical-align:top;border:1px solid #e2e0d9;${fundalZi}">
                 ${randuri.map((rand, idx) => `
                   <div style="display:flex;gap:6px;padding:4px 0;${idx < randuri.length - 1 ? 'border-bottom:1px solid #eae8e1' : ''}">
                     ${rand.map(p => randPacientRand(p, culoareStatus)).join('')}
                   </div>
                 `).join('')}
+                <div class="zi-add-btn" onclick="aratatFormularProgramareNoua('${z}','${ora}')">+ adauga</div>
               </td>`;
             }).join('')}
           </tr>

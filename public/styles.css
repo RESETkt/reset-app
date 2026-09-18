@@ -111,15 +111,15 @@ th, td { text-align: left; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 .pacient-chip:hover .pacient-tooltip { display: block; }
-.ora-cell { position: relative; }
-.ora-add-btn {
+.zi-cell { position: relative; }
+.zi-add-btn {
   visibility: hidden;
   margin-top: 4px;
   font-size: 11px;
   color: #175e52;
   cursor: pointer;
 }
-.ora-cell:hover .ora-add-btn { visibility: visible; }
+.zi-cell:hover .zi-add-btn { visibility: visible; }
 
 
 .pacient-tooltip.vizibil { display: block; }
