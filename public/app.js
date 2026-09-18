@@ -2413,8 +2413,7 @@ function cereParolaSume(onSuccess) {
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
       <div class="card" style="max-width:320px;width:90%">
-        <h2>Parola sume</h2>
-        <label>Introdu parola pentru a vedea sumele incasate</label>
+        <label>Introdu parola</label>
         <input id="parola-sume-input" type="password" style="width:100%;margin-bottom:8px" onkeydown="if(event.key==='Enter') confirmaParolaSume()">
         <div id="eroare-parola-sume-modal" style="color:#e08585;font-size:12px;margin-bottom:8px"></div>
         <button class="btn" style="width:100%" onclick="confirmaParolaSume()">Confirma</button>
