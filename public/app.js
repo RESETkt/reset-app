@@ -1859,7 +1859,7 @@ async function incarcaStatistici() {
           <h2>Luna aceasta</h2>
           <div class="grid-2">
             <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
-            <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? s.incasari_luna + ' lei' : '••• lei'}</div></div>
+            <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? Math.round(s.incasari_luna).toLocaleString('ro-RO') + ' lei' : '••• lei'}</div></div>
           </div>
         </div>
       </div>
@@ -2001,9 +2001,9 @@ function randCardCheltuieli(rez) {
         <button class="btn secundar" onclick="blocheazaSume()">Blocheaza sumele</button>
       </div>
       <div class="grid-3" style="margin-bottom:14px">
-        <div class="metric"><div class="label">Incasari</div><div class="value">${rez.incasari_luna} lei</div></div>
-        <div class="metric"><div class="label">Cheltuieli</div><div class="value">${rez.cheltuieli_luna} lei</div></div>
-        <div class="metric"><div class="label">Profit</div><div class="value" style="color:${rez.profit_luna >= 0 ? '#7fd9a8' : '#e08585'}">${rez.profit_luna} lei</div></div>
+        <div class="metric"><div class="label">Incasari</div><div class="value">${Math.round(rez.incasari_luna).toLocaleString('ro-RO')} lei</div></div>
+        <div class="metric"><div class="label">Cheltuieli</div><div class="value">${Math.round(rez.cheltuieli_luna).toLocaleString('ro-RO')} lei</div></div>
+        <div class="metric"><div class="label">Profit</div><div class="value" style="color:${rez.profit_luna >= 0 ? '#7fd9a8' : '#e08585'}">${Math.round(rez.profit_luna).toLocaleString('ro-RO')} lei</div></div>
       </div>
 
       ${rez.recurente_variabile_lipsa.length
