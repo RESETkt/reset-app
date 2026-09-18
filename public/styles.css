@@ -88,6 +88,8 @@ body {
 .top-nav-btn.activ:hover { background: #7fd9a8; color: #12251a; }
 .logout-btn { cursor: pointer; color: #9a988e; padding: 4px; border-radius: 6px; flex-shrink: 0; } .logout-btn:hover { color: #ece9e2; background: #33322e; }
 h2 { font-size: 15px; margin: 0 0 12px; color: #ece9e2; }
+.titlu-buton { display: block; font-size: 15px; margin: 0; padding: 0; color: #ece9e2; background: none; border: none; cursor: pointer; font-family: inherit; text-align: left; }
+.titlu-buton:hover, .titlu-buton:active, .titlu-buton:focus { color: #ece9e2; background: none; }
 label { display: block; font-size: 12px; color: #9a988e; margin-bottom: 4px; }
 input, select, textarea { padding: 7px; border: 1px solid #45443f; border-radius: 6px; font-size: 13px; background: #1e1e1d; color: #ece9e2; font-family: inherit; }
 textarea { resize: vertical; }

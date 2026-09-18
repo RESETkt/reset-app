@@ -1985,9 +1985,7 @@ function randCardCheltuieli(rez) {
   if (!sumeDeblocate) {
     return `
       <div class="card" style="margin-top:16px">
-        <h2>Cheltuieli si profit (luna aceasta)</h2>
-        <div style="font-size:13px;color:#9a988e;margin-bottom:12px">Sumele sunt ascunse. Apasa "Arata sumele" pentru a le vedea.</div>
-        <button class="btn" onclick="cereParolaSume()">Arata sumele</button>
+        <button class="titlu-buton" onclick="cereParolaSume()">Rezumat</button>
       </div>
     `;
   }
@@ -1997,7 +1995,7 @@ function randCardCheltuieli(rez) {
   return `
     <div class="card" style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <h2 style="margin:0">Cheltuieli si profit (luna aceasta)</h2>
+        <h2 style="margin:0">Rezumat</h2>
         <button class="btn secundar" onclick="blocheazaSume()">Blocheaza sumele</button>
       </div>
       <div class="grid-3" style="margin-bottom:14px">
