@@ -7,6 +7,8 @@ const router = express.Router();
 // Toate rutele de cheltuieli sunt doar pentru admin - colegii kineto nu au ce cauta in ele.
 router.use(ceareAutentificare, ceareAdmin);
 
+const LUNI_RO = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+
 // Prinde orice eroare dintr-un handler async si raspunde cu JSON (nu lasa cererea agatata) -
 // util mai ales acum, cat timp tabelele noi (cheltuieli, cheltuieli_recurente) nu exista inca
 // pe o baza de date pe care nu s-a rulat migrarea.
@@ -28,7 +30,9 @@ router.get('/rezumat', asincron(async (req, res) => {
       cheltuieli_pe_categorie: null,
       cheltuieli: null,
       recurente: null,
-      recurente_variabile_lipsa: null
+      recurente_variabile_lipsa: null,
+      incasari_dupa_metoda: null,
+      incasari_pe_luna: null
     });
   }
 
@@ -59,6 +63,27 @@ router.get('/rezumat', asincron(async (req, res) => {
 
   const recurente = await pool.query(`SELECT * FROM cheltuieli_recurente ORDER BY categorie`);
 
+  const dupaMetoda = await pool.query(`
+    SELECT metoda, COALESCE(SUM(suma),0) AS total FROM plati
+    WHERE data_plata >= $1::date AND data_plata < ($1::date + interval '1 month')
+    GROUP BY metoda
+  `, [inceput]);
+
+  const incasariLunar = await pool.query(`
+    SELECT
+      EXTRACT(YEAR FROM gs.luna)::int AS an,
+      EXTRACT(MONTH FROM gs.luna)::int AS luna,
+      COALESCE(SUM(pl.suma), 0) AS total
+    FROM generate_series(
+      date_trunc('year', now()),
+      date_trunc('year', now()) + interval '11 months',
+      interval '1 month'
+    ) AS gs(luna)
+    LEFT JOIN plati pl ON date_trunc('month', pl.data_plata) = gs.luna
+    GROUP BY gs.luna
+    ORDER BY gs.luna
+  `);
+
   // Sabloanele variabile active pentru care nu exista inca nicio cheltuiala introdusa in luna asta
   const categoriiCuCheltuiala = new Set(cheltuieli.rows.map(c => c.categorie));
   const recurenteVariabileLipsa = recurente.rows
@@ -75,7 +100,13 @@ router.get('/rezumat', asincron(async (req, res) => {
     cheltuieli_pe_categorie: peCategorie.rows.map(r => ({ categorie: r.categorie, total: Number(r.total) })),
     cheltuieli: cheltuieli.rows,
     recurente: recurente.rows,
-    recurente_variabile_lipsa: recurenteVariabileLipsa
+    recurente_variabile_lipsa: recurenteVariabileLipsa,
+    incasari_dupa_metoda: dupaMetoda.rows.map(r => ({ metoda: r.metoda, total: Number(r.total) })),
+    incasari_pe_luna: incasariLunar.rows.map(r => ({
+      luna: `${r.an}-${String(r.luna).padStart(2, '0')}`,
+      eticheta: LUNI_RO[r.luna - 1].slice(0, 3),
+      total: Number(r.total)
+    }))
   });
 }));
 

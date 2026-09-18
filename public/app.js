@@ -1852,51 +1852,11 @@ async function incarcaStatistici() {
   if (parolaSumeCurenta && !sumeDeblocate) parolaSumeCurenta = null;
   const acum = new Date();
   document.getElementById('panel-statistici').innerHTML = `
-    <div class="panel-cols-2">
-      <div id="statistici-coloana-stanga" style="display:flex;flex-direction:column;gap:16px">
-        <div class="card" id="statistici-card-saptamana"></div>
-        <div class="card">
-          <h2>Luna aceasta</h2>
-          <div class="grid-2">
-            <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
-            <div class="metric"><div class="label">Incasari</div><div class="value">${sumeDeblocate ? Math.round(s.incasari_luna).toLocaleString('ro-RO') + ' lei' : '••• lei'}</div></div>
-          </div>
-        </div>
-      </div>
-      <div id="statistici-card-incasari" class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 style="margin:0">Incasari dupa metoda (luna aceasta)</h2>
-          <button class="btn" onclick="${sumeDeblocate ? 'blocheazaSume()' : 'cereParolaSume()'}">${sumeDeblocate ? 'Blocheaza sumele' : 'Arata sumele'}</button>
-        </div>
-        ${sumeDeblocate
-          ? (s.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${m.total} lei</div>`).join('') || '<div style="font-size:13px;color:#9a988e">Fara plati inregistrate.</div>')
-          : '<div style="font-size:13px;color:#9a988e">Sumele sunt ascunse. Apasa "Arata sumele" pentru a le vedea.</div>'}
-        <div id="eroare-parola-sume" style="color:#e08585;font-size:12px;margin-top:8px"></div>
-
-        <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
-          <div style="font-weight:500;font-size:13px;margin-bottom:8px">Descarca raport PDF</div>
-          <div style="display:flex;gap:8px;margin-bottom:8px">
-            <select id="pdf-luna" style="flex:1">
-              ${LUNI_RO_STATS.map((l, i) => `<option value="${i + 1}" ${i === acum.getMonth() ? 'selected' : ''}>${l}</option>`).join('')}
-            </select>
-            <input id="pdf-an" type="number" value="${acum.getFullYear()}" style="width:90px">
-          </div>
-          <button class="btn secundar" style="width:100%" onclick="descarcaPdfStatistici()">Descarca PDF</button>
-        </div>
-      </div>
-    </div>
+    <div class="card" id="statistici-card-saptamana"></div>
 
     <div class="card" style="margin-top:16px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-        <div>
-          <h2 style="margin:0 0 2px">Incasari pe luna</h2>
-          <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()}</div>
-        </div>
-        ${sumeDeblocate ? cardTendinta(s.incasari_pe_luna, acum.getMonth()) : ''}
-      </div>
-      ${sumeDeblocate
-        ? `<div id="grafic-incasari-luna" style="margin-top:10px"></div>`
-        : '<div style="font-size:13px;color:#9a988e;margin-top:10px">Sumele sunt ascunse. Apasa "Arata sumele" din cardul de mai sus pentru a le vedea.</div>'}
+      <h2>Luna aceasta</h2>
+      <div class="metric"><div class="label">Pacienti</div><div class="value">${s.pacienti_luna}</div></div>
     </div>
 
     <div class="card" style="margin-top:16px">
@@ -1923,8 +1883,6 @@ async function incarcaStatistici() {
 
     ${rolCurent() === 'admin' ? '<div id="statistici-card-cheltuieli"></div>' : ''}
   `;
-  egalizeazaColoaneStatistici();
-  if (sumeDeblocate) deseneazaGraficBare('grafic-incasari-luna', s.incasari_pe_luna, '#EA532F', acum.getMonth(), formatLei);
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
   if (rolCurent() === 'admin') incarcaCheltuieli();
@@ -1978,6 +1936,7 @@ function saptamanaStatsAcum() {
 // --- Cheltuieli si profit (doar admin, plus parolate - vezi routes/expenses.js pentru gating pe server) ---
 
 let cheltuieliLunaCache = [];
+let ultimulRezumatCheltuieli = null;
 
 function randCardCheltuieli(rez) {
   const sumeDeblocate = rez.cheltuieli_luna != null;
@@ -2002,6 +1961,31 @@ function randCardCheltuieli(rez) {
         <div class="metric"><div class="label">Incasari</div><div class="value">${Math.round(rez.incasari_luna).toLocaleString('ro-RO')} lei</div></div>
         <div class="metric"><div class="label">Cheltuieli</div><div class="value">${Math.round(rez.cheltuieli_luna).toLocaleString('ro-RO')} lei</div></div>
         <div class="metric"><div class="label">Profit</div><div class="value" style="color:${rez.profit_luna >= 0 ? '#7fd9a8' : '#e08585'}">${Math.round(rez.profit_luna).toLocaleString('ro-RO')} lei</div></div>
+      </div>
+
+      <div style="border-top:1px solid #3a3937;margin-top:2px;padding-top:12px">
+        <div style="font-weight:500;font-size:13px;margin-bottom:8px">Incasari dupa metoda</div>
+        ${rez.incasari_dupa_metoda.map(m => `<div style="font-size:13px;margin-bottom:4px">${m.metoda}: ${Math.round(m.total).toLocaleString('ro-RO')} lei</div>`).join('') || '<div style="font-size:13px;color:#9a988e">Fara plati inregistrate.</div>'}
+      </div>
+
+      <div style="border-top:1px solid #3a3937;margin-top:12px;padding-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="font-weight:500;font-size:13px">Incasari pe luna</div>
+          ${cardTendinta(rez.incasari_pe_luna, new Date().getMonth())}
+        </div>
+        <div id="grafic-incasari-luna" style="margin-top:10px"></div>
+      </div>
+
+      <div style="border-top:1px solid #3a3937;margin-top:12px;padding-top:12px">
+        <div style="font-weight:500;font-size:13px;margin-bottom:8px">Descarca raport PDF</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select id="pdf-luna" style="flex:1">
+            ${LUNI_RO_STATS.map((l, i) => `<option value="${i + 1}" ${i === new Date().getMonth() ? 'selected' : ''}>${l}</option>`).join('')}
+          </select>
+          <input id="pdf-an" type="number" value="${new Date().getFullYear()}" style="width:90px">
+        </div>
+        <button class="btn secundar" style="width:100%" onclick="descarcaPdfStatistici()">Descarca PDF</button>
+        <div id="eroare-parola-sume" style="color:#e08585;font-size:12px;margin-top:8px"></div>
       </div>
 
       ${rez.recurente_variabile_lipsa.length
@@ -2087,7 +2071,9 @@ async function incarcaCheltuieli() {
       return;
     }
     if (parolaSumeCurenta && rez.cheltuieli_luna == null) parolaSumeCurenta = null;
+    ultimulRezumatCheltuieli = rez;
     el.innerHTML = randCardCheltuieli(rez);
+    if (rez.incasari_pe_luna) deseneazaGraficBare('grafic-incasari-luna', rez.incasari_pe_luna, '#EA532F', new Date().getMonth(), formatLei);
   } catch (e) {
     el.innerHTML = `<div class="card" style="margin-top:16px;color:#e08585;font-size:13px">Nu am putut incarca cheltuielile: ${e.message}</div>`;
   }
@@ -2360,22 +2346,6 @@ function randeazaBadgeTendinta(stare, text) {
   `;
 }
 
-function egalizeazaColoaneStatistici() {
-  const stanga = document.getElementById('statistici-coloana-stanga');
-  const dreapta = document.getElementById('statistici-card-incasari');
-  if (!stanga || !dreapta) return;
-  const carduriStanga = Array.from(stanga.children);
-  carduriStanga.forEach(c => c.style.minHeight = '');
-  // Sub 760px, .panel-cols-2 devine 1 coloana (totul stivuit) - pe telefon nu egalizam nimic
-  if (window.innerWidth <= 760) return;
-  requestAnimationFrame(() => {
-    if (window.innerWidth <= 760) return;
-    const gapTotal = (carduriStanga.length - 1) * 16;
-    const fiecare = (dreapta.offsetHeight - gapTotal) / carduriStanga.length;
-    if (fiecare > 0) carduriStanga.forEach(c => c.style.minHeight = fiecare + 'px');
-  });
-}
-
 function descarcaPdfStatistici() {
   const luna = document.getElementById('pdf-luna').value;
   const an = document.getElementById('pdf-an').value;
@@ -2493,10 +2463,10 @@ window.addEventListener('resize', () => {
     }
     if (ultimeleStatisticiDate) {
       deseneazaGraficBare('grafic-sedinte-luna', ultimeleStatisticiDate.sedinte_pe_luna, '#1FA1AB', new Date().getMonth());
-      if (ultimeleStatisticiDate.incasari_pe_luna) {
-        deseneazaGraficBare('grafic-incasari-luna', ultimeleStatisticiDate.incasari_pe_luna, '#EA532F', new Date().getMonth(), formatLei);
-      }
       deseneazaGraficBare('grafic-reinnoiri-luna', ultimeleStatisticiDate.reinnoiri_pe_luna, '#E9B44C', new Date().getMonth(), formatRata);
+    }
+    if (ultimulRezumatCheltuieli && ultimulRezumatCheltuieli.incasari_pe_luna) {
+      deseneazaGraficBare('grafic-incasari-luna', ultimulRezumatCheltuieli.incasari_pe_luna, '#EA532F', new Date().getMonth(), formatLei);
     }
   }, 250);
 });
