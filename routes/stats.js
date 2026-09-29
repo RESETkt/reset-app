@@ -72,6 +72,32 @@ router.get('/', async (req, res) => {
     total: Number(r.total)
   }));
 
+  // Ultimele 12 saptamani (luni->duminica), saptamana curenta inclusiv - la fel ca la luni,
+  // dar pe o fereastra glisanta, nu ancorata de inceputul anului (nu prea are sens un "ianuarie
+  // - saptamana 1" cand saptamanile taie peste ani).
+  const pacientiSaptamanal = await pool.query(`
+    SELECT
+      gs.saptamana AS inceput,
+      COUNT(p.id) AS total
+    FROM generate_series(
+      date_trunc('week', now()) - interval '11 weeks',
+      date_trunc('week', now()),
+      interval '1 week'
+    ) AS gs(saptamana)
+    LEFT JOIN programari p
+      ON p.data_ora >= gs.saptamana AND p.data_ora < gs.saptamana + interval '1 week' AND p.status = 'prezent'
+    GROUP BY gs.saptamana
+    ORDER BY gs.saptamana
+  `);
+  const pacienti_pe_saptamana = pacientiSaptamanal.rows.map(r => {
+    const d = new Date(r.inceput);
+    return {
+      saptamana: dataISO(d),
+      eticheta: `${d.getDate()} ${LUNI_RO[d.getMonth()].slice(0, 3)}`,
+      total: Number(r.total)
+    };
+  });
+
   // Rata de reinnoire a abonamentelor (pachete cu mai multe sedinte - 8/12/functional -
   // individualele nu se "reinnoiesc", sunt o singura sedinta oricum).
   // Un abonament e considerat "finalizat" cand sedinte_efectuate >= total_sedinte; data
@@ -165,6 +191,7 @@ router.get('/', async (req, res) => {
     incasari_dupa_metoda,
     incasari_pe_luna,
     sedinte_pe_luna,
+    pacienti_pe_saptamana,
     reinnoiri_pe_luna
   });
 });

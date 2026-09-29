@@ -1965,6 +1965,17 @@ async function incarcaStatistici() {
     <div class="card" style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
         <div>
+          <h2 style="margin:0 0 2px">Pacienti pe saptamana</h2>
+          <div style="font-size:11.5px;color:#6f6d64">Ultimele 12 saptamani</div>
+        </div>
+        ${cardTendinta(s.pacienti_pe_saptamana, s.pacienti_pe_saptamana.length - 1)}
+      </div>
+      <div id="grafic-pacienti-saptamana" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
           <h2 style="margin:0 0 2px">Sedinte pe luna</h2>
           <div style="font-size:11.5px;color:#6f6d64">Anul ${acum.getFullYear()}</div>
         </div>
@@ -1986,6 +1997,7 @@ async function incarcaStatistici() {
 
     ${rolCurent() === 'admin' ? '<div id="statistici-card-cheltuieli"></div>' : ''}
   `;
+  deseneazaGraficBare('grafic-pacienti-saptamana', s.pacienti_pe_saptamana, '#7F77DD', s.pacienti_pe_saptamana.length - 1);
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
   if (rolCurent() === 'admin') incarcaCheltuieli();
@@ -2565,6 +2577,7 @@ window.addEventListener('resize', () => {
       if (panelCalendar && panelCalendar.style.display !== 'none') incarcaCalendarSaptamana();
     }
     if (ultimeleStatisticiDate) {
+      deseneazaGraficBare('grafic-pacienti-saptamana', ultimeleStatisticiDate.pacienti_pe_saptamana, '#7F77DD', ultimeleStatisticiDate.pacienti_pe_saptamana.length - 1);
       deseneazaGraficBare('grafic-sedinte-luna', ultimeleStatisticiDate.sedinte_pe_luna, '#1FA1AB', new Date().getMonth());
       deseneazaGraficBare('grafic-reinnoiri-luna', ultimeleStatisticiDate.reinnoiri_pe_luna, '#E9B44C', new Date().getMonth(), formatRata);
     }
