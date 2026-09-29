@@ -645,7 +645,10 @@ async function deschideFisa(id) {
           <div style="font-size:16px;font-weight:600">${p.nume} ${p.prenume} ${!p.activ ? '<span style="color:#e0b85e;font-size:12px">(arhivat)</span>' : ''}</div>
           <div style="font-size:13px;color:#9a988e;margin-top:2px">Diagnostic: ${p.diagnostic || '-'}</div>
         </div>
-        ${ab ? `<span class="badge">Abonament ${ab.tip} sedinte</span>` : '<span class="badge" style="background:#3a2f1f;color:#e0b85e">Fara abonament</span>'}
+        <div style="text-align:right">
+          ${ab ? `<span class="badge">Abonament ${ab.tip} sedinte</span>` : '<span class="badge" style="background:#3a2f1f;color:#e0b85e">Fara abonament</span>'}
+          <div style="margin-top:6px"><span style="font-size:12px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatIstoricAbonamente('${id}')">Istoric abonamente</span></div>
+        </div>
       </div>
 
       <div class="grid-3" style="margin-top:16px">
@@ -696,6 +699,29 @@ async function deschideFisa(id) {
 }
 
 let sedinteIstoricCache = [];
+
+async function aratatIstoricAbonamente(pacientId) {
+  const abonamente = await apel(`/api/abonamente/pacient/${pacientId}`);
+  const total = abonamente.length;
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:480px;width:90%;max-height:80vh;overflow-y:auto">
+        <h2>Istoric abonamente</h2>
+        ${abonamente.length === 0 ? '<div style="font-size:13px;color:#9a988e">Niciun abonament inregistrat inca.</div>' : abonamente.map((a, i) => `
+          <div style="border-bottom:1px solid #3a3937;padding:10px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:13px;font-weight:500">Abonamentul ${total - i} - ${textAbonament(a.tip)}</div>
+              ${a.activ ? '<span class="badge">Activ</span>' : '<span style="font-size:11px;color:#9a988e">Incheiat</span>'}
+            </div>
+            <div style="font-size:12px;color:#9a988e">Inceput pe ${new Date(a.creat_la).toLocaleDateString('ro-RO')} - ${a.sedinte_efectuate}/${a.total_sedinte} sedinte efectuate</div>
+          </div>
+        `).join('')}
+        <button class="btn secundar" style="width:100%;margin-top:14px" onclick="inchideModalProgramare()">Inchide</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
 
 async function aratatIstoricSedinte(pacientId) {
   const sedinte = await apel(`/api/pacienti/${pacientId}/sedinte`);

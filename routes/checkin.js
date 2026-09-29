@@ -39,11 +39,12 @@ router.post('/:programareId/confirma', async (req, res) => {
     await client.query('BEGIN');
     const existent = await client.query(`SELECT status, pacient_id, abonament_id FROM programari WHERE id = $1`, [req.params.programareId]);
     const eraDejaPrezent = existent.rows[0]?.status === 'prezent';
-    // Programarea poate fi facuta inainte ca pacientul sa aiba un abonament (adaugat ulterior din
-    // editarea pacientului) - recalculam abonamentul activ curent daca cel retinut pe programare
-    // e gol, ca sedinta sa se contorizeze corect in loc sa se piarda.
-    let abonament_id = existent.rows[0]?.abonament_id || null;
-    if (!abonament_id && existent.rows[0]?.pacient_id) {
+    // Programarea a fost legata de abonamentul activ in momentul in care a fost facuta, dar intre
+    // timp pacientul poate sa fi platit un abonament nou - la marcarea prezentei, recalculam mereu
+    // abonamentul activ curent (nu doar cand cel retinut pe programare lipseste), ca sedinta sa se
+    // contorizeze pe abonamentul chiar folosit, nu pe unul vechi deja incheiat.
+    let abonament_id = null;
+    if (existent.rows[0]?.pacient_id) {
       const activ = await client.query(
         `SELECT id FROM abonamente WHERE pacient_id = $1 AND activ = true ORDER BY creat_la DESC LIMIT 1`,
         [existent.rows[0].pacient_id]
