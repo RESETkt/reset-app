@@ -1115,6 +1115,10 @@ async function aratatFormularPlataNoua(pacientId) {
           <option value="altceva">Altceva (scriu eu)</option>
         </select>
         <input id="plata-motiv-liber" placeholder="Descrie motivul" style="width:100%;margin-bottom:10px;display:none">
+        <label id="plata-abonament-nou-label" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="plata-abonament-nou" checked style="width:auto">
+          Aceasta plata porneste un abonament nou (reseteaza sedintele)
+        </label>
 
         <label>Data platii</label>
         <input id="plata-data" type="date" style="width:100%;margin-bottom:14px" value="${dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
@@ -1130,6 +1134,7 @@ async function aratatFormularPlataNoua(pacientId) {
 
 function schimbaMotivPlata(valoare) {
   document.getElementById('plata-motiv-liber').style.display = valoare === 'altceva' ? 'block' : 'none';
+  document.getElementById('plata-abonament-nou-label').style.display = valoare === 'altceva' ? 'none' : 'flex';
 }
 
 async function salveazaPlataNoua(pacientId) {
@@ -1160,6 +1165,14 @@ async function salveazaPlataNoua(pacientId) {
     eroareEl.textContent = rezultat.eroare;
     buton.disabled = false;
     return;
+  }
+
+  const pornesteAbonamentNou = motivSelect !== 'altceva' && document.getElementById('plata-abonament-nou').checked;
+  if (pornesteAbonamentNou) {
+    await apel('/api/abonamente', {
+      method: 'POST',
+      body: JSON.stringify({ pacient_id: pacientId, tip: motivSelect })
+    });
   }
 
   inchideModalProgramare();
