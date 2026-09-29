@@ -1997,7 +1997,7 @@ async function incarcaStatistici() {
 
     ${rolCurent() === 'admin' ? '<div id="statistici-card-cheltuieli"></div>' : ''}
   `;
-  deseneazaGraficBare('grafic-pacienti-saptamana', s.pacienti_pe_saptamana, '#7F77DD', s.pacienti_pe_saptamana.length - 1);
+  deseneazaGraficBare('grafic-pacienti-saptamana', s.pacienti_pe_saptamana, '#7F77DD', s.pacienti_pe_saptamana.length - 1, null, true);
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
   if (rolCurent() === 'admin') incarcaCheltuieli();
@@ -2328,19 +2328,20 @@ async function stergeRecurenta(id) {
 // Deseneaza un grafic cu bare in containerul dat, folosind latimea lui reala (masurata in
 // DOM, ca la canvas-ul de semnatura GDPR) - nu scalare CSS, ca sa nu se deformeze barele.
 // indexCurent = indexul lunii curente in serie (celelalte de dupa el sunt viitoare, inca 0).
-function deseneazaGraficBare(idContainer, serie, culoare, indexCurent, formatValoare) {
+function deseneazaGraficBare(idContainer, serie, culoare, indexCurent, formatValoare, toateValorile) {
   const container = document.getElementById(idContainer);
   if (!container) return;
   requestAnimationFrame(() => {
     const latimeContainer = container.clientWidth;
     if (!latimeContainer) return;
-    container.innerHTML = svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoare);
+    container.innerHTML = svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoare, toateValorile);
   });
 }
 
 // Grafic simplu cu bare, la latimea reala primita (in pixeli). Luna curenta e plina si
 // etichetata cu valoarea; lunile trecute sunt tot mai transparente, cele viitoare abia vizibile.
-function svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoare) {
+// toateValorile=true arata numarul deasupra fiecarei bare, nu doar la cea curenta.
+function svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoare, toateValorile) {
   formatValoare = formatValoare || (l => l.total);
   const marginLateral = 4, sus = 28, jos = 20, inaltimeGrafic = 180;
   const inaltimeTotal = sus + inaltimeGrafic + jos;
@@ -2363,7 +2364,8 @@ function svgGraficBare(serie, culoare, latimeContainer, indexCurent, formatValoa
     const opacitate = viitor ? 0.12 : (ultima ? 1 : 0.35 + (i / Math.max(indexCurent, 1)) * 0.55);
     return `
       <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${latimeBara.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${culoare}" opacity="${opacitate.toFixed(2)}"/>
-      ${ultima ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#ece9e2">${formatValoare(l)}</text>` : ''}
+      ${ultima ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#ece9e2">${formatValoare(l)}</text>`
+        : (toateValorile ? `<text x="${(x + latimeBara / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" text-anchor="middle" font-size="9" fill="#6f6d64">${formatValoare(l)}</text>` : '')}
       <text x="${(x + latimeBara / 2).toFixed(1)}" y="${yBaza + 14}" text-anchor="middle" font-size="9" fill="${ultima ? '#ece9e2' : '#6f6d64'}" font-weight="${ultima ? 600 : 400}">${l.eticheta}</text>
     `;
   }).join('');
@@ -2577,7 +2579,7 @@ window.addEventListener('resize', () => {
       if (panelCalendar && panelCalendar.style.display !== 'none') incarcaCalendarSaptamana();
     }
     if (ultimeleStatisticiDate) {
-      deseneazaGraficBare('grafic-pacienti-saptamana', ultimeleStatisticiDate.pacienti_pe_saptamana, '#7F77DD', ultimeleStatisticiDate.pacienti_pe_saptamana.length - 1);
+      deseneazaGraficBare('grafic-pacienti-saptamana', ultimeleStatisticiDate.pacienti_pe_saptamana, '#7F77DD', ultimeleStatisticiDate.pacienti_pe_saptamana.length - 1, null, true);
       deseneazaGraficBare('grafic-sedinte-luna', ultimeleStatisticiDate.sedinte_pe_luna, '#1FA1AB', new Date().getMonth());
       deseneazaGraficBare('grafic-reinnoiri-luna', ultimeleStatisticiDate.reinnoiri_pe_luna, '#E9B44C', new Date().getMonth(), formatRata);
     }

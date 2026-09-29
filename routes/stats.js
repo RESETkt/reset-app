@@ -89,11 +89,14 @@ router.get('/', async (req, res) => {
     GROUP BY gs.saptamana
     ORDER BY gs.saptamana
   `);
+  const contorSaptamaniLuna = {};
   const pacienti_pe_saptamana = pacientiSaptamanal.rows.map(r => {
     const d = new Date(r.inceput);
+    const cheieLuna = `${d.getFullYear()}-${d.getMonth()}`;
+    contorSaptamaniLuna[cheieLuna] = (contorSaptamaniLuna[cheieLuna] || 0) + 1;
     return {
       saptamana: dataISO(d),
-      eticheta: `${d.getDate()} ${LUNI_RO[d.getMonth()].slice(0, 3)}`,
+      eticheta: `S${contorSaptamaniLuna[cheieLuna]} ${LUNI_RO[d.getMonth()].slice(0, 3)}`,
       total: Number(r.total)
     };
   });
