@@ -673,7 +673,6 @@ async function deschideFisa(id) {
 
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="aratatFormularEditarePacient('${id}')">Editeaza</button>
-        <button class="btn secundar" onclick="aratatConfirmareAbonamentNou('${id}')">Abonament nou (reseteaza sedintele)</button>
         ${p.activ
           ? `<button class="btn secundar" onclick="arhiveazaPacient('${id}')">Arhiveaza</button>`
           : `<button class="btn" onclick="reactiveazaPacient('${id}')">Reactiveaza</button>`}
@@ -716,6 +715,9 @@ async function aratatIstoricAbonamente(pacientId) {
             <div style="font-size:12px;color:#9a988e">Inceput pe ${new Date(a.creat_la).toLocaleDateString('ro-RO')} - ${a.sedinte_efectuate}/${a.total_sedinte} sedinte efectuate</div>
           </div>
         `).join('')}
+        <div style="border-top:1px solid #3a3937;margin-top:12px;padding-top:12px">
+          <span style="font-size:12px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatConfirmareAbonamentNou('${pacientId}')">Corecteaza / porneste manual un abonament nou</span>
+        </div>
         <button class="btn secundar" style="width:100%;margin-top:14px" onclick="inchideModalProgramare()">Inchide</button>
       </div>
     </div>
