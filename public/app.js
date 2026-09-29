@@ -1067,6 +1067,7 @@ function aratatConfirmareAbonamentNou(pacientId) {
         <div style="font-size:11px;color:#9a988e;margin-bottom:14px">Completeaza doar daca pacientul a facut deja sedinte inainte sa existe acest abonament (ex: istoric de dinainte).</div>
         <button class="btn" style="width:100%" onclick="confirmaAbonamentNou('${pacientId}')">Da, porneste abonament nou</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+        <div id="eroare-abonament-nou" style="color:#e08585;font-size:12px;margin-top:8px"></div>
       </div>
     </div>
   `;
@@ -1076,11 +1077,25 @@ function aratatConfirmareAbonamentNou(pacientId) {
 async function confirmaAbonamentNou(pacientId) {
   const tip = document.getElementById('abonament-nou-tip').value;
   const sedinte_efectuate = document.getElementById('abonament-nou-efectuate').value || 0;
-  event.target.disabled = true;
-  await apel('/api/abonamente', {
-    method: 'POST',
-    body: JSON.stringify({ pacient_id: pacientId, tip, sedinte_efectuate })
-  });
+  const eroareEl = document.getElementById('eroare-abonament-nou');
+  const buton = event.target;
+  buton.disabled = true;
+  let rezultat;
+  try {
+    rezultat = await apel('/api/abonamente', {
+      method: 'POST',
+      body: JSON.stringify({ pacient_id: pacientId, tip, sedinte_efectuate })
+    });
+  } catch (e) {
+    eroareEl.textContent = 'Nu am putut porni abonamentul nou: ' + e.message;
+    buton.disabled = false;
+    return;
+  }
+  if (rezultat.eroare) {
+    eroareEl.textContent = rezultat.eroare;
+    buton.disabled = false;
+    return;
+  }
   inchideModalProgramare();
   deschideFisa(pacientId);
 }
@@ -1169,10 +1184,15 @@ async function salveazaPlataNoua(pacientId) {
 
   const pornesteAbonamentNou = motivSelect !== 'altceva' && document.getElementById('plata-abonament-nou').checked;
   if (pornesteAbonamentNou) {
-    await apel('/api/abonamente', {
+    const rezultatAbonament = await apel('/api/abonamente', {
       method: 'POST',
       body: JSON.stringify({ pacient_id: pacientId, tip: motivSelect })
     });
+    if (rezultatAbonament.eroare) {
+      eroareEl.textContent = `Plata a fost salvata, dar abonamentul nou nu a putut fi pornit: ${rezultatAbonament.eroare}`;
+      buton.disabled = false;
+      return;
+    }
   }
 
   inchideModalProgramare();
