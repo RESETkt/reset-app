@@ -737,7 +737,10 @@ async function aratatIstoricSedinte(pacientId) {
           <div style="border-bottom:1px solid #3a3937;padding:10px 0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <div style="font-size:13px;font-weight:500">${new Date(s.data_ora).toLocaleDateString('ro-RO')} ${s.kineto_nume ? `- ${s.kineto_nume}` : ''}</div>
-              <span style="font-size:11px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatFormularEditareSedinta('${pacientId}','${s.id}')">Editeaza</span>
+              <div style="display:flex;gap:10px;flex-shrink:0">
+                <span style="font-size:11px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatMutaSedintaAbonament('${pacientId}','${s.id}')">Muta abonament</span>
+                <span style="font-size:11px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatFormularEditareSedinta('${pacientId}','${s.id}')">Editeaza</span>
+              </div>
             </div>
             <div style="font-size:13px;color:#c9c7bd">Exercitii: ${s.exercitii || '-'}</div>
             <div style="font-size:13px;color:#c9c7bd">Observatii: ${s.observatii || '-'}</div>
@@ -748,6 +751,45 @@ async function aratatIstoricSedinte(pacientId) {
     </div>
   `;
   document.getElementById('modal-container').innerHTML = html;
+}
+
+async function aratatMutaSedintaAbonament(pacientId, sedintaId) {
+  const sedinta = sedinteIstoricCache.find(s => s.id === sedintaId);
+  if (!sedinta) return;
+  const abonamente = await apel(`/api/abonamente/pacient/${pacientId}`);
+  const html = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
+      <div class="card" style="max-width:420px;width:90%">
+        <h2>Muta sedinta din ${new Date(sedinta.data_ora).toLocaleDateString('ro-RO')}</h2>
+        <div style="font-size:13px;color:#c9c7bd;margin-bottom:14px">Sedinta ramane neschimbata (data, exercitii, observatii) - se schimba doar pe ce abonament se contorizeaza.</div>
+        <label>Pe ce abonament sa se contorizeze</label>
+        <select id="muta-abonament-select" style="width:100%;margin-bottom:14px">
+          ${abonamente.map(a => `<option value="${a.id}" ${a.id === sedinta.abonament_id ? 'selected' : ''}>${textAbonament(a.tip)} - inceput ${new Date(a.creat_la).toLocaleDateString('ro-RO')} (${a.sedinte_efectuate}/${a.total_sedinte}) ${a.activ ? '- Activ' : '- Incheiat'}</option>`).join('')}
+        </select>
+        <button class="btn" style="width:100%" onclick="confirmaMutaSedintaAbonament('${pacientId}','${sedintaId}')">Muta</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
+        <div id="eroare-muta-abonament" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function confirmaMutaSedintaAbonament(pacientId, sedintaId) {
+  const abonamentId = document.getElementById('muta-abonament-select').value;
+  const eroareEl = document.getElementById('eroare-muta-abonament');
+  const buton = event.target;
+  buton.disabled = true;
+  const rezultat = await apel(`/api/programari/${sedintaId}/muta-abonament`, {
+    method: 'PATCH',
+    body: JSON.stringify({ abonament_id: abonamentId })
+  });
+  if (rezultat.eroare) {
+    eroareEl.textContent = rezultat.eroare;
+    buton.disabled = false;
+    return;
+  }
+  aratatIstoricSedinte(pacientId);
 }
 
 function aratatFormularEditareSedinta(pacientId, sedintaId) {

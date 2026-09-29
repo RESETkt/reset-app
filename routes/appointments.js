@@ -182,6 +182,50 @@ router.patch('/:id/absent', async (req, res) => {
   }
 });
 
+// Muta o sedinta deja marcata prezenta pe alt abonament al aceluiasi pacient - fara sa stearga
+// sau sa modifice nimic din sedinta insasi (data, exercitii, observatii raman neschimbate),
+// doar scade contorul din abonamentul vechi si il creste pe cel nou. Utila cand o sedinta a fost
+// contorizata din greseala pe abonamentul gresit (ex: abonamentul nou a fost pornit dupa sedinta).
+router.patch('/:id/muta-abonament', async (req, res) => {
+  const { abonament_id } = req.body;
+  if (!abonament_id) return res.status(400).json({ eroare: 'Abonamentul destinatie este obligatoriu.' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const existent = await client.query(`SELECT status, abonament_id, pacient_id FROM programari WHERE id = $1`, [req.params.id]);
+    if (!existent.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ eroare: 'Sedinta nu exista.' });
+    }
+    if (existent.rows[0].status !== 'prezent') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ eroare: 'Doar sedintele marcate prezente pot fi mutate pe alt abonament.' });
+    }
+    const abonamentNou = await client.query(`SELECT id FROM abonamente WHERE id = $1 AND pacient_id = $2`, [abonament_id, existent.rows[0].pacient_id]);
+    if (!abonamentNou.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ eroare: 'Abonamentul destinatie nu apartine acestui pacient.' });
+    }
+    const abonamentVechi = existent.rows[0].abonament_id;
+    if (abonamentVechi === abonament_id) {
+      await client.query('ROLLBACK');
+      return res.json({ mutat: false });
+    }
+    if (abonamentVechi) {
+      await client.query(`UPDATE abonamente SET sedinte_efectuate = GREATEST(sedinte_efectuate - 1, 0) WHERE id = $1`, [abonamentVechi]);
+    }
+    await client.query(`UPDATE abonamente SET sedinte_efectuate = sedinte_efectuate + 1 WHERE id = $1`, [abonament_id]);
+    const prog = await client.query(`UPDATE programari SET abonament_id = $1 WHERE id = $2 RETURNING *`, [abonament_id, req.params.id]);
+    await client.query('COMMIT');
+    res.json(prog.rows[0]);
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ eroare: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 function formateazaDataOra(data_ora) {
   return new Date(data_ora).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' });
 }
