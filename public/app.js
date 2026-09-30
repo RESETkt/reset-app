@@ -1448,18 +1448,23 @@ async function incarcaCalendarZi() {
   document.getElementById('panel-calendar').innerHTML = html;
 }
 
-// Punct colorat pe status, text mereu negru (lizibil garantat) - la fel ca bulina aurie
-// existenta deja pentru "ultima sedinta din abonament".
-const PUNCT_STATUS = { programat: '#9a988e', prezent: '#1f8a5a', absent: '#c14343', reprogramat: '#e0b85e' };
+// Eticheta colorata (fundal + text), paleta domoala - mai putin saturata decat prima
+// incercare de badge, ca sa nu para stridenta cand sunt mai multi pacienti alaturi.
+const PALETA_STATUS = {
+  programat: { bg: '#ece9e2', border: '#dad7cd', text: '#6b6a63' },
+  prezent: { bg: '#e3ede4', border: '#c7d8c9', text: '#3f6b4f' },
+  absent: { bg: '#f0e3e1', border: '#ddc3c0', text: '#9c5347' },
+  reprogramat: { bg: '#efe6d3', border: '#ddccab', text: '#86682f' }
+};
 
 function randPacientRand(p) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
+  const culoare = PALETA_STATUS[p.status] || { bg: '#f6f5f1', border: '#d8d6cd', text: '#2b2a26' };
   const tooltipId = `tooltip-${p.id}`;
   return `
-    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 5px;background:#f6f5f1">
-      <span style="width:6px;height:6px;border-radius:50%;background:${PUNCT_STATUS[p.status] || '#9a988e'};flex-shrink:0" title="Status: ${p.status}"></span>
+    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid ${culoare.border};border-radius:4px;padding:1px 5px;background:${culoare.bg}">
       ${ramase === 1 ? '<span style="width:6px;height:6px;border-radius:50%;background:#e0b85e;flex-shrink:0" title="Ultima sedinta din abonament"></span>' : ''}
-      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#2b2a26;font-weight:600" onclick="toggleMeniuStatus('${p.id}', event)">${p.prenume}</span>
+      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoare.text};font-weight:600" onclick="toggleMeniuStatus('${p.id}', event)">${p.prenume}</span>
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
       <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
         <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="aratatFormularPrezenta('${p.id}','${p.prenume}',${p.total_sedinte ?? 'null'},${p.sedinte_efectuate ?? 'null'},'${p.status}')">Prezent</div>
