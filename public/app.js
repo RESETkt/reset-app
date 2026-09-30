@@ -1448,11 +1448,12 @@ async function incarcaCalendarZi() {
   document.getElementById('panel-calendar').innerHTML = html;
 }
 
-// Eticheta colorata (fundal + text), paleta domoala - mai putin saturata decat prima
-// incercare de badge, ca sa nu para stridenta cand sunt mai multi pacienti alaturi.
+// Eticheta colorata (fundal + text) - programat ramane gri neutru (fara nicio nuanta de
+// verde), iar prezent are verde suficient de saturat cat sa nu se confunde cu gri-ul de
+// alaturi; absent/reprogramat raman domoale, ca nu s-a plans nimeni de ele.
 const PALETA_STATUS = {
-  programat: { bg: '#ece9e2', border: '#dad7cd', text: '#6b6a63' },
-  prezent: { bg: '#e3ede4', border: '#c7d8c9', text: '#3f6b4f' },
+  programat: { bg: '#e9e7e1', border: '#d4d1c5', text: '#6b6a63' },
+  prezent: { bg: '#d2ecdc', border: '#9fd0b1', text: '#16643c' },
   absent: { bg: '#f0e3e1', border: '#ddc3c0', text: '#9c5347' },
   reprogramat: { bg: '#efe6d3', border: '#ddccab', text: '#86682f' }
 };
