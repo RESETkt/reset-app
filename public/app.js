@@ -1307,7 +1307,6 @@ async function incarcaCalendarSaptamana() {
     pePeriada[cheie].push(r);
   });
 
-  const culoareStatus = { programat: '#9a988e', prezent: '#6bcf9b', absent: '#e08585', reprogramat: '#e0b85e' };
   const bordura = '1px solid #3a3937';
   const dataCurenta = new Date(saptamanaCurenta + 'T00:00:00');
 
@@ -1348,7 +1347,7 @@ async function incarcaCalendarSaptamana() {
               return `<td class="zi-cell" style="padding:6px 8px;vertical-align:top;border:1px solid #e2e0d9;${fundalZi}">
                 ${randuri.map((rand, idx) => `
                   <div style="display:flex;gap:6px;padding:4px 0;${idx < randuri.length - 1 ? 'border-bottom:1px solid #eae8e1' : ''}">
-                    ${rand.map(p => randPacientRand(p, culoareStatus)).join('')}
+                    ${rand.map(p => randPacientRand(p)).join('')}
                   </div>
                 `).join('')}
                 <div class="zi-add-btn" onclick="aratatFormularProgramareNoua('${z}','${ora}')">+ adauga</div>
@@ -1451,7 +1450,7 @@ async function incarcaCalendarZi() {
 
 function randPacientRand(p) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
-  const culoareStatusDeschis = { programat: '#8a8880', prezent: '#1f8a5a', absent: '#c14343', reprogramat: '#b8860b' };
+  const culoareStatusDeschis = { programat: '#6b6a63', prezent: '#175e52', absent: '#c14343', reprogramat: '#b8860b' };
   const tooltipId = `tooltip-${p.id}`;
   return `
     <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 3px;background:#f6f5f1">
