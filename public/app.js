@@ -1448,14 +1448,23 @@ async function incarcaCalendarZi() {
   document.getElementById('panel-calendar').innerHTML = html;
 }
 
+// Eticheta colorata (fundal + text), nu doar text colorat pe fundal neutru - mult mai lizibil
+// decat variante anterioare (text verde/gri pe alb, contrast prea slab).
+const PALETA_STATUS = {
+  programat: { bg: '#e9e7e1', border: '#d8d6cd', text: '#57554f' },
+  prezent: { bg: '#d9f0e2', border: '#b3ddc2', text: '#0f6b3f' },
+  absent: { bg: '#fbe2e2', border: '#f0bcbc', text: '#a43333' },
+  reprogramat: { bg: '#f7ecd2', border: '#e8d6a3', text: '#8a6508' }
+};
+
 function randPacientRand(p) {
   const ramase = (p.total_sedinte != null) ? (p.total_sedinte - p.sedinte_efectuate) : '-';
-  const culoareStatusDeschis = { programat: '#6b6a63', prezent: '#175e52', absent: '#c14343', reprogramat: '#b8860b' };
+  const culoare = PALETA_STATUS[p.status] || { bg: '#f6f5f1', border: '#d8d6cd', text: '#2b2a26' };
   const tooltipId = `tooltip-${p.id}`;
   return `
-    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid #d8d6cd;border-radius:4px;padding:1px 3px;background:#f6f5f1">
+    <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid ${culoare.border};border-radius:4px;padding:1px 5px;background:${culoare.bg}">
       ${ramase === 1 ? '<span style="width:6px;height:6px;border-radius:50%;background:#e0b85e;flex-shrink:0" title="Ultima sedinta din abonament"></span>' : ''}
-      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoareStatusDeschis[p.status] || '#2b2a26'};font-weight:600" onclick="toggleMeniuStatus('${p.id}', event)">${p.prenume}</span>
+      <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoare.text};font-weight:600" onclick="toggleMeniuStatus('${p.id}', event)">${p.prenume}</span>
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
       <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
         <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="aratatFormularPrezenta('${p.id}','${p.prenume}',${p.total_sedinte ?? 'null'},${p.sedinte_efectuate ?? 'null'},'${p.status}')">Prezent</div>
