@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) => {
     [id]
   );
   const ultimaSedinta = await pool.query(
-    `SELECT data_ora, exercitii, observatii FROM programari
+    `SELECT data_ora, exercitii, observatii, plan_viitor FROM programari
      WHERE pacient_id = $1 AND status = 'prezent' ORDER BY data_ora DESC LIMIT 1`,
     [id]
   );
@@ -91,7 +91,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:id/sedinte', async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT p.id, p.data_ora, p.exercitii, p.observatii, p.abonament_id, u.nume AS kineto_nume
+    `SELECT p.id, p.data_ora, p.exercitii, p.observatii, p.plan_viitor, p.abonament_id, u.nume AS kineto_nume
      FROM programari p
      LEFT JOIN utilizatori u ON u.id = p.kineto_id
      WHERE p.pacient_id = $1 AND p.status = 'prezent'

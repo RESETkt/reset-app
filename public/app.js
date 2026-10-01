@@ -668,6 +668,7 @@ async function deschideFisa(id) {
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"> <div style="font-weight:500;font-size:13px">${data.ultima_sedinta ? `Ultima sedinta (${new Date(data.ultima_sedinta.data_ora).toLocaleDateString('ro-RO')})` : 'Sedinte'}</div> <button class="btn secundar" onclick="aratatIstoricSedinte('${id}')">Istoric</button> </div>
         ${data.ultima_sedinta ? `
+        ${data.ultima_sedinta.plan_viitor ? `<div style="font-size:13px;color:#a79ded;background:rgba(127,119,221,0.08);border:1px solid rgba(127,119,221,0.3);border-radius:7px;padding:8px 10px;margin-bottom:8px"><strong>Plan pentru data viitoare:</strong> ${data.ultima_sedinta.plan_viitor}</div>` : ''}
         <div style="font-size:13px;color:#c9c7bd">Exercitii: ${data.ultima_sedinta.exercitii || '-'}</div>
         <div style="font-size:13px;color:#c9c7bd">Observatii: ${data.ultima_sedinta.observatii || '-'}</div>` : '<div style="font-size:13px;color:#9a988e">Nicio sedinta inregistrata inca.</div>'}
       </div>
@@ -754,6 +755,7 @@ async function aratatIstoricSedinte(pacientId) {
             </div>
             <div style="font-size:13px;color:#c9c7bd">Exercitii: ${s.exercitii || '-'}</div>
             <div style="font-size:13px;color:#c9c7bd">Observatii: ${s.observatii || '-'}</div>
+            ${s.plan_viitor ? `<div style="font-size:13px;color:#a79ded;margin-top:2px">Plan viitor: ${s.plan_viitor}</div>` : ''}
           </div>
         `).join('')}
         <button class="btn secundar" style="width:100%;margin-top:14px" onclick="inchideModalProgramare()">Inchide</button>
@@ -812,7 +814,9 @@ function aratatFormularEditareSedinta(pacientId, sedintaId) {
         <label>Exercitii</label>
         <textarea id="istoric-exercitii" rows="3" style="width:100%;margin-bottom:10px">${sedinta.exercitii || ''}</textarea>
         <label>Cum s-a simtit / Observatii</label>
-        <textarea id="istoric-observatii" rows="3" style="width:100%;margin-bottom:14px">${sedinta.observatii || ''}</textarea>
+        <textarea id="istoric-observatii" rows="3" style="width:100%;margin-bottom:10px">${sedinta.observatii || ''}</textarea>
+        <label>Plan pentru data viitoare</label>
+        <textarea id="istoric-plan-viitor" rows="2" style="width:100%;margin-bottom:14px">${sedinta.plan_viitor || ''}</textarea>
         <button class="btn" style="width:100%" onclick="salveazaEditareSedinta('${sedinta.id}','${pacientId}')">Salveaza</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
       </div>
@@ -824,9 +828,10 @@ function aratatFormularEditareSedinta(pacientId, sedintaId) {
 async function salveazaEditareSedinta(sedintaId, pacientId) {
   const exercitii = document.getElementById('istoric-exercitii').value.trim();
   const observatii = document.getElementById('istoric-observatii').value.trim();
+  const plan_viitor = document.getElementById('istoric-plan-viitor').value.trim();
   await apel(`/api/programari/${sedintaId}/editeaza-istoric`, {
     method: 'PATCH',
-    body: JSON.stringify({ exercitii, observatii })
+    body: JSON.stringify({ exercitii, observatii, plan_viitor })
   });
   if (pacientCurent === pacientId) deschideFisa(pacientId);
   aratatIstoricSedinte(pacientId);
@@ -1925,6 +1930,14 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
           <input type="text" id="prezenta-nota" placeholder="ex: obosit azi, genunchi drept sensibil, totul ok...">
         </div>
 
+        <div class="prot-plan-box">
+          <div class="prot-nota-box-cap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a79ded" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            <span>Plan pentru data viitoare</span>
+          </div>
+          <textarea id="prezenta-plan-viitor" rows="2" placeholder="ex: de continuat stabilitate umar, de introdus genunchi..."></textarea>
+        </div>
+
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anulează</button>
       </div>
@@ -1996,8 +2009,9 @@ function formateazaExercitiiProtocol() {
 async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
   prezentaCardio.durata = document.getElementById('prezenta-cardio-durata').value.trim();
   const observatii = document.getElementById('prezenta-nota').value.trim();
+  const plan_viitor = document.getElementById('prezenta-plan-viitor').value.trim();
   const exercitii = formateazaExercitiiProtocol();
-  await apel(`/api/programari/${id}/prezent`, { method: 'PATCH', body: JSON.stringify({ exercitii, observatii }) });
+  await apel(`/api/programari/${id}/prezent`, { method: 'PATCH', body: JSON.stringify({ exercitii, observatii, plan_viitor }) });
 
   const areMaiPutinDe3 = statusCurent !== 'prezent' && totalSedinte != null && sedinteEfectuate != null
     && totalSedinte - (sedinteEfectuate + 1) === 2;

@@ -358,3 +358,8 @@ th, td { text-align: left; }
 .prot-nota-box input { width: 100%; box-sizing: border-box; background: #1e1e1d; border: 1px solid #45443f; border-radius: 7px; padding: 8px 10px; font-size: 12.5px; color: #ece9e2; font-family: inherit; }
 .prot-nota-box input:focus { outline: none; border-color: #e0b85e; }
 .prot-nota-box input::placeholder { color: #706e66; }
+.prot-plan-box { margin-top: 14px; background: rgba(127, 119, 221, 0.08); border: 1px solid rgba(127, 119, 221, 0.3); border-radius: 10px; padding: 14px; }
+.prot-plan-box .prot-nota-box-cap span { color: #a79ded; }
+.prot-plan-box textarea { width: 100%; box-sizing: border-box; background: #1e1e1d; border: 1px solid #45443f; border-radius: 7px; padding: 8px 10px; font-size: 12.5px; color: #ece9e2; font-family: inherit; resize: vertical; }
+.prot-plan-box textarea:focus { outline: none; border-color: #a79ded; }
+.prot-plan-box textarea::placeholder { color: #706e66; }

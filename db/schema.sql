@@ -96,6 +96,11 @@ CREATE TABLE IF NOT EXISTS programari (
   prezent_marcat_la timestamptz
 );
 
+-- Plan pentru data viitoare: ce ar trebui lucrat la urmatoarea sedinta a pacientului, scris la
+-- finalul sedintei curente - continuitate intre kinetoterapeuti (concediu, inlocuire, al doilea
+-- centru), nu doar memoria celui care a vazut ultima oara pacientul.
+ALTER TABLE programari ADD COLUMN IF NOT EXISTS plan_viitor text;
+
 -- Prima discutie/consultatie cu un potential pacient - nu se taxeaza, deci nu e un pacient
 -- inca (nu exista fisa, abonament sau plata). Separata de "programari" tocmai ca sa nu
 -- apara niciodata in statistici (pacienti/sedinte) sau in cautarea de pacienti.

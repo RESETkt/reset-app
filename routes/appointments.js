@@ -70,7 +70,7 @@ router.post('/', async (req, res) => {
 
 // Marcheaza prezenta: incrementeaza sedintele efectuate din abonament si salveaza exercitii/observatii
 router.patch('/:id/prezent', async (req, res) => {
-  const { exercitii, observatii } = req.body;
+  const { exercitii, observatii, plan_viitor } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -89,8 +89,8 @@ router.patch('/:id/prezent', async (req, res) => {
       abonament_id = activ.rows[0]?.id || null;
     }
     const prog = await client.query(
-      `UPDATE programari SET status='prezent', exercitii=$1, observatii=$2, prezent_marcat_la=now(), abonament_id=$3 WHERE id=$4 RETURNING *`,
-      [exercitii, observatii, abonament_id, req.params.id]
+      `UPDATE programari SET status='prezent', exercitii=$1, observatii=$2, plan_viitor=$3, prezent_marcat_la=now(), abonament_id=$4 WHERE id=$5 RETURNING *`,
+      [exercitii, observatii, plan_viitor || null, abonament_id, req.params.id]
     );
     if (!eraDejaPrezent && abonament_id) {
       await client.query(
@@ -110,7 +110,7 @@ router.patch('/:id/prezent', async (req, res) => {
 
 // Adauga retroactiv o sedinta uitata (nu exista programare pentru ea) - fisa pacientului > istoric
 router.post('/sedinta-trecuta', async (req, res) => {
-  const { pacient_id, kineto_id, data_ora, exercitii, observatii } = req.body;
+  const { pacient_id, kineto_id, data_ora, exercitii, observatii, plan_viitor } = req.body;
   if (!pacient_id || !data_ora) {
     return res.status(400).json({ eroare: 'Pacientul si data sunt obligatorii.' });
   }
@@ -126,9 +126,9 @@ router.post('/sedinta-trecuta', async (req, res) => {
     );
     const abonament_id = activ.rows[0]?.id || null;
     const prog = await client.query(
-      `INSERT INTO programari (pacient_id, kineto_id, abonament_id, data_ora, status, exercitii, observatii, prezent_marcat_la)
-       VALUES ($1,$2,$3,$4,'prezent',$5,$6,now()) RETURNING *`,
-      [pacient_id, kineto_id || null, abonament_id, data_ora, exercitii || null, observatii || null]
+      `INSERT INTO programari (pacient_id, kineto_id, abonament_id, data_ora, status, exercitii, observatii, plan_viitor, prezent_marcat_la)
+       VALUES ($1,$2,$3,$4,'prezent',$5,$6,$7,now()) RETURNING *`,
+      [pacient_id, kineto_id || null, abonament_id, data_ora, exercitii || null, observatii || null, plan_viitor || null]
     );
     if (abonament_id) {
       await client.query(`UPDATE abonamente SET sedinte_efectuate = sedinte_efectuate + 1 WHERE id = $1`, [abonament_id]);
@@ -145,10 +145,10 @@ router.post('/sedinta-trecuta', async (req, res) => {
 
 // Editeaza retroactiv exercitiile/observatiile unei sedinte deja marcate prezenta - fisa pacientului > istoric
 router.patch('/:id/editeaza-istoric', async (req, res) => {
-  const { exercitii, observatii } = req.body;
+  const { exercitii, observatii, plan_viitor } = req.body;
   const { rows } = await pool.query(
-    `UPDATE programari SET exercitii=$1, observatii=$2 WHERE id=$3 AND status='prezent' RETURNING *`,
-    [exercitii || null, observatii || null, req.params.id]
+    `UPDATE programari SET exercitii=$1, observatii=$2, plan_viitor=$3 WHERE id=$4 AND status='prezent' RETURNING *`,
+    [exercitii || null, observatii || null, plan_viitor || null, req.params.id]
   );
   if (!rows[0]) return res.status(404).json({ eroare: 'Sedinta inexistenta.' });
   res.json(rows[0]);
