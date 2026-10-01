@@ -97,6 +97,7 @@ form-row { display: flex; gap: 8px; }
 table { color: #ece9e2; }
 th, td { text-align: left; }
 .pacient-chip { position: relative; }
+.discutie-chip { position: relative; }
 .pacient-tooltip {
   display: none;
   position: absolute;

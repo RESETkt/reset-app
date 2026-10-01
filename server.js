@@ -18,6 +18,7 @@ const notificariRoutes = require('./routes/notificari');
 const liveRoutes = require('./routes/live');
 const pushRoutes = require('./routes/push');
 const expensesRoutes = require('./routes/expenses');
+const discutiiRoutes = require('./routes/discutii');
 const { porneteReminderele } = require('./services/reminders');
 const { porneteCheltuieliRecurente } = require('./services/cheltuieliRecurente');
 const { porneteVerificareSedinteUitate } = require('./services/sedinteUitate');
@@ -71,6 +72,7 @@ app.use('/api/notificari', notificariRoutes);
 app.use('/api/live', liveRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/cheltuieli', expensesRoutes);
+app.use('/api/discutii', discutiiRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

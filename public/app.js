@@ -539,21 +539,24 @@ function citesteCumAAflat(idSelect, idLiber) {
   return valoare === 'altceva' ? (document.getElementById(idLiber).value.trim() || null) : valoare;
 }
 
-function aratatFormularPacientNou() {
+let discutieConvertitaId = null;
+
+function aratatFormularPacientNou(prenumePresetat, telefonPresetat, discutieId) {
   ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
   marcheazaActiv('fisa');
+  discutieConvertitaId = discutieId || null;
 
   document.getElementById('panel-fisa').innerHTML = `
     <div class="card" style="max-width:420px">
       <h2>Pacient nou</h2>
       <label>Prenume</label>
-      <input id="nou-prenume" style="width:100%;margin-bottom:10px">
+      <input id="nou-prenume" style="width:100%;margin-bottom:10px" value="${prenumePresetat || ''}">
       <label>Nume</label>
       <input id="nou-nume" style="width:100%;margin-bottom:10px">
       <label>Telefon</label>
-      <input id="nou-telefon" type="tel" style="width:100%;margin-bottom:10px" placeholder="07xxxxxxxx">
+      <input id="nou-telefon" type="tel" style="width:100%;margin-bottom:10px" placeholder="07xxxxxxxx" value="${telefonPresetat || ''}">
       <label>Email</label>
       <input id="nou-email" type="email" style="width:100%;margin-bottom:10px">
       <label>Diagnostic</label>
@@ -612,6 +615,11 @@ async function salveazaPacientNou() {
       method: 'POST',
       body: JSON.stringify({ pacient_id: pacient.id, tip: tipAbonament })
     });
+  }
+
+  if (discutieConvertitaId) {
+    await apel(`/api/discutii/${discutieConvertitaId}`, { method: 'DELETE' });
+    discutieConvertitaId = null;
   }
 
   cautaPacienti('');
@@ -1296,7 +1304,10 @@ async function incarcaCalendarSaptamana() {
   if (esteMobil()) return incarcaCalendarZi();
   const astazi = dataLocala(new Date());
   const zile = [0, 1, 2, 3, 4].map(i => adaugaZile(saptamanaCurenta, i));
-  const rows = await apel(`/api/programari?de_la=${zile[0]}&pana_la=${zile[4]}`);
+  const [rows, discutii] = await Promise.all([
+    apel(`/api/programari?de_la=${zile[0]}&pana_la=${zile[4]}`),
+    apel(`/api/discutii?de_la=${zile[0]}&pana_la=${zile[4]}`)
+  ]);
 
   const pePeriada = {};
   rows.forEach(r => {
@@ -1305,6 +1316,13 @@ async function incarcaCalendarSaptamana() {
     const cheie = `${dataR}_${oraR}`;
     if (!pePeriada[cheie]) pePeriada[cheie] = [];
     pePeriada[cheie].push(r);
+  });
+  discutii.forEach(d => {
+    const dataD = d.data_ora.slice(0, 10);
+    const oraD = new Date(d.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+    const cheie = `${dataD}_${oraD}`;
+    if (!pePeriada[cheie]) pePeriada[cheie] = [];
+    pePeriada[cheie].push({ ...d, _discutie: true });
   });
 
   const bordura = '1px solid #3a3937';
@@ -1347,7 +1365,7 @@ async function incarcaCalendarSaptamana() {
               return `<td class="zi-cell" style="padding:6px 8px;vertical-align:top;border:1px solid #e2e0d9;${fundalZi}">
                 ${randuri.map((rand, idx) => `
                   <div style="display:flex;gap:6px;padding:4px 0;${idx < randuri.length - 1 ? 'border-bottom:1px solid #eae8e1' : ''}">
-                    ${rand.map(p => randPacientRand(p)).join('')}
+                    ${rand.map(p => p._discutie ? randDiscutieRand(p) : randPacientRand(p)).join('')}
                   </div>
                 `).join('')}
                 <div class="zi-add-btn" onclick="aratatFormularProgramareNoua('${z}','${ora}')">+ adauga</div>
@@ -1403,13 +1421,21 @@ async function incarcaCalendarZi() {
   const esteWeekendZi = ziSaptamanii === 0 || ziSaptamanii === 6;
   const numeZi = !esteWeekendZi ? ZILE_SAPTAMANA[ziSaptamanii - 1] : (ziSaptamanii === 0 ? 'Duminica' : 'Sambata');
 
-  const rows = esteWeekendZi ? [] : await apel(`/api/programari?de_la=${ziuaMobilCurenta}&pana_la=${ziuaMobilCurenta}`);
+  const [rows, discutii] = esteWeekendZi ? [[], []] : await Promise.all([
+    apel(`/api/programari?de_la=${ziuaMobilCurenta}&pana_la=${ziuaMobilCurenta}`),
+    apel(`/api/discutii?de_la=${ziuaMobilCurenta}&pana_la=${ziuaMobilCurenta}`)
+  ]);
 
   const peOra = {};
   rows.forEach(r => {
     const oraR = new Date(r.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
     if (!peOra[oraR]) peOra[oraR] = [];
     peOra[oraR].push(r);
+  });
+  discutii.forEach(d => {
+    const oraD = new Date(d.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+    if (!peOra[oraD]) peOra[oraD] = [];
+    peOra[oraD].push({ ...d, _discutie: true });
   });
 
   const html = `
@@ -1436,7 +1462,7 @@ async function incarcaCalendarZi() {
               <div class="day-view-row">
                 <div class="day-view-ora">${ora}</div>
                 <div class="day-view-chips">
-                  ${toate.map(p => randPacientRand(p)).join('')}
+                  ${toate.map(p => p._discutie ? randDiscutieRand(p) : randPacientRand(p)).join('')}
                   <span class="day-view-add" onclick="aratatFormularProgramareNoua('${ziuaMobilCurenta}','${ora}')">+ adauga</span>
                 </div>
               </div>
@@ -1493,7 +1519,56 @@ function toggleMeniuStatus(id, event) {
 
 document.addEventListener('click', () => {
   document.querySelectorAll('[id^="status-meniu-"]').forEach(m => m.style.display = 'none');
+  document.querySelectorAll('[id^="discutie-meniu-"]').forEach(m => m.style.display = 'none');
 });
+
+// Prima discutie/consultatie cu un potential pacient - nu se taxeaza, nu e inca pacient,
+// deci e afisata separat de programari, cu alta culoare (mov), ca sa nu se confunde cu ele.
+let discutiiCalendarCache = {};
+
+function randDiscutieRand(d) {
+  discutiiCalendarCache[d.id] = d;
+  return `
+    <div class="discutie-chip" style="display:inline-flex;align-items:center;gap:3px;border:1px solid #c3b8ee;border-radius:4px;padding:1px 5px;background:#efecfc">
+      <span style="font-size:10px;color:#5b4fa8" aria-hidden="true">&#9742;</span>
+      <span style="font-size:12px;cursor:pointer;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#5b4fa8;font-weight:600" onclick="toggleMeniuDiscutie('${d.id}', event)">${d.prenume}</span>
+      <div id="discutie-meniu-${d.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:170px;overflow:hidden">
+        ${d.telefon ? `<div style="padding:7px 12px;font-size:12px;color:#6b6a63;border-bottom:1px solid #eae8e1;white-space:nowrap">${d.telefon}</div>` : ''}
+        ${d.notite ? `<div style="padding:7px 12px;font-size:11px;color:#9a988e;border-bottom:1px solid #eae8e1;white-space:normal">${d.notite}</div>` : ''}
+        <div style="padding:7px 12px;font-size:12px;color:#2b2a26;cursor:pointer;white-space:nowrap" onclick="editeazaDiscutie('${d.id}')">Editeaza</div>
+        <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="convertesteDiscutieInPacient('${d.id}')">A devenit pacient</div>
+        <div style="padding:7px 12px;font-size:12px;color:#c14343;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="stergeDiscutie('${d.id}')">Sterge</div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleMeniuDiscutie(id, event) {
+  if (event) event.stopPropagation();
+  const el = document.getElementById(`discutie-meniu-${id}`);
+  const eraDeschis = el.style.display === 'block';
+  document.querySelectorAll('[id^="status-meniu-"]').forEach(m => m.style.display = 'none');
+  document.querySelectorAll('[id^="discutie-meniu-"]').forEach(m => m.style.display = 'none');
+  el.style.display = eraDeschis ? 'none' : 'block';
+}
+
+async function stergeDiscutie(id) {
+  aratatPopupConfirmare({
+    titlu: 'Stergi discutia?',
+    mesaj: 'Nu se poate recupera dupa stergere.',
+    textConfirma: 'Sterge', periculos: true
+  }, async () => {
+    await apel(`/api/discutii/${id}`, { method: 'DELETE' });
+    incarcaCalendarSaptamana();
+  });
+}
+
+function convertesteDiscutieInPacient(id) {
+  const d = discutiiCalendarCache[id];
+  if (!d) return;
+  sessionStorage.setItem('tabActiv', 'fisa');
+  aratatFormularPacientNou(d.prenume, d.telefon, d.id);
+}
 
 function toggleInfoChip(id) {
   const el = document.getElementById(id);
@@ -1504,59 +1579,154 @@ function toggleInfoChip(id) {
 
 let pacientiProgramareCache = [];
 
-async function aratatFormularProgramareNoua(dataPresetata, oraPresetata) {
+let discutieEditareId = null;
+
+async function aratatFormularProgramareNoua(dataPresetata, oraPresetata, discutieEdit) {
   pacientiProgramareCache = await apel('/api/pacienti');
   const kinetoUtilizatori = await apel('/api/utilizatori');
+  discutieEditareId = discutieEdit ? discutieEdit.id : null;
+  const tabInitial = discutieEdit ? 'discutie' : 'pacient';
+  progTabActiv = tabInitial;
+  const dataInitiala = discutieEdit ? discutieEdit.data_ora.slice(0, 10) : (dataPresetata || dataLocala(new Date()));
+  const oraInitiala = discutieEdit ? new Date(discutieEdit.data_ora).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : oraPresetata;
 
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
       <div class="card" style="max-width:420px;width:90%">
-        <h2>Programare noua</h2>
+        <h2>${discutieEdit ? 'Editeaza discutia' : 'Programare noua'}</h2>
 
-        <label>Pacient</label>
-        <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." style="width:100%;margin-bottom:4px" oninput="filtreazaPacientiProgramare(this.value)" onfocus="filtreazaPacientiProgramare(this.value)" autocomplete="off">
-        <input type="hidden" id="prog-pacient-id">
-        <div id="prog-pacient-rezultate" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+        ${discutieEdit ? '' : `
+        <div style="display:flex;background:#1e1e1d;border-radius:8px;padding:3px;margin-bottom:14px">
+          <button type="button" id="prog-tab-pacient" onclick="comutaTabProgramare('pacient')" style="flex:1;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;background:#175e52;color:#fff;font-weight:600">Pacient</button>
+          <button type="button" id="prog-tab-discutie" onclick="comutaTabProgramare('discutie')" style="flex:1;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;background:transparent;color:#9a988e;font-weight:500">Discutie noua</button>
+        </div>
+        `}
 
-        <label>Kineto</label>
-        <select id="prog-kineto" style="width:100%;margin-bottom:10px">
-          <option value="">Nealocat</option>
-          ${kinetoUtilizatori.map(u => `<option value="${u.id}">${u.nume}</option>`).join('')}
-        </select>
+        <div id="prog-bloc-pacient" style="${tabInitial === 'discutie' ? 'display:none' : ''}">
+          <label>Pacient</label>
+          <input type="text" id="prog-pacient-cautare" placeholder="Scrie numele pacientului..." style="width:100%;margin-bottom:4px" oninput="filtreazaPacientiProgramare(this.value)" onfocus="filtreazaPacientiProgramare(this.value)" autocomplete="off">
+          <input type="hidden" id="prog-pacient-id">
+          <div id="prog-pacient-rezultate" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+
+          <label>Kineto</label>
+          <select id="prog-kineto" style="width:100%;margin-bottom:10px">
+            <option value="">Nealocat</option>
+            ${kinetoUtilizatori.map(u => `<option value="${u.id}">${u.nume}</option>`).join('')}
+          </select>
+        </div>
+
+        <div id="prog-bloc-discutie" style="${tabInitial === 'pacient' ? 'display:none' : ''}">
+          <label>Prenume</label>
+          <input id="discutie-prenume" style="width:100%;margin-bottom:10px" value="${discutieEdit ? discutieEdit.prenume : ''}">
+          <label>Telefon</label>
+          <input id="discutie-telefon" type="tel" placeholder="07xxxxxxxx" style="width:100%;margin-bottom:10px" value="${discutieEdit ? (discutieEdit.telefon || '') : ''}">
+          <label>Notite (optional)</label>
+          <textarea id="discutie-notite" rows="2" placeholder="ex: dureri lombare de 3 luni, vine recomandata de..." style="width:100%;margin-bottom:10px">${discutieEdit ? (discutieEdit.notite || '') : ''}</textarea>
+        </div>
 
         <label>Data</label>
-        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataPresetata || dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
+        <input id="prog-data" type="date" style="width:100%;margin-bottom:10px" value="${dataInitiala}" onclick="this.showPicker && this.showPicker()">
 
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-          <input type="checkbox" id="prog-recurenta" style="width:auto" onchange="toggleRecurentaProgramare()">
-          Repeta in fiecare saptamana
-        </label>
+        <div id="prog-bloc-recurenta" style="${tabInitial === 'discutie' ? 'display:none' : ''}">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="prog-recurenta" style="width:auto" onchange="toggleRecurentaProgramare()">
+            Repeta in fiecare saptamana
+          </label>
 
-        <div id="prog-recurenta-detalii" style="display:none;margin-top:8px">
-          <label>In zilele</label>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
-            ${ZILE_SAPTAMANA.map((z, i) => `
-              <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
-                <input type="checkbox" class="prog-recurenta-zi" value="${i + 1}" style="width:auto">
-                ${z}
-              </label>
-            `).join('')}
+          <div id="prog-recurenta-detalii" style="display:none;margin-top:8px">
+            <label>In zilele</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+              ${ZILE_SAPTAMANA.map((z, i) => `
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
+                  <input type="checkbox" class="prog-recurenta-zi" value="${i + 1}" style="width:auto">
+                  ${z}
+                </label>
+              `).join('')}
+            </div>
+            <div style="font-size:12px;color:#9a988e;margin-bottom:10px">Se creeaza programari pana la finalul lunii selectate mai sus.</div>
           </div>
-          <div style="font-size:12px;color:#9a988e;margin-bottom:10px">Se creeaza programari pana la finalul lunii selectate mai sus.</div>
         </div>
 
         <label>Ora</label>
         <select id="prog-ora" style="width:100%;margin-bottom:14px">
-          ${ORE_DISPONIBILE.map(o => `<option value="${o}" ${o === oraPresetata ? 'selected' : ''}>${o}</option>`).join('')}
+          ${ORE_DISPONIBILE.map(o => `<option value="${o}" ${o === oraInitiala ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
 
-        <button class="btn" style="width:100%" onclick="salveazaProgramareNoua()">Salveaza programarea</button>
+        <button id="prog-buton-salveaza" class="btn" style="width:100%" onclick="salveazaProgramareNoua()">${discutieEdit ? 'Salveaza discutia' : 'Salveaza programarea'}</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
         <div id="eroare-programare-noua" style="color:#e08585;font-size:12px;margin-top:8px"></div>
       </div>
     </div>
   `;
   document.getElementById('modal-container').innerHTML = html;
+  if (discutieEdit) comutaTabProgramare('discutie');
+}
+
+function comutaTabProgramare(tab) {
+  const blocPacient = document.getElementById('prog-bloc-pacient');
+  const blocDiscutie = document.getElementById('prog-bloc-discutie');
+  const blocRecurenta = document.getElementById('prog-bloc-recurenta');
+  const tabPacient = document.getElementById('prog-tab-pacient');
+  const tabDiscutie = document.getElementById('prog-tab-discutie');
+  const buton = document.getElementById('prog-buton-salveaza');
+  progTabActiv = tab;
+  if (blocPacient) blocPacient.style.display = tab === 'pacient' ? 'block' : 'none';
+  if (blocDiscutie) blocDiscutie.style.display = tab === 'discutie' ? 'block' : 'none';
+  if (blocRecurenta) blocRecurenta.style.display = tab === 'pacient' ? 'block' : 'none';
+  if (buton) buton.textContent = tab === 'pacient' ? 'Salveaza programarea' : 'Salveaza discutia';
+  if (tabPacient && tabDiscutie) {
+    tabPacient.style.background = tab === 'pacient' ? '#175e52' : 'transparent';
+    tabPacient.style.color = tab === 'pacient' ? '#fff' : '#9a988e';
+    tabPacient.style.fontWeight = tab === 'pacient' ? '600' : '500';
+    tabDiscutie.style.background = tab === 'discutie' ? '#5b4fa8' : 'transparent';
+    tabDiscutie.style.color = tab === 'discutie' ? '#fff' : '#9a988e';
+    tabDiscutie.style.fontWeight = tab === 'discutie' ? '600' : '500';
+  }
+}
+
+let progTabActiv = 'pacient';
+
+function editeazaDiscutie(id) {
+  const d = discutiiCalendarCache[id];
+  if (!d) return;
+  aratatFormularProgramareNoua(null, null, d);
+}
+
+async function salveazaDiscutieNoua() {
+  const prenume = document.getElementById('discutie-prenume').value.trim();
+  const telefon = document.getElementById('discutie-telefon').value.trim();
+  const notite = document.getElementById('discutie-notite').value.trim();
+  const data = document.getElementById('prog-data').value;
+  const ora = document.getElementById('prog-ora').value;
+  const eroareEl = document.getElementById('eroare-programare-noua');
+  eroareEl.textContent = '';
+
+  if (!prenume) {
+    eroareEl.textContent = 'Completeaza prenumele.';
+    return;
+  }
+  if (!data || !ora) {
+    eroareEl.textContent = 'Completeaza data si ora.';
+    return;
+  }
+
+  const buton = event.target;
+  buton.disabled = true;
+  const data_ora = `${data} ${ora}:00`;
+  const cale = discutieEditareId ? `/api/discutii/${discutieEditareId}` : '/api/discutii';
+  const rezultat = await apel(cale, {
+    method: discutieEditareId ? 'PATCH' : 'POST',
+    body: JSON.stringify({ prenume, telefon, notite, data_ora })
+  });
+
+  if (rezultat.eroare) {
+    eroareEl.textContent = rezultat.eroare;
+    buton.disabled = false;
+    return;
+  }
+
+  inchideModalProgramare();
+  incarcaCalendarSaptamana();
 }
 
 function filtreazaPacientiProgramare(text) {
@@ -1606,6 +1776,7 @@ function genereazaDateRecurente(start, zileSaptamana) {
 }
 
 async function salveazaProgramareNoua() {
+  if (progTabActiv === 'discutie') return salveazaDiscutieNoua();
   const pacient_id = document.getElementById('prog-pacient-id').value;
   const kineto_id = document.getElementById('prog-kineto').value || null;
   const data = document.getElementById('prog-data').value;
