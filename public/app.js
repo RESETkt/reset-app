@@ -1499,6 +1499,11 @@ function randPacientRand(p) {
       <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoare.text};font-weight:600" onclick="toggleMeniuStatus('${p.id}', event)">${p.prenume}</span>
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
       <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
+        ${p.status === 'prezent' ? `
+        <div class="plan-sedinta" style="width:230px;padding:9px 12px;border-bottom:1px solid #eae8e1;white-space:normal">
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;color:#5b4fa8;margin-bottom:4px">Plan pentru sedinta asta${p.plan_anterior_data ? ` (din ${new Date(p.plan_anterior_data).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })})` : ''}</div>
+          <div style="font-size:12.5px;line-height:1.45;color:${p.plan_anterior ? '#2b2a26' : '#9a988e'}">${p.plan_anterior ? scapaHtml(p.plan_anterior) : 'Niciun plan notat la sedinta anterioara.'}</div>
+        </div>` : ''}
         <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="aratatFormularPrezenta('${p.id}','${p.prenume}',${p.total_sedinte ?? 'null'},${p.sedinte_efectuate ?? 'null'},'${p.status}')">Prezent</div>
         <div style="padding:7px 12px;font-size:12px;color:#c14343;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="marcheaza('${p.id}','absent')">Absent</div>
         <div style="padding:7px 12px;font-size:12px;color:#2b2a26;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="fisaOrigine='calendar'; deschideFisa('${p.pacient_id}')">Fisa</div>

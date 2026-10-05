@@ -20,7 +20,8 @@ router.get('/', async (req, res) => {
   const end = pana_la || start;
   const { rows } = await pool.query(
     `SELECT p.*, pac.nume, pac.prenume, pac.diagnostic, u.nume AS kineto_nume,
-            ab.total_sedinte, ab.sedinte_efectuate
+            ab.total_sedinte, ab.sedinte_efectuate,
+            prev.plan_anterior, prev.plan_anterior_data
      FROM programari p
      JOIN pacienti pac ON pac.id = p.pacient_id
      LEFT JOIN utilizatori u ON u.id = p.kineto_id
@@ -29,6 +30,11 @@ router.get('/', async (req, res) => {
        WHERE pacient_id = p.pacient_id AND activ = true
        ORDER BY creat_la DESC LIMIT 1
      ) ab ON true
+     LEFT JOIN LATERAL (
+       SELECT plan_viitor AS plan_anterior, data_ora AS plan_anterior_data FROM programari
+       WHERE pacient_id = p.pacient_id AND status = 'prezent' AND data_ora < p.data_ora
+       ORDER BY data_ora DESC LIMIT 1
+     ) prev ON true
      WHERE p.data_ora::date BETWEEN $1 AND $2
      ORDER BY p.data_ora`,
     [start, end]
