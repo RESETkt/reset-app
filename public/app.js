@@ -642,6 +642,7 @@ async function deschideFisa(id) {
   const p = data.pacient;
   const ab = data.abonament;
   const ramase = ab ? ab.total_sedinte - ab.sedinte_efectuate : '-';
+  platiFisaCache = data.plati;
 
   document.getElementById('panel-fisa').innerHTML = `
     <div style="margin-bottom:12px">
@@ -700,6 +701,10 @@ async function deschideFisa(id) {
             <div style="font-size:13px;font-weight:500">${Number(pl.suma).toFixed(0)} lei - ${pl.metoda === 'cash' ? 'Cash' : 'Card'} (${pl.tip_plata === 'integral' ? 'integral' : 'in rate'})</div>
             <div style="font-size:11px;color:#9a988e">${pl.motiv || 'fara motiv specificat'} - ${new Date(pl.data_plata).toLocaleDateString('ro-RO')}</div>
           </div>
+          <div style="display:flex;gap:10px;flex-shrink:0">
+            <span style="font-size:11px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatEditarePlata('${id}','${pl.id}')">Editeaza</span>
+            <span style="font-size:11px;color:#e08585;cursor:pointer;text-decoration:underline" onclick="stergePlata('${id}','${pl.id}')">Sterge</span>
+          </div>
         </div>
       `).join('')}
     </div>
@@ -708,8 +713,83 @@ async function deschideFisa(id) {
 
 let sedinteIstoricCache = [];
 
+let platiFisaCache = [];
+
+function aratatEditarePlata(pacientId, platiId) {
+  const pl = platiFisaCache.find(x => x.id === platiId);
+  if (!pl) return;
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:110" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card" style="max-width:380px;width:90%">
+        <h2>Editeaza plata</h2>
+        <label>Suma (lei)</label>
+        <input id="plata-edit-suma" type="number" min="1" step="1" value="${Number(pl.suma)}" style="width:100%;margin-bottom:10px">
+        <label>Metoda</label>
+        <select id="plata-edit-metoda" style="width:100%;margin-bottom:10px">
+          <option value="cash" ${pl.metoda === 'cash' ? 'selected' : ''}>Cash</option>
+          <option value="card" ${pl.metoda === 'card' ? 'selected' : ''}>Card</option>
+        </select>
+        <label>Tip</label>
+        <select id="plata-edit-tip" style="width:100%;margin-bottom:10px">
+          <option value="integral" ${pl.tip_plata === 'integral' ? 'selected' : ''}>Integral</option>
+          <option value="rate" ${pl.tip_plata === 'rate' ? 'selected' : ''}>In rate</option>
+        </select>
+        <label>Motiv</label>
+        <input id="plata-edit-motiv" value="${scapaHtml(pl.motiv || '').replace(/"/g, '&quot;')}" style="width:100%;margin-bottom:10px">
+        <label>Data</label>
+        <input id="plata-edit-data" type="date" value="${dataLocala(new Date(pl.data_plata))}" style="width:100%;margin-bottom:14px" onclick="this.showPicker && this.showPicker()">
+        <button class="btn" style="width:100%" onclick="salveazaEditarePlata('${pacientId}','${pl.id}')">Salveaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anuleaza</button>
+        <div id="eroare-editare-plata" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function salveazaEditarePlata(pacientId, platiId) {
+  const pl = platiFisaCache.find(x => x.id === platiId);
+  const data = document.getElementById('plata-edit-data').value;
+  const dataNeschimbata = pl && data === dataLocala(new Date(pl.data_plata));
+  const buton = event.target;
+  buton.disabled = true;
+  const rezultat = await apel(`/api/pacienti/${pacientId}/plati/${platiId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      suma: document.getElementById('plata-edit-suma').value,
+      metoda: document.getElementById('plata-edit-metoda').value,
+      tip_plata: document.getElementById('plata-edit-tip').value,
+      motiv: document.getElementById('plata-edit-motiv').value.trim(),
+      data_plata: data && !dataNeschimbata ? `${data} 12:00:00` : null
+    })
+  });
+  if (rezultat.eroare) {
+    document.getElementById('eroare-editare-plata').textContent = rezultat.eroare;
+    buton.disabled = false;
+    return;
+  }
+  inchideModalProgramare();
+  deschideFisa(pacientId);
+}
+
+function stergePlata(pacientId, platiId) {
+  const pl = platiFisaCache.find(x => x.id === platiId);
+  aratatPopupConfirmare({
+    titlu: 'Stergi plata?',
+    mesaj: `${pl ? Number(pl.suma).toFixed(0) + ' lei, ' + new Date(pl.data_plata).toLocaleDateString('ro-RO') + '. ' : ''}Nu se poate anula.`,
+    textConfirma: 'Sterge', periculos: true
+  }, async () => {
+    await apel(`/api/pacienti/${pacientId}/plati/${platiId}`, { method: 'DELETE' });
+    deschideFisa(pacientId);
+  });
+}
+
+let abonamenteIstoricCache = [];
+const TOTAL_IMPLICIT_ABONAMENT = { '8': 8, '12': 12, functional: 8, individual: 1 };
+
 async function aratatIstoricAbonamente(pacientId) {
   const abonamente = await apel(`/api/abonamente/pacient/${pacientId}`);
+  abonamenteIstoricCache = abonamente;
   const total = abonamente.length;
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
@@ -719,7 +799,11 @@ async function aratatIstoricAbonamente(pacientId) {
           <div style="border-bottom:1px solid #3a3937;padding:10px 0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <div style="font-size:13px;font-weight:500">Abonamentul ${total - i} - ${textAbonament(a.tip)}</div>
-              ${a.activ ? '<span class="badge">Activ</span>' : '<span style="font-size:11px;color:#9a988e">Incheiat</span>'}
+              <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+                ${a.activ ? '<span class="badge">Activ</span>' : '<span style="font-size:11px;color:#9a988e">Incheiat</span>'}
+                <span style="font-size:11px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatEditareAbonament('${pacientId}','${a.id}')">Editeaza</span>
+                <span style="font-size:11px;color:#e08585;cursor:pointer;text-decoration:underline" onclick="stergeAbonament('${pacientId}','${a.id}')">Sterge</span>
+              </div>
             </div>
             <div style="font-size:12px;color:#9a988e">Inceput pe ${new Date(a.creat_la).toLocaleDateString('ro-RO')} - ${a.sedinte_efectuate}/${a.total_sedinte} sedinte efectuate</div>
           </div>
@@ -732,6 +816,85 @@ async function aratatIstoricAbonamente(pacientId) {
     </div>
   `;
   document.getElementById('modal-container').innerHTML = html;
+}
+
+function aratatEditareAbonament(pacientId, abonamentId) {
+  const a = abonamenteIstoricCache.find(x => x.id === abonamentId);
+  if (!a) return;
+  const optiune = (val, text) => `<option value="${val}" ${a.tip === val ? 'selected' : ''}>${text}</option>`;
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:110" onclick="if(event.target===this) aratatIstoricAbonamente('${pacientId}')">
+      <div class="card" style="max-width:420px;width:90%">
+        <h2>Editeaza abonamentul</h2>
+        <div style="font-size:12px;color:#9a988e;margin-bottom:14px">Inceput pe ${new Date(a.creat_la).toLocaleDateString('ro-RO')}. Aici poti corecta orice, inclusiv numarul de sedinte.</div>
+        <label>Tip</label>
+        <select id="ab-edit-tip" onchange="document.getElementById('ab-edit-total').value = TOTAL_IMPLICIT_ABONAMENT[this.value]" style="width:100%;margin-bottom:10px">
+          ${optiune('8', '8 sedinte')}${optiune('12', '12 sedinte')}${optiune('functional', 'Functional')}${optiune('individual', 'Sedinta individuala')}
+        </select>
+        <label>Total sedinte in abonament</label>
+        <input id="ab-edit-total" type="number" min="1" step="1" value="${a.total_sedinte}" style="width:100%;margin-bottom:10px">
+        <label>Sedinte efectuate</label>
+        <input id="ab-edit-efectuate" type="number" min="0" step="1" value="${a.sedinte_efectuate}" style="width:100%;margin-bottom:10px">
+        <label>Stare</label>
+        <select id="ab-edit-activ" style="width:100%;margin-bottom:14px">
+          <option value="1" ${a.activ ? 'selected' : ''}>Activ (cel curent al pacientului)</option>
+          <option value="0" ${a.activ ? '' : 'selected'}>Incheiat</option>
+        </select>
+        <button class="btn" style="width:100%" onclick="salveazaEditareAbonament('${pacientId}','${a.id}')">Salveaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricAbonamente('${pacientId}')">Anuleaza</button>
+        <div id="eroare-editare-abonament" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+async function salveazaEditareAbonament(pacientId, abonamentId) {
+  const eroareEl = document.getElementById('eroare-editare-abonament');
+  eroareEl.textContent = '';
+  const buton = event.target;
+  buton.disabled = true;
+  const rezultat = await apel(`/api/abonamente/${abonamentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      tip: document.getElementById('ab-edit-tip').value,
+      total_sedinte: document.getElementById('ab-edit-total').value,
+      sedinte_efectuate: document.getElementById('ab-edit-efectuate').value,
+      activ: document.getElementById('ab-edit-activ').value === '1'
+    })
+  });
+  if (rezultat.eroare) {
+    eroareEl.textContent = rezultat.eroare;
+    buton.disabled = false;
+    return;
+  }
+  if (pacientCurent === pacientId) deschideFisa(pacientId);
+  aratatIstoricAbonamente(pacientId);
+}
+
+function stergeAbonament(pacientId, abonamentId) {
+  aratatPopupConfirmare({
+    titlu: 'Stergi abonamentul?',
+    mesaj: 'Sedintele deja facute raman in istoric, dar nu mai sunt legate de niciun abonament. Nu se poate anula.',
+    textConfirma: 'Sterge', periculos: true
+  }, async () => {
+    await apel(`/api/abonamente/${abonamentId}`, { method: 'DELETE' });
+    if (pacientCurent === pacientId) deschideFisa(pacientId);
+    aratatIstoricAbonamente(pacientId);
+  });
+}
+
+function stergeSedintaIstoric(pacientId, sedintaId) {
+  const s = sedinteIstoricCache.find(x => x.id === sedintaId);
+  aratatPopupConfirmare({
+    titlu: 'Stergi sedinta?',
+    mesaj: `${s ? 'Sedinta din ' + new Date(s.data_ora).toLocaleDateString('ro-RO') + ' dispare din istoric. ' : ''}Daca era contorizata intr-un abonament, se scade de acolo. Nu se poate anula.`,
+    textConfirma: 'Sterge', periculos: true
+  }, async () => {
+    await apel(`/api/programari/${sedintaId}`, { method: 'DELETE' });
+    if (pacientCurent === pacientId) deschideFisa(pacientId);
+    aratatIstoricSedinte(pacientId);
+  });
 }
 
 async function aratatIstoricSedinte(pacientId) {
@@ -751,6 +914,7 @@ async function aratatIstoricSedinte(pacientId) {
               <div style="display:flex;gap:10px;flex-shrink:0">
                 <span style="font-size:11px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatMutaSedintaAbonament('${pacientId}','${s.id}')">Muta abonament</span>
                 <span style="font-size:11px;color:#9a988e;cursor:pointer;text-decoration:underline" onclick="aratatFormularEditareSedinta('${pacientId}','${s.id}')">Editeaza</span>
+                <span style="font-size:11px;color:#e08585;cursor:pointer;text-decoration:underline" onclick="stergeSedintaIstoric('${pacientId}','${s.id}')">Sterge</span>
               </div>
             </div>
             <div style="font-size:13px;color:#c9c7bd">Exercitii: ${s.exercitii || '-'}</div>
@@ -811,6 +975,8 @@ function aratatFormularEditareSedinta(pacientId, sedintaId) {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
       <div class="card" style="max-width:420px;width:90%">
         <h2>Editeaza sedinta din ${new Date(sedinta.data_ora).toLocaleDateString('ro-RO')}</h2>
+        <label>Data sedintei</label>
+        <input id="istoric-data" type="date" value="${dataLocala(new Date(sedinta.data_ora))}" style="width:100%;margin-bottom:10px" onclick="this.showPicker && this.showPicker()">
         <label>Exercitii</label>
         <textarea id="istoric-exercitii" rows="3" style="width:100%;margin-bottom:10px">${sedinta.exercitii || ''}</textarea>
         <label>Cum s-a simtit / Observatii</label>
@@ -819,6 +985,7 @@ function aratatFormularEditareSedinta(pacientId, sedintaId) {
         <textarea id="istoric-plan-viitor" rows="2" style="width:100%;margin-bottom:14px">${sedinta.plan_viitor || ''}</textarea>
         <button class="btn" style="width:100%" onclick="salveazaEditareSedinta('${sedinta.id}','${pacientId}')">Salveaza</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
+        <div id="eroare-editare-sedinta" style="color:#e08585;font-size:12px;margin-top:8px"></div>
       </div>
     </div>
   `;
@@ -826,13 +993,21 @@ function aratatFormularEditareSedinta(pacientId, sedintaId) {
 }
 
 async function salveazaEditareSedinta(sedintaId, pacientId) {
+  const data = document.getElementById('istoric-data').value;
   const exercitii = document.getElementById('istoric-exercitii').value.trim();
   const observatii = document.getElementById('istoric-observatii').value.trim();
   const plan_viitor = document.getElementById('istoric-plan-viitor').value.trim();
-  await apel(`/api/programari/${sedintaId}/editeaza-istoric`, {
+  const buton = event.target;
+  buton.disabled = true;
+  const rezultat = await apel(`/api/programari/${sedintaId}/editeaza-istoric`, {
     method: 'PATCH',
-    body: JSON.stringify({ exercitii, observatii, plan_viitor })
+    body: JSON.stringify({ exercitii, observatii, plan_viitor, data })
   });
+  if (rezultat.eroare) {
+    document.getElementById('eroare-editare-sedinta').textContent = rezultat.eroare;
+    buton.disabled = false;
+    return;
+  }
   if (pacientCurent === pacientId) deschideFisa(pacientId);
   aratatIstoricSedinte(pacientId);
 }

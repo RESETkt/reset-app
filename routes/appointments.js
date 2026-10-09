@@ -151,10 +151,15 @@ router.post('/sedinta-trecuta', async (req, res) => {
 
 // Editeaza retroactiv exercitiile/observatiile unei sedinte deja marcate prezenta - fisa pacientului > istoric
 router.patch('/:id/editeaza-istoric', async (req, res) => {
-  const { exercitii, observatii, plan_viitor } = req.body;
+  const { exercitii, observatii, plan_viitor, data } = req.body;
+  if (data && !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    return res.status(400).json({ eroare: 'Data sedintei nu este valida.' });
+  }
   const { rows } = await pool.query(
-    `UPDATE programari SET exercitii=$1, observatii=$2, plan_viitor=$3 WHERE id=$4 AND status='prezent' RETURNING *`,
-    [exercitii || null, observatii || null, plan_viitor || null, req.params.id]
+    `UPDATE programari SET exercitii=$1, observatii=$2, plan_viitor=$3,
+            data_ora = CASE WHEN $5::date IS NULL THEN data_ora ELSE ($5::date + data_ora::time)::timestamptz END
+     WHERE id=$4 AND status='prezent' RETURNING *`,
+    [exercitii || null, observatii || null, plan_viitor || null, req.params.id, data || null]
   );
   if (!rows[0]) return res.status(404).json({ eroare: 'Sedinta inexistenta.' });
   res.json(rows[0]);

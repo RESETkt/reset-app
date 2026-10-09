@@ -69,6 +69,26 @@ router.post('/:id/plati', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
+router.patch('/:id/plati/:platiId', async (req, res) => {
+  const { suma, metoda, tip_plata, motiv, data_plata } = req.body;
+  if (!(Number(suma) > 0) || !['cash', 'card'].includes(metoda) || !['integral', 'rate'].includes(tip_plata)) {
+    return res.status(400).json({ eroare: 'Suma, metoda si tipul de plata trebuie sa fie valide.' });
+  }
+  const { rows } = await pool.query(
+    `UPDATE plati SET suma=$1, metoda=$2, tip_plata=$3, motiv=$4, data_plata=COALESCE($5::timestamptz, data_plata)
+     WHERE id=$6 AND pacient_id=$7 RETURNING *`,
+    [suma, metoda, tip_plata, motiv || null, data_plata || null, req.params.platiId, req.params.id]
+  );
+  if (!rows[0]) return res.status(404).json({ eroare: 'Plata nu exista.' });
+  res.json(rows[0]);
+});
+
+router.delete('/:id/plati/:platiId', async (req, res) => {
+  const { rowCount } = await pool.query(`DELETE FROM plati WHERE id=$1 AND pacient_id=$2`, [req.params.platiId, req.params.id]);
+  if (!rowCount) return res.status(404).json({ eroare: 'Plata nu exista.' });
+  res.json({ sters: true });
+});
+
 router.post('/', async (req, res) => {
   const { nume, prenume, telefon, email, diagnostic, cum_a_aflat } = req.body;
   const { rows } = await pool.query(
