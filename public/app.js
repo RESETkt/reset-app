@@ -104,6 +104,7 @@ function reincarcaAplicatiaSigur() {
   const incearcaReincarcare = () => {
     const modal = document.getElementById('modal-container');
     if (modal && modal.children.length) { setTimeout(incearcaReincarcare, 5000); return; }
+    if (document.getElementById('evaluare-ecran')) { setTimeout(incearcaReincarcare, 5000); return; }
     reincarcatDupaActualizare = true;
     window.location.reload();
   };
@@ -132,6 +133,7 @@ function reimprospateazaDupaSchimbare() {
   if (tabActiv === 'fisa') {
     if (document.getElementById('cautare')) cautaPacienti(document.getElementById('cautare').value || '');
     else if (document.getElementById('nou-nume')) { /* formular de pacient nou deschis - nu il suprascriem */ }
+    else if (document.getElementById('evaluare-ecran')) { /* evaluare in curs - se salveaza singura, nu o suprascriem */ }
     else if (pacientCurent) deschideFisa(pacientCurent);
   }
 }
@@ -632,6 +634,7 @@ function inapoiDinFisa() {
 }
 
 async function deschideFisa(id) {
+  if (typeof evParasesteEvaluarea === 'function') evParasesteEvaluarea(); // din evaluare.js
   pacientCurent = id;
   ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
@@ -690,6 +693,8 @@ async function deschideFisa(id) {
       </div>
     </div>
 
+    <div class="card" id="evaluari-fisa"></div>
+
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <h2 style="margin:0">Plati</h2>
@@ -709,6 +714,7 @@ async function deschideFisa(id) {
       `).join('')}
     </div>
   `;
+  incarcaEvaluariFisa(id);
 }
 
 let sedinteIstoricCache = [];

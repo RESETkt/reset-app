@@ -167,3 +167,19 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   auth text NOT NULL,
   creat_la timestamptz DEFAULT now()
 );
+-- Evaluarile functionale (cele 12 teste RESET), pe fisa pacientului. Notarea (semafor, cifre,
+-- compensari, durere) sta in "date" ca JSON, ca testele si criteriile sa se poata regla din mers
+-- fara migrari; pozele de postura, separat, ca lista de evaluari sa nu le incarce.
+CREATE TABLE IF NOT EXISTS evaluari (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pacient_id uuid REFERENCES pacienti(id) ON DELETE CASCADE,
+  data date NOT NULL DEFAULT CURRENT_DATE,
+  date jsonb NOT NULL DEFAULT '{}'::jsonb,
+  poze jsonb NOT NULL DEFAULT '{}'::jsonb,
+  recomandare text,
+  creat_de uuid REFERENCES utilizatori(id) ON DELETE SET NULL,
+  creat_la timestamptz DEFAULT now(),
+  actualizat_la timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_evaluari_pacient ON evaluari(pacient_id, data);

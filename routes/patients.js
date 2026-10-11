@@ -55,6 +55,25 @@ router.get('/:id', async (req, res) => {
   });
 });
 
+// Evaluarile functionale ale pacientului, cele mai noi primele (fara poze, ca lista sa fie usoara)
+router.get('/:id/evaluari', async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT e.id, to_char(e.data, 'YYYY-MM-DD') AS data, e.date, e.recomandare, e.creat_la, u.nume AS kineto
+     FROM evaluari e LEFT JOIN utilizatori u ON u.id = e.creat_de
+     WHERE e.pacient_id = $1 ORDER BY e.data DESC, e.creat_la DESC`,
+    [req.params.id]
+  );
+  res.json(rows);
+});
+
+router.post('/:id/evaluari', async (req, res) => {
+  const { rows } = await pool.query(
+    `INSERT INTO evaluari (pacient_id, creat_de) VALUES ($1, $2) RETURNING id`,
+    [req.params.id, req.user.id]
+  );
+  res.status(201).json(rows[0]);
+});
+
 // Adauga o plata noua pentru un pacient - abonament nou, sedinta, sau orice suma
 router.post('/:id/plati', async (req, res) => {
   const { suma, metoda, tip_plata, motiv, data_plata } = req.body;

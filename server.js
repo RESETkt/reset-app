@@ -19,6 +19,7 @@ const liveRoutes = require('./routes/live');
 const pushRoutes = require('./routes/push');
 const expensesRoutes = require('./routes/expenses');
 const discutiiRoutes = require('./routes/discutii');
+const evaluariRoutes = require('./routes/evaluari');
 const { porneteReminderele } = require('./services/reminders');
 const { porneteCheltuieliRecurente } = require('./services/cheltuieliRecurente');
 const { porneteVerificareSedinteUitate } = require('./services/sedinteUitate');
@@ -47,7 +48,8 @@ app.use('/api', (req, res, next) => {
 
 // Orice modificare reusita (POST/PATCH/DELETE) anunta instant, prin SSE, toate telefoanele/tabletele
 // deschise - ca datele sa se actualizeze singure la ceilalti, fara sa mai fie nevoie de refresh manual.
-const CAI_FARA_ANUNT = ['/api/auth', '/api/live', '/api/push'];
+// /api/evaluari: salvarea automata din timpul evaluarii (la fiecare tap) nu trebuie sa reimprospateze ecranele tuturor
+const CAI_FARA_ANUNT = ['/api/auth', '/api/live', '/api/push', '/api/evaluari'];
 app.use((req, res, next) => {
   res.on('finish', () => {
     const eModificare = req.method !== 'GET' && res.statusCode < 400;
@@ -73,6 +75,7 @@ app.use('/api/live', liveRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/cheltuieli', expensesRoutes);
 app.use('/api/discutii', discutiiRoutes);
+app.use('/api/evaluari', evaluariRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

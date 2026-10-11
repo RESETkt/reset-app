@@ -1,5 +1,5 @@
-const CACHE = 'reset-shell-v1';
-const SHELL = ['/index.html', '/styles.css', '/app.js', '/logo-icon.png', '/favicon-v2.png'];
+const CACHE = 'reset-shell-v2';
+const SHELL = ['/index.html', '/styles.css', '/app.js', '/evaluare.js', '/logo-icon.png', '/favicon-v2.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
