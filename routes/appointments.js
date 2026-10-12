@@ -165,20 +165,21 @@ router.patch('/:id/editeaza-istoric', async (req, res) => {
   res.json(rows[0]);
 });
 
-// Ce s-a lucrat la ultima sedinta anterioara a pacientului (pentru "Ca data trecuta")
+// Ce s-a lucrat si ce plan s-a notat la ultimele sedinte anterioare ale pacientului (pentru "Ca data trecuta")
 router.get('/:id/ultima-sedinta', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT prev.exercitii FROM programari p
-       JOIN LATERAL (
-         SELECT exercitii FROM programari
-         WHERE pacient_id = p.pacient_id AND status = 'prezent' AND exercitii IS NOT NULL AND data_ora < p.data_ora
-         ORDER BY data_ora DESC LIMIT 1
-       ) prev ON true
-       WHERE p.id = $1`,
+      `SELECT
+         (SELECT exercitii FROM programari
+           WHERE pacient_id = p.pacient_id AND status = 'prezent' AND exercitii IS NOT NULL AND data_ora < p.data_ora
+           ORDER BY data_ora DESC LIMIT 1) AS exercitii,
+         (SELECT plan_viitor FROM programari
+           WHERE pacient_id = p.pacient_id AND status = 'prezent' AND plan_viitor IS NOT NULL AND data_ora < p.data_ora
+           ORDER BY data_ora DESC LIMIT 1) AS plan_viitor
+       FROM programari p WHERE p.id = $1`,
       [req.params.id]
     );
-    res.json({ exercitii: rows[0]?.exercitii || null });
+    res.json({ exercitii: rows[0]?.exercitii || null, plan_viitor: rows[0]?.plan_viitor || null });
   } catch (e) {
     res.status(500).json({ eroare: e.message });
   }

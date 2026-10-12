@@ -314,6 +314,21 @@ th, td { text-align: left; }
 .ap-ca-trecuta { padding: 6px 12px; font-size: 12px; color: #7fd9a8; border-color: #2f6a52; background: transparent; white-space: nowrap; }
 .ap-ca-trecuta:hover { background: #1f3626; }
 
+/* --- Plan "Data viitoare" cu butoane (Atentie la / De lucrat / Progresie) --- */
+.ap-plan-cap { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+.ap-plan-cap .ap-eticheta { margin: 0 0 0 2px; }
+.ap-plan-cap .ap-ca-trecuta { color: #a79ded; border-color: rgba(127, 119, 221, 0.4); }
+.ap-plan-cap .ap-ca-trecuta:hover { background: rgba(127, 119, 221, 0.12); }
+.pl-grup { margin-top: 10px; }
+.pl-nume { font-size: 12px; color: #9a988e; margin: 0 0 6px 2px; }
+.pl-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pl-chip { padding: 9px 14px; border: 1px solid #45443f; border-radius: 9px; background: #1e1e1d; color: #c9c7bd; font-size: 14px; font-family: inherit; cursor: pointer; }
+.pl-chip:hover { border-color: #706e66; color: #ece9e2; }
+.pl-chip.on { border-color: #a79ded; background: rgba(127, 119, 221, 0.2); color: #ece9e2; font-weight: 600; }
+.pl-lat { display: inline-flex; gap: 3px; margin-left: -4px; }
+.pl-lat button { width: 30px; height: 30px; border-radius: 7px; border: 1px solid #45443f; background: #1e1e1d; color: #9a988e; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.pl-lat button.on { border-color: #a79ded; background: rgba(127, 119, 221, 0.3); color: #fff; }
+
 /* ---- Evaluarea functionala (evaluare.js) ---- */
 .ev-cap { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 8px; }
 .ev-gol { font-size: 13px; color: #9a988e; margin-top: 8px; }

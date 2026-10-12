@@ -1007,7 +1007,7 @@ function aratatFormularEditareSedintaAparate(pacientId, sedinta) {
         <h2>Editeaza sedinta din ${new Date(sedinta.data_ora).toLocaleDateString('ro-RO')}</h2>
         <label>Data sedintei</label>
         <input id="istoric-data" type="date" value="${dataLocala(new Date(sedinta.data_ora))}" style="width:100%;margin-bottom:14px" onclick="this.showPicker && this.showPicker()">
-        ${htmlCampuriSedinta(sedinta.exercitii, sedinta.plan_viitor)}
+        ${htmlCampuriSedinta(sedinta.exercitii, sedinta.plan_viitor, sedinta.id)}
         <button class="btn" style="width:100%;margin-top:16px" onclick="salveazaEditareSedinta('${sedinta.id}','${pacientId}')">Salveaza</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
         <div id="eroare-editare-sedinta" style="color:#e08585;font-size:12px;margin-top:8px"></div>
@@ -1022,7 +1022,7 @@ async function salveazaEditareSedinta(sedintaId, pacientId) {
   const data = document.getElementById('istoric-data').value;
   const peAparate = !!document.getElementById('ap-azi');
   const corp = peAparate
-    ? { exercitii: exercitiiDinFormular(), plan_viitor: document.getElementById('ap-plan').value.trim(), data }
+    ? { exercitii: exercitiiDinFormular(), plan_viitor: planDinFormular(), data }
     : {
         exercitii: document.getElementById('istoric-exercitii').value.trim(),
         observatii: document.getElementById('istoric-observatii').value.trim(),
@@ -1082,7 +1082,7 @@ async function salveazaSedintaNoua(pacientId) {
   buton.disabled = true;
   const rezultat = await apel('/api/programari/sedinta-trecuta', {
     method: 'POST',
-    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, exercitii: exercitiiDinFormular(), plan_viitor: document.getElementById('ap-plan').value.trim() })
+    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, exercitii: exercitiiDinFormular(), plan_viitor: planDinFormular() })
   });
 
   if (rezultat.eroare) {
@@ -2131,15 +2131,139 @@ function exercitiiDinFormular() {
   return [respiratiiBifat ? RESPIRATII : '', text].filter(Boolean).join('\n');
 }
 
-function htmlCampuriSedinta(azi, plan) {
+// "Data viitoare" se noteaza cu butoane: Atenție la (zone), De lucrat, Progresie, plus un camp pentru restul.
+// Se salveaza ca text pe randuri ("Atenție la: genunchi D, lombar"), deci fisa si calendarul il afiseaza ca pana acum.
+const PLAN_ZONE = ['Picior', 'Gleznă', 'Genunchi', 'Șold', 'Lombar', 'Toracal', 'Cervical', 'Umăr'];
+const PLAN_LUCRU = ['Stabilitate', 'Forță', 'Mobilitate', 'Core', 'Agilitate', 'Echilibru'];
+const PLAN_PROG = ['Creștem', 'La fel', 'Scădem', 'Reevaluare'];
+const PLAN_ZONE_CU_PARTE = ['Genunchi', 'Umăr'];
+const PLAN_GRUPE = [
+  { cheie: 'z', titlu: 'Atenție la', prefix: 'Atenție la:', lista: PLAN_ZONE },
+  { cheie: 'l', titlu: 'De lucrat', prefix: 'De lucrat:', lista: PLAN_LUCRU },
+  { cheie: 'p', titlu: 'Progresie', prefix: 'Progresie:', lista: PLAN_PROG }
+];
+
+function planGol() {
+  return { z: {}, l: {}, p: {}, parte: {}, text: '' };
+}
+
+let planStare = planGol();
+
+// Citeste un plan salvat (text) inapoi in butoane; ce nu se potriveste ramane in campul de text
+function planParseaza(text) {
+  const st = planGol();
+  const ramase = [];
+  (text || '').split('\n').forEach(linie => {
+    const g = PLAN_GRUPE.find(x => linie.startsWith(x.prefix));
+    if (!g) {
+      ramase.push(linie);
+      return;
+    }
+    linie.slice(g.prefix.length).split(',').map(s => s.trim()).filter(Boolean).forEach(elem => {
+      let nume = elem;
+      let parte = '';
+      if (g.cheie === 'z') {
+        const m = elem.match(/^(.*?)\s+(S\+D|S|D)$/);
+        if (m) { nume = m[1]; parte = m[2]; }
+      }
+      const gasit = g.lista.find(n => n.toLowerCase() === nume.toLowerCase());
+      if (gasit) {
+        st[g.cheie][gasit] = true;
+        if (parte) st.parte[gasit] = parte;
+      } else {
+        ramase.push(`${g.prefix} ${elem}`);
+      }
+    });
+  });
+  st.text = ramase.join('\n').trim();
+  return st;
+}
+
+function planCompune(st) {
+  const linii = [];
+  PLAN_GRUPE.forEach(g => {
+    const alese = g.lista
+      .filter(n => st[g.cheie][n])
+      .map(n => n.toLowerCase() + (g.cheie === 'z' && st.parte[n] ? ' ' + st.parte[n] : ''));
+    if (alese.length) linii.push(`${g.prefix} ${alese.join(', ')}`);
+  });
+  if (st.text.trim()) linii.push(st.text.trim());
+  return linii.join('\n');
+}
+
+function planDinFormular() {
+  return planCompune(planStare);
+}
+
+function planChipsHtml() {
+  return PLAN_GRUPE.map(g => `
+    <div class="pl-grup">
+      <div class="pl-nume">${g.titlu}</div>
+      <div class="pl-chips">${g.lista.map((n, i) => {
+        const on = planStare[g.cheie][n];
+        let h = `<button type="button" class="pl-chip ${on ? 'on' : ''}" onclick="planApasa('${g.cheie}', ${i})">${n}</button>`;
+        if (g.cheie === 'z' && on && PLAN_ZONE_CU_PARTE.includes(n)) {
+          const p = planStare.parte[n] || '';
+          h += `<span class="pl-lat"><button type="button" class="${p.includes('S') ? 'on' : ''}" onclick="planParte(${i}, 'S')">S</button><button type="button" class="${p.includes('D') ? 'on' : ''}" onclick="planParte(${i}, 'D')">D</button></span>`;
+        }
+        return h;
+      }).join('')}</div>
+    </div>`).join('');
+}
+
+function planRandeaza() {
+  document.getElementById('ap-plan-chips').innerHTML = planChipsHtml();
+}
+
+function planApasa(cheie, i) {
+  const g = PLAN_GRUPE.find(x => x.cheie === cheie);
+  const n = g.lista[i];
+  planStare[cheie][n] = !planStare[cheie][n];
+  if (!planStare[cheie][n]) delete planStare.parte[n];
+  planRandeaza();
+}
+
+function planParte(i, litera) {
+  const n = PLAN_ZONE[i];
+  let p = planStare.parte[n] || '';
+  p = p.includes(litera) ? p.replace(litera, '') : p + litera;
+  p = ['S', 'D'].filter(c => p.includes(c)).join('+');
+  if (p) planStare.parte[n] = p;
+  else delete planStare.parte[n];
+  planRandeaza();
+}
+
+// Bifeaza zonele si ce s-a lucrat din planul de la ultima sedinta a pacientului
+async function planCaDataTrecuta(programareId) {
+  const mesajEl = document.getElementById('ap-plan-mesaj');
+  mesajEl.textContent = '';
+  const r = await apel(`/api/programari/${programareId}/ultima-sedinta`);
+  const trecut = planParseaza(r.plan_viitor);
+  if (!PLAN_GRUPE.some(g => Object.keys(trecut[g.cheie]).length)) {
+    mesajEl.textContent = r.eroare || 'Nu exista un plan anterior cu butoane.';
+    return;
+  }
+  PLAN_GRUPE.forEach(g => Object.keys(trecut[g.cheie]).forEach(n => { planStare[g.cheie][n] = true; }));
+  Object.assign(planStare.parte, trecut.parte);
+  planRandeaza();
+}
+
+function htmlCampuriSedinta(azi, plan, idProgramare) {
   const extras = extrageRespiratii(azi);
   respiratiiBifat = extras.bifat;
+  planStare = planParseaza(plan);
   return `
     <div class="ap-chips">${APARATE.map((n, i) => `<button type="button" class="ap-chip ${n === RESPIRATII && respiratiiBifat ? 'on' : ''}" data-n="${scapaAtribut(n)}" onclick="aparateApasa(${i})">${scapaHtml(n)}</button>`).join('')}</div>
     <label class="ap-eticheta">Azi</label>
     <textarea class="ap-camp" id="ap-azi" rows="4" oninput="aparateActualizeaza()">${scapaHtml(extras.text)}</textarea>
-    <label class="ap-eticheta viitor">Data viitoare</label>
-    <textarea class="ap-camp viitor" id="ap-plan" rows="2">${scapaHtml(plan || '')}</textarea>`;
+    <div class="ap-plan-cap">
+      <label class="ap-eticheta viitor">Data viitoare</label>
+      ${idProgramare ? `<button type="button" class="btn ap-ca-trecuta" onclick="planCaDataTrecuta('${idProgramare}')">Ca data trecută</button>` : ''}
+    </div>
+    <div id="ap-plan-mesaj" style="font-size:12px;color:#e08585"></div>
+    <div id="ap-plan-chips">${planChipsHtml()}</div>
+    <label class="ap-eticheta">Alte detalii</label>
+    <textarea class="ap-camp viitor" id="ap-plan-text" rows="2" oninput="planStare.text=this.value">${scapaHtml(planStare.text)}</textarea>`;
 }
 
 // Adauga sub ce e deja scris textul de la ultima sedinta a pacientului
@@ -2169,7 +2293,7 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
           <button type="button" class="btn ap-ca-trecuta" onclick="aparateCaDataTrecuta('${id}')">Ca data trecută</button>
         </div>
         <div id="ap-mesaj" style="font-size:12px;color:#e08585;margin-bottom:6px"></div>
-        ${htmlCampuriSedinta('', '')}
+        ${htmlCampuriSedinta('', '', id)}
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anulează</button>
       </div>
@@ -2185,7 +2309,7 @@ async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
     method: 'PATCH',
     body: JSON.stringify({
       exercitii: exercitiiDinFormular(),
-      plan_viitor: document.getElementById('ap-plan').value.trim()
+      plan_viitor: planDinFormular()
     })
   });
   if (rezultat.eroare) {
