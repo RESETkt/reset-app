@@ -672,9 +672,9 @@ async function deschideFisa(id) {
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"> <div style="font-weight:500;font-size:13px">${data.ultima_sedinta ? `Ultima sedinta (${new Date(data.ultima_sedinta.data_ora).toLocaleDateString('ro-RO')})` : 'Sedinte'}</div> <button class="btn secundar" onclick="aratatIstoricSedinte('${id}')">Istoric</button> </div>
         ${data.ultima_sedinta ? `
-        ${data.ultima_sedinta.plan_viitor ? `<div style="font-size:13px;color:#a79ded;background:rgba(127,119,221,0.08);border:1px solid rgba(127,119,221,0.3);border-radius:7px;padding:8px 10px;margin-bottom:8px"><strong>Plan pentru data viitoare:</strong> ${data.ultima_sedinta.plan_viitor}</div>` : ''}
-        <div style="font-size:13px;color:#c9c7bd">Exercitii: ${data.ultima_sedinta.exercitii || '-'}</div>
-        <div style="font-size:13px;color:#c9c7bd">Observatii: ${data.ultima_sedinta.observatii || '-'}</div>` : '<div style="font-size:13px;color:#9a988e">Nicio sedinta inregistrata inca.</div>'}
+        ${data.ultima_sedinta.plan_viitor ? `<div style="font-size:13px;color:#a79ded;background:rgba(127,119,221,0.08);border:1px solid rgba(127,119,221,0.3);border-radius:7px;padding:8px 10px;margin-bottom:8px;white-space:pre-line"><strong>Plan pentru data viitoare:</strong> ${scapaHtml(data.ultima_sedinta.plan_viitor)}</div>` : ''}
+        <div style="font-size:13px;color:#c9c7bd;white-space:pre-line">Exercitii: ${scapaHtml(data.ultima_sedinta.exercitii) || '-'}</div>
+        ${data.ultima_sedinta.observatii ? `<div style="font-size:13px;color:#c9c7bd">Observatii: ${scapaHtml(data.ultima_sedinta.observatii)}</div>` : ''}` : '<div style="font-size:13px;color:#9a988e">Nicio sedinta inregistrata inca.</div>'}
       </div>
 
       <div style="border-top:1px solid #3a3937;margin-top:16px;padding-top:12px">
@@ -923,9 +923,9 @@ async function aratatIstoricSedinte(pacientId) {
                 <span style="font-size:11px;color:#e08585;cursor:pointer;text-decoration:underline" onclick="stergeSedintaIstoric('${pacientId}','${s.id}')">Sterge</span>
               </div>
             </div>
-            <div style="font-size:13px;color:#c9c7bd">Exercitii: ${s.exercitii || '-'}</div>
-            <div style="font-size:13px;color:#c9c7bd">Observatii: ${s.observatii || '-'}</div>
-            ${s.plan_viitor ? `<div style="font-size:13px;color:#a79ded;margin-top:2px">Plan viitor: ${s.plan_viitor}</div>` : ''}
+            <div style="font-size:13px;color:#c9c7bd;white-space:pre-line">Exercitii: ${scapaHtml(s.exercitii) || '-'}</div>
+            ${s.observatii ? `<div style="font-size:13px;color:#c9c7bd">Observatii: ${scapaHtml(s.observatii)}</div>` : ''}
+            ${s.plan_viitor ? `<div style="font-size:13px;color:#a79ded;margin-top:2px;white-space:pre-line">Plan viitor: ${scapaHtml(s.plan_viitor)}</div>` : ''}
           </div>
         `).join('')}
         <button class="btn secundar" style="width:100%;margin-top:14px" onclick="inchideModalProgramare()">Inchide</button>
@@ -977,6 +977,7 @@ async function confirmaMutaSedintaAbonament(pacientId, sedintaId) {
 function aratatFormularEditareSedinta(pacientId, sedintaId) {
   const sedinta = sedinteIstoricCache.find(s => s.id === sedintaId);
   if (!sedinta) return;
+  if (Array.isArray(sedinta.aparate)) return aratatFormularEditareSedintaAparate(pacientId, sedinta);
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
       <div class="card" style="max-width:420px;width:90%">
@@ -998,16 +999,41 @@ function aratatFormularEditareSedinta(pacientId, sedintaId) {
   document.getElementById('modal-container').innerHTML = html;
 }
 
+// Sedintele notate pe aparate se editeaza cu aceeasi lista; cele vechi (text liber) raman cu formularul de mai sus
+function aratatFormularEditareSedintaAparate(pacientId, sedinta) {
+  aparateInit(sedinta.aparate);
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
+      <div class="card" style="max-width:720px;width:100%">
+        <h2>Editeaza sedinta din ${new Date(sedinta.data_ora).toLocaleDateString('ro-RO')}</h2>
+        <label>Data sedintei</label>
+        <input id="istoric-data" type="date" value="${dataLocala(new Date(sedinta.data_ora))}" style="width:100%;margin-bottom:14px" onclick="this.showPicker && this.showPicker()">
+        ${htmlAparate()}
+        <button class="btn" style="width:100%;margin-top:16px" onclick="salveazaEditareSedinta('${sedinta.id}','${pacientId}')">Salveaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
+        <div id="eroare-editare-sedinta" style="color:#e08585;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
 async function salveazaEditareSedinta(sedintaId, pacientId) {
   const data = document.getElementById('istoric-data').value;
-  const exercitii = document.getElementById('istoric-exercitii').value.trim();
-  const observatii = document.getElementById('istoric-observatii').value.trim();
-  const plan_viitor = document.getElementById('istoric-plan-viitor').value.trim();
+  const peAparate = !!document.getElementById('aparate-lista');
+  const corp = peAparate
+    ? { aparate: aparateColecteaza(), data }
+    : {
+        exercitii: document.getElementById('istoric-exercitii').value.trim(),
+        observatii: document.getElementById('istoric-observatii').value.trim(),
+        plan_viitor: document.getElementById('istoric-plan-viitor').value.trim(),
+        data
+      };
   const buton = event.target;
   buton.disabled = true;
   const rezultat = await apel(`/api/programari/${sedintaId}/editeaza-istoric`, {
     method: 'PATCH',
-    body: JSON.stringify({ exercitii, observatii, plan_viitor, data })
+    body: JSON.stringify(corp)
   });
   if (rezultat.eroare) {
     document.getElementById('eroare-editare-sedinta').textContent = rezultat.eroare;
@@ -1020,9 +1046,10 @@ async function salveazaEditareSedinta(sedintaId, pacientId) {
 
 async function aratatFormularSedintaNoua(pacientId) {
   const kinetoUtilizatori = await apel('/api/utilizatori');
+  aparateInit([]);
   const html = `
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
-      <div class="card" style="max-width:420px;width:90%">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
+      <div class="card" style="max-width:720px;width:100%">
         <h2>Adauga sedinta uitata</h2>
         <label>Data sedintei</label>
         <input id="sedinta-noua-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
@@ -1031,11 +1058,8 @@ async function aratatFormularSedintaNoua(pacientId) {
           <option value="">Nealocat</option>
           ${kinetoUtilizatori.map(u => `<option value="${u.id}">${u.nume}</option>`).join('')}
         </select>
-        <label>Exercitii</label>
-        <textarea id="sedinta-noua-exercitii" rows="3" style="width:100%;margin-bottom:10px"></textarea>
-        <label>Cum s-a simtit / Observatii</label>
-        <textarea id="sedinta-noua-observatii" rows="3" style="width:100%;margin-bottom:14px"></textarea>
-        <button class="btn" style="width:100%" onclick="salveazaSedintaNoua('${pacientId}')">Salveaza sedinta</button>
+        ${htmlAparate()}
+        <button class="btn" style="width:100%;margin-top:16px" onclick="salveazaSedintaNoua('${pacientId}')">Salveaza sedinta</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
         <div id="eroare-sedinta-noua" style="color:#e08585;font-size:12px;margin-top:8px"></div>
       </div>
@@ -1047,8 +1071,6 @@ async function aratatFormularSedintaNoua(pacientId) {
 async function salveazaSedintaNoua(pacientId) {
   const data = document.getElementById('sedinta-noua-data').value;
   const kineto_id = document.getElementById('sedinta-noua-kineto').value || null;
-  const exercitii = document.getElementById('sedinta-noua-exercitii').value.trim();
-  const observatii = document.getElementById('sedinta-noua-observatii').value.trim();
   const eroareEl = document.getElementById('eroare-sedinta-noua');
   eroareEl.textContent = '';
 
@@ -1061,7 +1083,7 @@ async function salveazaSedintaNoua(pacientId) {
   buton.disabled = true;
   const rezultat = await apel('/api/programari/sedinta-trecuta', {
     method: 'POST',
-    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, exercitii, observatii })
+    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, aparate: aparateColecteaza() })
   });
 
   if (rezultat.eroare) {
@@ -1683,7 +1705,7 @@ function randPacientRand(p) {
         ${p.status === 'programat' || p.status === 'reprogramat' ? `
         <div class="plan-sedinta" style="width:230px;padding:9px 12px;border-bottom:1px solid #eae8e1;white-space:normal">
           <div style="font-size:10.5px;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;color:#5b4fa8;margin-bottom:4px">Plan pentru sedinta asta${p.plan_anterior_data ? ` (din ${new Date(p.plan_anterior_data).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })})` : ''}</div>
-          <div style="font-size:12.5px;line-height:1.45;color:${p.plan_anterior ? '#2b2a26' : '#9a988e'}">${p.plan_anterior ? scapaHtml(p.plan_anterior) : (p.plan_anterior_data ? 'Niciun plan notat la sedinta anterioara.' : 'Nu exista o sedinta anterioara.')}</div>
+          <div style="font-size:12.5px;line-height:1.45;white-space:pre-line;color:${p.plan_anterior ? '#2b2a26' : '#9a988e'}">${p.plan_anterior ? scapaHtml(p.plan_anterior) : (p.plan_anterior_data ? 'Niciun plan notat la sedinta anterioara.' : 'Nu exista o sedinta anterioara.')}</div>
         </div>` : ''}
         <div style="padding:7px 12px;font-size:12px;color:#1f8a5a;cursor:pointer;white-space:nowrap" onclick="aratatFormularPrezenta('${p.id}','${p.prenume}',${p.total_sedinte ?? 'null'},${p.sedinte_efectuate ?? 'null'},'${p.status}')">Prezent</div>
         <div style="padding:7px 12px;font-size:12px;color:#c14343;cursor:pointer;white-space:nowrap;border-top:1px solid #eae8e1" onclick="marcheaza('${p.id}','absent')">Absent</div>
@@ -2037,167 +2059,125 @@ async function marcheaza(id, status) {
   incarcaCalendarSaptamana();
 }
 
-// Protocolul de Mobilitate e aproape mereu acelasi (ordine fixa) - se bifeaza in bloc,
-// iar la nevoie un pas se debifeaza si se noteaza ce s-a modificat/de ce s-a renuntat.
-const PROTOCOL_MOBILITATE = [
-  { nume: 'Respirații diafragmatice', detaliu: '3 min' },
-  { nume: 'Detensionare posterior', detaliu: 'foam roller + mingiuțe, talpă → cervical' },
-  { nume: 'Detensionare anterior', detaliu: 'tibial anterior → umeri' },
-  { nume: 'Frog Stretch', detaliu: 'deschidere șolduri pe saltea' },
-  { nume: 'Stick mobility', detaliu: 'rotații și înclinări laterale cu stick mobility la piept, din fandare sau șezut' },
-  { nume: 'Lotus', detaliu: 'talpă în talpă, deschidere șolduri' },
-  { nume: 'Deschidere torace', detaliu: 'genunchi pe foam roller, mâini întinse înainte, rotații' },
-];
+// Sedinta se noteaza pe aparate: un buton pentru fiecare, iar la click apar chenarele "Azi" (ce s-a lucrat)
+// si "Data viitoare" (planul) in dreptul lui. Ordinea e cea din sala.
+const APARATE = ['Respirații', 'Mobilitate', 'Fără aparat', 'Benzi', 'TRX', 'Kettlebell', 'StickMobility', 'RIP', 'Lada', 'Stepper', 'Haltere', 'Altceva'];
 
-// Stabilitate & Forta: un singur camp de text liber pentru tot ce s-a facut (nu mai e impartit
-// pe Lower/Trunk/Upper) - mult mai rapid de completat intre pacienti, iar kinetoterapeutii scriu
-// oricum tot ce au facut intr-un singur loc, nu pe zone separate.
-const PLACEHOLDER_STABILITATE = 'ex: fandări în mers, plank, rotații trunchi, flotări TRX, stretching activ/pasiv, stick mobility...';
+let aparateStare = [];
 
-let prezentaMobilitate = [];
-let prezentaGrupe = '';
-let prezentaCardio = { activ: false, tip: 'Bicicletă', durata: '' };
+function scapaAtribut(s) {
+  return scapaHtml(s).replace(/"/g, '&quot;');
+}
+
+// initial: [{ n, azi, viitor }] - aparatele care au deja text vin deschise
+function aparateInit(initial) {
+  const stare = APARATE.map(n => ({ n, azi: '', viitor: '', deschis: false }));
+  (initial || []).forEach(a => {
+    let rand = stare.find(x => x.n === a.n);
+    if (!rand) {
+      rand = { n: a.n, azi: '', viitor: '', deschis: false };
+      stare.push(rand);
+    }
+    rand.azi = a.azi || '';
+    rand.viitor = a.viitor || '';
+    rand.deschis = !!(rand.azi || rand.viitor);
+  });
+  aparateStare = stare;
+}
+
+function htmlRandAparat(a, i) {
+  return `
+    <div class="ap-rand ${a.deschis ? 'deschis' : ''}" id="ap-rand-${i}">
+      <button type="button" class="ap-btn ${a.deschis ? 'deschis' : ''}" onclick="aparateApasa(${i})">${scapaHtml(a.n)}</button>
+      <input class="ap-camp" id="ap-azi-${i}" placeholder="Azi" value="${scapaAtribut(a.azi)}" autocomplete="off" oninput="aparateStare[${i}].azi=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('ap-viitor-${i}').focus()}">
+      <input class="ap-camp viitor" id="ap-viitor-${i}" placeholder="Data viitoare" value="${scapaAtribut(a.viitor)}" autocomplete="off" oninput="aparateStare[${i}].viitor=this.value">
+    </div>`;
+}
+
+function htmlAparate() {
+  return `
+    <div class="ap-coloane"><span></span><span>Azi</span><span class="viitor">Data viitoare</span></div>
+    <div id="aparate-lista">${aparateStare.map(htmlRandAparat).join('')}</div>`;
+}
+
+function aparateApasa(i) {
+  const a = aparateStare[i];
+  const rand = document.getElementById(`ap-rand-${i}`);
+  const buton = rand.querySelector('.ap-btn');
+  if (!a.deschis) {
+    a.deschis = true;
+    rand.classList.add('deschis');
+    buton.classList.add('deschis');
+    document.getElementById(`ap-azi-${i}`).focus();
+  } else if (!a.azi && !a.viitor) {
+    a.deschis = false;
+    rand.classList.remove('deschis');
+    buton.classList.remove('deschis');
+  } else {
+    document.getElementById(`ap-azi-${i}`).focus();
+  }
+}
+
+function aparateColecteaza() {
+  return aparateStare
+    .filter(a => a.azi.trim() || a.viitor.trim())
+    .map(a => ({ n: a.n, azi: a.azi.trim(), viitor: a.viitor.trim() }));
+}
+
+// Completeaza "Azi" cu ce s-a lucrat la ultima sedinta, doar la aparatele ramase goale
+async function aparateCaDataTrecuta(programareId) {
+  const mesajEl = document.getElementById('ap-mesaj');
+  mesajEl.textContent = '';
+  const r = await apel(`/api/programari/${programareId}/ultima-aparate`);
+  if (!r.aparate || !r.aparate.length) {
+    mesajEl.textContent = r.eroare || 'Nu exista o sedinta anterioara notata pe aparate.';
+    return;
+  }
+  r.aparate.forEach(prev => {
+    let a = aparateStare.find(x => x.n === prev.n);
+    if (!a) {
+      a = { n: prev.n, azi: '', viitor: '', deschis: false };
+      aparateStare.push(a);
+    }
+    if (prev.azi && !a.azi) {
+      a.azi = prev.azi;
+      a.deschis = true;
+    }
+  });
+  document.getElementById('aparate-lista').innerHTML = aparateStare.map(htmlRandAparat).join('');
+}
 
 function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
-  prezentaMobilitate = PROTOCOL_MOBILITATE.map(p => ({ ...p, bifat: true, nota: '' }));
-  prezentaGrupe = '';
-  prezentaCardio = { activ: false, tip: 'Bicicletă', durata: '' };
-
+  aparateInit([]);
   const html = `
     <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:200" onclick="if(event.target===this) inchideModalProgramare()">
-      <div class="card" style="max-width:680px;width:90%;max-height:calc(100vh - 48px);overflow-y:auto">
-        <h2>Prezență &ndash; ${prenume}</h2>
-
-        <div class="prot-doua-coloane">
-          <div class="prot-coloana">
-            <div class="prot-sectiune">
-              <div class="prot-sectiune-head">
-                <h3>Mobilitate</h3>
-              </div>
-              <button class="prot-btn-toate" type="button" onclick="bifeazaToatePrezentaMobilitate()" style="margin-bottom:6px">Bifează tot ca de obicei</button>
-              <div id="prezenta-mobilitate-lista"></div>
-            </div>
-          </div>
-
-          <div class="prot-coloana">
-            <div class="prot-sectiune">
-              <div class="prot-sectiune-head">
-                <h3>Stabilitate &amp; Forță</h3>
-              </div>
-              <div id="prezenta-grupe"></div>
-            </div>
-
-            <div class="prot-sectiune">
-              <div class="prot-sectiune-head">
-                <h3>Cardio</h3>
-                <span class="prot-durata-chip">opțional</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between">
-                <span style="font-size:13px">S-a făcut cardio azi</span>
-                <div class="prot-switch off" id="prezenta-cardio-switch" onclick="togglePrezentaCardio()"><div class="prot-buliniu"></div></div>
-              </div>
-              <div id="prezenta-cardio-detalii" style="display:none;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">
-                <div class="prot-chip activ" onclick="alegePrezentaCardioTip(this,'Bicicletă')">Bicicletă</div>
-                <div class="prot-chip" onclick="alegePrezentaCardioTip(this,'Scăriță')">Scăriță</div>
-                <div class="prot-chip" onclick="alegePrezentaCardioTip(this,'Altceva')">Altceva</div>
-                <span style="flex-grow:1"></span>
-                <input class="prot-durata" id="prezenta-cardio-durata" placeholder="min" inputmode="numeric">
-                <span style="font-size:11px;color:#706e66">min</span>
-              </div>
-            </div>
-          </div>
+      <div class="card" style="max-width:720px;width:100%;max-height:calc(100vh - 48px);overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px">
+          <h2 style="margin:0">Prezență &ndash; ${prenume}</h2>
+          <button type="button" class="btn ap-ca-trecuta" onclick="aparateCaDataTrecuta('${id}')">Ca data trecută</button>
         </div>
-
-        <div class="prot-nota-box">
-          <div class="prot-nota-box-cap">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e0b85e" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            <span>Cum s-a simțit azi?</span>
-          </div>
-          <input type="text" id="prezenta-nota" placeholder="ex: obosit azi, genunchi drept sensibil, totul ok...">
-        </div>
-
-        <div class="prot-plan-box">
-          <div class="prot-nota-box-cap">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a79ded" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-            <span>Plan pentru data viitoare</span>
-          </div>
-          <textarea id="prezenta-plan-viitor" rows="2" placeholder="ex: de continuat stabilitate umar, de introdus genunchi..."></textarea>
-        </div>
-
+        <div id="ap-mesaj" style="font-size:12px;color:#e08585;margin-bottom:6px"></div>
+        ${htmlAparate()}
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anulează</button>
       </div>
     </div>
   `;
   document.getElementById('modal-container').innerHTML = html;
-  randPrezentaMobilitate();
-  randPrezentaGrupe();
-}
-
-function randPrezentaMobilitate() {
-  document.getElementById('prezenta-mobilitate-lista').innerHTML = prezentaMobilitate.map((p, i) => `
-    <div class="prot-pas ${p.bifat ? 'bifat' : ''}">
-      <div class="prot-check" onclick="togglePrezentaMobilitate(${i})">${p.bifat ? '&#10003;' : ''}</div>
-      <div class="prot-continut">
-        <div class="prot-nume" onclick="togglePrezentaMobilitate(${i})">${p.nume}</div>
-        <div class="prot-detaliu">${p.detaliu}</div>
-        ${!p.bifat ? `<input class="prot-nota" placeholder="ce s-a modificat sau de ce s-a renunțat..." value="${p.nota}" oninput="prezentaMobilitate[${i}].nota=this.value">` : ''}
-      </div>
-    </div>
-  `).join('');
-}
-function togglePrezentaMobilitate(i) { prezentaMobilitate[i].bifat = !prezentaMobilitate[i].bifat; randPrezentaMobilitate(); }
-function bifeazaToatePrezentaMobilitate() { prezentaMobilitate.forEach(p => { p.bifat = true; p.nota = ''; }); randPrezentaMobilitate(); }
-
-function randPrezentaGrupe() {
-  document.getElementById('prezenta-grupe').innerHTML = `
-    <div class="prot-grup">
-      <textarea rows="6" placeholder="${PLACEHOLDER_STABILITATE}" oninput="prezentaGrupe=this.value">${prezentaGrupe}</textarea>
-    </div>
-  `;
-}
-
-function togglePrezentaCardio() {
-  prezentaCardio.activ = !prezentaCardio.activ;
-  document.getElementById('prezenta-cardio-switch').classList.toggle('off', !prezentaCardio.activ);
-  document.getElementById('prezenta-cardio-detalii').style.display = prezentaCardio.activ ? 'flex' : 'none';
-}
-function alegePrezentaCardioTip(el, tip) {
-  prezentaCardio.tip = tip;
-  el.parentElement.querySelectorAll('.prot-chip').forEach(c => c.classList.remove('activ'));
-  el.classList.add('activ');
-}
-
-// Compune textul salvat in coloana "exercitii" din starea structurata a formularului -
-// ramane text simplu, ca sa nu stricam istoricul/PDF-ul care afiseaza deja acest camp ca atare.
-function formateazaExercitiiProtocol() {
-  const parti = [];
-
-  const nebifate = prezentaMobilitate.filter(p => !p.bifat);
-  if (!nebifate.length) {
-    parti.push('Mobilitate: toate ca de obicei');
-  } else {
-    const exceptii = nebifate.map(p => p.nota ? `${p.nume} (${p.nota})` : p.nume).join(', ');
-    parti.push(`Mobilitate: toate ca de obicei, cu excepția: ${exceptii}`);
-  }
-
-  const stabilitate = prezentaGrupe.trim();
-  if (stabilitate) parti.push(`Stabilitate & Forță: ${stabilitate}`);
-
-  if (prezentaCardio.activ) {
-    const durata = prezentaCardio.durata ? `, ${prezentaCardio.durata} min` : '';
-    parti.push(`Cardio: ${prezentaCardio.tip}${durata}`);
-  }
-
-  return parti.join('\n');
 }
 
 async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
-  prezentaCardio.durata = document.getElementById('prezenta-cardio-durata').value.trim();
-  const observatii = document.getElementById('prezenta-nota').value.trim();
-  const plan_viitor = document.getElementById('prezenta-plan-viitor').value.trim();
-  const exercitii = formateazaExercitiiProtocol();
-  await apel(`/api/programari/${id}/prezent`, { method: 'PATCH', body: JSON.stringify({ exercitii, observatii, plan_viitor }) });
+  const buton = event.target;
+  buton.disabled = true;
+  const rezultat = await apel(`/api/programari/${id}/prezent`, {
+    method: 'PATCH',
+    body: JSON.stringify({ aparate: aparateColecteaza() })
+  });
+  if (rezultat.eroare) {
+    document.getElementById('ap-mesaj').textContent = rezultat.eroare;
+    buton.disabled = false;
+    return;
+  }
 
   const areMaiPutinDe3 = statusCurent !== 'prezent' && totalSedinte != null && sedinteEfectuate != null
     && totalSedinte - (sedinteEfectuate + 1) === 2;

@@ -101,6 +101,10 @@ CREATE TABLE IF NOT EXISTS programari (
 -- centru), nu doar memoria celui care a vazut ultima oara pacientul.
 ALTER TABLE programari ADD COLUMN IF NOT EXISTS plan_viitor text;
 
+-- Ce s-a lucrat si ce urmeaza, pe aparate: [{"n":"TRX","azi":"flotari","viitor":"mai grele"}].
+-- "exercitii" si "plan_viitor" se compun din el (text simplu), ca restul aplicatiei sa le afiseze ca pana acum.
+ALTER TABLE programari ADD COLUMN IF NOT EXISTS aparate jsonb;
+
 -- Prima discutie/consultatie cu un potential pacient - nu se taxeaza, deci nu e un pacient
 -- inca (nu exista fisa, abonament sau plata). Separata de "programari" tocmai ca sa nu
 -- apara niciodata in statistici (pacienti/sedinte) sau in cautarea de pacienti.
