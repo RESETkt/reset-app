@@ -13,24 +13,6 @@ function esteWeekend(data_ora) {
   return zi === 0 || zi === 6;
 }
 
-// Sedinta se noteaza pe aparate: [{ n, azi, viitor }]. Din ele se compun, ca text simplu, "exercitii"
-// (ce s-a lucrat) si planul pentru data viitoare, ca fisa, istoricul si calendarul sa le afiseze ca pana acum.
-function compuneAparate(aparate) {
-  if (!Array.isArray(aparate)) return null;
-  const curat = aparate
-    .map(a => ({
-      n: String(a?.n || '').trim().slice(0, 60),
-      azi: String(a?.azi || '').trim().slice(0, 500),
-      viitor: String(a?.viitor || '').trim().slice(0, 500)
-    }))
-    .filter(a => a.n && (a.azi || a.viitor));
-  return {
-    aparate: curat,
-    exercitii: curat.filter(a => a.azi).map(a => `${a.n}: ${a.azi}`).join('\n') || null,
-    plan: curat.filter(a => a.viitor).map(a => `${a.n}: ${a.viitor}`).join('\n') || null
-  };
-}
-
 // Programarile dintr-un interval (implicit azi), pentru calendar
 router.get('/', async (req, res) => {
   const { de_la, pana_la } = req.query;
@@ -95,7 +77,6 @@ router.post('/', async (req, res) => {
 // Marcheaza prezenta: incrementeaza sedintele efectuate din abonament si salveaza exercitii/observatii
 router.patch('/:id/prezent', async (req, res) => {
   const { exercitii, observatii, plan_viitor } = req.body;
-  const comp = compuneAparate(req.body.aparate);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -114,8 +95,8 @@ router.patch('/:id/prezent', async (req, res) => {
       abonament_id = activ.rows[0]?.id || null;
     }
     const prog = await client.query(
-      `UPDATE programari SET status='prezent', exercitii=$1, observatii=$2, plan_viitor=$3, aparate=COALESCE($6::jsonb, aparate), prezent_marcat_la=now(), abonament_id=$4 WHERE id=$5 RETURNING *`,
-      [comp ? comp.exercitii : exercitii, comp ? null : observatii, comp ? comp.plan : (plan_viitor || null), abonament_id, req.params.id, comp ? JSON.stringify(comp.aparate) : null]
+      `UPDATE programari SET status='prezent', exercitii=$1, observatii=$2, plan_viitor=$3, prezent_marcat_la=now(), abonament_id=$4 WHERE id=$5 RETURNING *`,
+      [exercitii, observatii, plan_viitor || null, abonament_id, req.params.id]
     );
     if (!eraDejaPrezent && abonament_id) {
       await client.query(
@@ -136,7 +117,6 @@ router.patch('/:id/prezent', async (req, res) => {
 // Adauga retroactiv o sedinta uitata (nu exista programare pentru ea) - fisa pacientului > istoric
 router.post('/sedinta-trecuta', async (req, res) => {
   const { pacient_id, kineto_id, data_ora, exercitii, observatii, plan_viitor } = req.body;
-  const comp = compuneAparate(req.body.aparate);
   if (!pacient_id || !data_ora) {
     return res.status(400).json({ eroare: 'Pacientul si data sunt obligatorii.' });
   }
@@ -152,11 +132,9 @@ router.post('/sedinta-trecuta', async (req, res) => {
     );
     const abonament_id = activ.rows[0]?.id || null;
     const prog = await client.query(
-      `INSERT INTO programari (pacient_id, kineto_id, abonament_id, data_ora, status, exercitii, observatii, plan_viitor, aparate, prezent_marcat_la)
-       VALUES ($1,$2,$3,$4,'prezent',$5,$6,$7,$8::jsonb,now()) RETURNING *`,
-      [pacient_id, kineto_id || null, abonament_id, data_ora,
-        comp ? comp.exercitii : (exercitii || null), comp ? null : (observatii || null), comp ? comp.plan : (plan_viitor || null),
-        comp ? JSON.stringify(comp.aparate) : null]
+      `INSERT INTO programari (pacient_id, kineto_id, abonament_id, data_ora, status, exercitii, observatii, plan_viitor, prezent_marcat_la)
+       VALUES ($1,$2,$3,$4,'prezent',$5,$6,$7,now()) RETURNING *`,
+      [pacient_id, kineto_id || null, abonament_id, data_ora, exercitii || null, observatii || null, plan_viitor || null]
     );
     if (abonament_id) {
       await client.query(`UPDATE abonamente SET sedinte_efectuate = sedinte_efectuate + 1 WHERE id = $1`, [abonament_id]);
@@ -174,35 +152,33 @@ router.post('/sedinta-trecuta', async (req, res) => {
 // Editeaza retroactiv exercitiile/observatiile unei sedinte deja marcate prezenta - fisa pacientului > istoric
 router.patch('/:id/editeaza-istoric', async (req, res) => {
   const { exercitii, observatii, plan_viitor, data } = req.body;
-  const comp = compuneAparate(req.body.aparate);
   if (data && !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
     return res.status(400).json({ eroare: 'Data sedintei nu este valida.' });
   }
   const { rows } = await pool.query(
-    `UPDATE programari SET exercitii=$1, observatii=$2, plan_viitor=$3, aparate=COALESCE($6::jsonb, aparate),
+    `UPDATE programari SET exercitii=$1, observatii=$2, plan_viitor=$3,
             data_ora = CASE WHEN $5::date IS NULL THEN data_ora ELSE ($5::date + data_ora::time)::timestamptz END
      WHERE id=$4 AND status='prezent' RETURNING *`,
-    [comp ? comp.exercitii : (exercitii || null), comp ? null : (observatii || null), comp ? comp.plan : (plan_viitor || null),
-      req.params.id, data || null, comp ? JSON.stringify(comp.aparate) : null]
+    [exercitii || null, observatii || null, plan_viitor || null, req.params.id, data || null]
   );
   if (!rows[0]) return res.status(404).json({ eroare: 'Sedinta inexistenta.' });
   res.json(rows[0]);
 });
 
-// Aparatele notate la ultima sedinta anterioara a pacientului (pentru "Ca data trecuta")
-router.get('/:id/ultima-aparate', async (req, res) => {
+// Ce s-a lucrat la ultima sedinta anterioara a pacientului (pentru "Ca data trecuta")
+router.get('/:id/ultima-sedinta', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT prev.aparate FROM programari p
+      `SELECT prev.exercitii FROM programari p
        JOIN LATERAL (
-         SELECT aparate FROM programari
-         WHERE pacient_id = p.pacient_id AND status = 'prezent' AND aparate IS NOT NULL AND data_ora < p.data_ora
+         SELECT exercitii FROM programari
+         WHERE pacient_id = p.pacient_id AND status = 'prezent' AND exercitii IS NOT NULL AND data_ora < p.data_ora
          ORDER BY data_ora DESC LIMIT 1
        ) prev ON true
        WHERE p.id = $1`,
       [req.params.id]
     );
-    res.json({ aparate: rows[0]?.aparate || null });
+    res.json({ exercitii: rows[0]?.exercitii || null });
   } catch (e) {
     res.status(500).json({ eroare: e.message });
   }

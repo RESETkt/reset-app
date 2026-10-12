@@ -300,29 +300,20 @@ th, td { text-align: left; }
   .grid-3 .metric:nth-child(3) { grid-column: span 1; }
 }
 
-/* --- Formular Prezenta pe aparate: buton cu chenarele Azi / Data viitoare in dreptul lui --- */
-.ap-coloane, .ap-rand { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 8px; }
-.ap-coloane { padding: 0 0 6px; font-size: 11px; color: #706e66; }
-.ap-coloane .viitor { color: #8f87cf; }
-.ap-rand { align-items: center; margin-bottom: 8px; }
-.ap-btn { width: 100%; text-align: left; padding: 10px 14px; border: 1px solid #45443f; border-radius: 9px; background: #1e1e1d; color: #c9c7bd; font-size: 14px; font-family: inherit; cursor: pointer; }
-.ap-btn:hover { border-color: #706e66; color: #ece9e2; }
-.ap-btn.deschis { border-color: #1f8a7a; background: rgba(31, 138, 122, 0.16); color: #ece9e2; font-weight: 600; }
-.ap-camp { width: 100%; background: #1e1e1d; border: 1px solid #45443f; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #ece9e2; font-family: inherit; visibility: hidden; }
-.ap-rand.deschis .ap-camp { visibility: visible; }
-.ap-camp::placeholder { color: transparent; }
+/* --- Formular sedinta: aparatele sunt butoane care scriu in campul "Azi", colorate cat sunt folosite --- */
+.ap-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ap-chip { padding: 10px 14px; border: 1px solid #45443f; border-radius: 9px; background: #1e1e1d; color: #c9c7bd; font-size: 14px; font-family: inherit; cursor: pointer; }
+.ap-chip:hover { border-color: #706e66; color: #ece9e2; }
+.ap-chip.on { border-color: #1f8a7a; background: rgba(31, 138, 122, 0.2); color: #ece9e2; font-weight: 600; }
+.ap-eticheta { display: block; font-size: 12px; color: #9a988e; margin: 14px 0 5px 2px; }
+.ap-eticheta.viitor { color: #a79ded; }
+.ap-camp { width: 100%; background: #1e1e1d; border: 1px solid #45443f; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.45; color: #ece9e2; font-family: inherit; resize: vertical; }
 .ap-camp:focus { outline: none; border-color: #1f8a7a; }
 .ap-camp.viitor { border-color: rgba(127, 119, 221, 0.4); }
 .ap-camp.viitor:focus { border-color: #a79ded; }
 .ap-ca-trecuta { padding: 6px 12px; font-size: 12px; color: #7fd9a8; border-color: #2f6a52; background: transparent; white-space: nowrap; }
 .ap-ca-trecuta:hover { background: #1f3626; }
-@media (max-width: 640px) {
-  .ap-coloane { display: none; }
-  .ap-rand { grid-template-columns: 1fr; gap: 6px; margin-bottom: 10px; }
-  .ap-camp { visibility: visible; display: none; }
-  .ap-rand.deschis .ap-camp { display: block; }
-  .ap-camp::placeholder { color: #706e66; }
-}
+
 /* ---- Evaluarea functionala (evaluare.js) ---- */
 .ev-cap { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 8px; }
 .ev-gol { font-size: 13px; color: #9a988e; margin-top: 8px; }

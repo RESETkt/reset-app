@@ -977,7 +977,7 @@ async function confirmaMutaSedintaAbonament(pacientId, sedintaId) {
 function aratatFormularEditareSedinta(pacientId, sedintaId) {
   const sedinta = sedinteIstoricCache.find(s => s.id === sedintaId);
   if (!sedinta) return;
-  if (Array.isArray(sedinta.aparate)) return aratatFormularEditareSedintaAparate(pacientId, sedinta);
+  if (!sedinta.observatii) return aratatFormularEditareSedintaAparate(pacientId, sedinta);
   const html = `
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
       <div class="card" style="max-width:420px;width:90%">
@@ -999,16 +999,15 @@ function aratatFormularEditareSedinta(pacientId, sedintaId) {
   document.getElementById('modal-container').innerHTML = html;
 }
 
-// Sedintele notate pe aparate se editeaza cu aceeasi lista; cele vechi (text liber) raman cu formularul de mai sus
+// Sedintele fara observatii se editeaza cu aceleasi butoane de aparate; cele vechi, cu observatii, raman cu formularul de mai sus
 function aratatFormularEditareSedintaAparate(pacientId, sedinta) {
-  aparateInit(sedinta.aparate);
   const html = `
     <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
-      <div class="card" style="max-width:720px;width:100%">
+      <div class="card" style="max-width:560px;width:100%">
         <h2>Editeaza sedinta din ${new Date(sedinta.data_ora).toLocaleDateString('ro-RO')}</h2>
         <label>Data sedintei</label>
         <input id="istoric-data" type="date" value="${dataLocala(new Date(sedinta.data_ora))}" style="width:100%;margin-bottom:14px" onclick="this.showPicker && this.showPicker()">
-        ${htmlAparate()}
+        ${htmlCampuriSedinta(sedinta.exercitii, sedinta.plan_viitor)}
         <button class="btn" style="width:100%;margin-top:16px" onclick="salveazaEditareSedinta('${sedinta.id}','${pacientId}')">Salveaza</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
         <div id="eroare-editare-sedinta" style="color:#e08585;font-size:12px;margin-top:8px"></div>
@@ -1016,13 +1015,14 @@ function aratatFormularEditareSedintaAparate(pacientId, sedinta) {
     </div>
   `;
   document.getElementById('modal-container').innerHTML = html;
+  aparateActualizeaza();
 }
 
 async function salveazaEditareSedinta(sedintaId, pacientId) {
   const data = document.getElementById('istoric-data').value;
-  const peAparate = !!document.getElementById('aparate-lista');
+  const peAparate = !!document.getElementById('ap-azi');
   const corp = peAparate
-    ? { aparate: aparateColecteaza(), data }
+    ? { exercitii: curataTextAparate(document.getElementById('ap-azi').value), plan_viitor: document.getElementById('ap-plan').value.trim(), data }
     : {
         exercitii: document.getElementById('istoric-exercitii').value.trim(),
         observatii: document.getElementById('istoric-observatii').value.trim(),
@@ -1046,10 +1046,9 @@ async function salveazaEditareSedinta(sedintaId, pacientId) {
 
 async function aratatFormularSedintaNoua(pacientId) {
   const kinetoUtilizatori = await apel('/api/utilizatori');
-  aparateInit([]);
   const html = `
     <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:110" onclick="if(event.target===this) aratatIstoricSedinte('${pacientId}')">
-      <div class="card" style="max-width:720px;width:100%">
+      <div class="card" style="max-width:560px;width:100%">
         <h2>Adauga sedinta uitata</h2>
         <label>Data sedintei</label>
         <input id="sedinta-noua-data" type="date" style="width:100%;margin-bottom:10px" value="${dataLocala(new Date())}" onclick="this.showPicker && this.showPicker()">
@@ -1058,7 +1057,7 @@ async function aratatFormularSedintaNoua(pacientId) {
           <option value="">Nealocat</option>
           ${kinetoUtilizatori.map(u => `<option value="${u.id}">${u.nume}</option>`).join('')}
         </select>
-        ${htmlAparate()}
+        ${htmlCampuriSedinta('', '')}
         <button class="btn" style="width:100%;margin-top:16px" onclick="salveazaSedintaNoua('${pacientId}')">Salveaza sedinta</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="aratatIstoricSedinte('${pacientId}')">Anuleaza</button>
         <div id="eroare-sedinta-noua" style="color:#e08585;font-size:12px;margin-top:8px"></div>
@@ -1083,7 +1082,7 @@ async function salveazaSedintaNoua(pacientId) {
   buton.disabled = true;
   const rezultat = await apel('/api/programari/sedinta-trecuta', {
     method: 'POST',
-    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, aparate: aparateColecteaza() })
+    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, exercitii: curataTextAparate(document.getElementById('ap-azi').value), plan_viitor: document.getElementById('ap-plan').value.trim() })
   });
 
   if (rezultat.eroare) {
@@ -2059,105 +2058,90 @@ async function marcheaza(id, status) {
   incarcaCalendarSaptamana();
 }
 
-// Sedinta se noteaza pe aparate: un buton pentru fiecare, iar la click apar chenarele "Azi" (ce s-a lucrat)
-// si "Data viitoare" (planul) in dreptul lui. Ordinea e cea din sala.
+// Sedinta se noteaza intr-un singur camp ("Azi"). Aparatele sunt butoane-scurtatura: la click isi scriu numele
+// in camp, iar butonul ramane colorat cat timp aparatul apare in text. "Respirații" doar se bifeaza (nu are ce scrie).
 const APARATE = ['Respirații', 'Mobilitate', 'Fără aparat', 'Benzi', 'TRX', 'Kettlebell', 'StickMobility', 'RIP', 'Lada', 'Stepper', 'Haltere', 'Altceva'];
-
-let aparateStare = [];
+const APARATE_FARA_TEXT = ['Respirații'];
 
 function scapaAtribut(s) {
   return scapaHtml(s).replace(/"/g, '&quot;');
 }
 
-// initial: [{ n, azi, viitor }] - aparatele care au deja text vin deschise
-function aparateInit(initial) {
-  const stare = APARATE.map(n => ({ n, azi: '', viitor: '', deschis: false }));
-  (initial || []).forEach(a => {
-    let rand = stare.find(x => x.n === a.n);
-    if (!rand) {
-      rand = { n: a.n, azi: '', viitor: '', deschis: false };
-      stare.push(rand);
-    }
-    rand.azi = a.azi || '';
-    rand.viitor = a.viitor || '';
-    rand.deschis = !!(rand.azi || rand.viitor);
+function aparatInLinie(n, linie) {
+  const l = linie.trim();
+  return l === n || l.startsWith(n + ':');
+}
+
+function aparateActualizeaza() {
+  const linii = document.getElementById('ap-azi').value.split('\n');
+  document.querySelectorAll('.ap-chip').forEach(b => {
+    b.classList.toggle('on', linii.some(l => aparatInLinie(b.dataset.n, l)));
   });
-  aparateStare = stare;
-}
-
-function htmlRandAparat(a, i) {
-  return `
-    <div class="ap-rand ${a.deschis ? 'deschis' : ''}" id="ap-rand-${i}">
-      <button type="button" class="ap-btn ${a.deschis ? 'deschis' : ''}" onclick="aparateApasa(${i})">${scapaHtml(a.n)}</button>
-      <input class="ap-camp" id="ap-azi-${i}" placeholder="Azi" value="${scapaAtribut(a.azi)}" autocomplete="off" oninput="aparateStare[${i}].azi=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('ap-viitor-${i}').focus()}">
-      <input class="ap-camp viitor" id="ap-viitor-${i}" placeholder="Data viitoare" value="${scapaAtribut(a.viitor)}" autocomplete="off" oninput="aparateStare[${i}].viitor=this.value">
-    </div>`;
-}
-
-function htmlAparate() {
-  return `
-    <div class="ap-coloane"><span></span><span>Azi</span><span class="viitor">Data viitoare</span></div>
-    <div id="aparate-lista">${aparateStare.map(htmlRandAparat).join('')}</div>`;
 }
 
 function aparateApasa(i) {
-  const a = aparateStare[i];
-  const rand = document.getElementById(`ap-rand-${i}`);
-  const buton = rand.querySelector('.ap-btn');
-  if (!a.deschis) {
-    a.deschis = true;
-    rand.classList.add('deschis');
-    buton.classList.add('deschis');
-    document.getElementById(`ap-azi-${i}`).focus();
-  } else if (!a.azi && !a.viitor) {
-    a.deschis = false;
-    rand.classList.remove('deschis');
-    buton.classList.remove('deschis');
-  } else {
-    document.getElementById(`ap-azi-${i}`).focus();
+  const n = APARATE[i];
+  const ta = document.getElementById('ap-azi');
+  const linii = ta.value.split('\n');
+  const idx = linii.findIndex(l => aparatInLinie(n, l));
+  const faraText = APARATE_FARA_TEXT.includes(n);
+  if (idx >= 0) {
+    // al doilea click scoate aparatul doar daca nu are nimic scris; altfel te duce la scris
+    if (faraText || linii[idx].trim() === n + ':') {
+      linii.splice(idx, 1);
+      ta.value = linii.join('\n');
+    } else {
+      ta.focus();
+    }
+    aparateActualizeaza();
+    return;
   }
+  let v = ta.value;
+  if (v && !v.endsWith('\n')) v += '\n';
+  ta.value = v + (faraText ? n + '\n' : n + ': ');
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  aparateActualizeaza();
 }
 
-function aparateColecteaza() {
-  return aparateStare
-    .filter(a => a.azi.trim() || a.viitor.trim())
-    .map(a => ({ n: a.n, azi: a.azi.trim(), viitor: a.viitor.trim() }));
+// Scoate randurile ramase doar cu numele aparatului ("TRX:") fara nimic scris dupa
+function curataTextAparate(v) {
+  return v.split('\n').filter(l => !APARATE.some(n => l.trim() === n + ':')).join('\n').trim();
 }
 
-// Completeaza "Azi" cu ce s-a lucrat la ultima sedinta, doar la aparatele ramase goale
+function htmlCampuriSedinta(azi, plan) {
+  return `
+    <div class="ap-chips">${APARATE.map((n, i) => `<button type="button" class="ap-chip" data-n="${scapaAtribut(n)}" onclick="aparateApasa(${i})">${scapaHtml(n)}</button>`).join('')}</div>
+    <label class="ap-eticheta">Azi</label>
+    <textarea class="ap-camp" id="ap-azi" rows="4" oninput="aparateActualizeaza()">${scapaHtml(azi || '')}</textarea>
+    <label class="ap-eticheta viitor">Data viitoare</label>
+    <textarea class="ap-camp viitor" id="ap-plan" rows="2">${scapaHtml(plan || '')}</textarea>`;
+}
+
+// Adauga sub ce e deja scris textul de la ultima sedinta a pacientului
 async function aparateCaDataTrecuta(programareId) {
   const mesajEl = document.getElementById('ap-mesaj');
   mesajEl.textContent = '';
-  const r = await apel(`/api/programari/${programareId}/ultima-aparate`);
-  if (!r.aparate || !r.aparate.length) {
-    mesajEl.textContent = r.eroare || 'Nu exista o sedinta anterioara notata pe aparate.';
+  const r = await apel(`/api/programari/${programareId}/ultima-sedinta`);
+  if (!r.exercitii) {
+    mesajEl.textContent = r.eroare || 'Nu exista o sedinta anterioara notata.';
     return;
   }
-  r.aparate.forEach(prev => {
-    let a = aparateStare.find(x => x.n === prev.n);
-    if (!a) {
-      a = { n: prev.n, azi: '', viitor: '', deschis: false };
-      aparateStare.push(a);
-    }
-    if (prev.azi && !a.azi) {
-      a.azi = prev.azi;
-      a.deschis = true;
-    }
-  });
-  document.getElementById('aparate-lista').innerHTML = aparateStare.map(htmlRandAparat).join('');
+  const ta = document.getElementById('ap-azi');
+  ta.value = ta.value.trim() ? ta.value.replace(/\n*$/, '\n') + r.exercitii : r.exercitii;
+  aparateActualizeaza();
 }
 
 function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
-  aparateInit([]);
   const html = `
     <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;z-index:200" onclick="if(event.target===this) inchideModalProgramare()">
-      <div class="card" style="max-width:720px;width:100%;max-height:calc(100vh - 48px);overflow-y:auto">
+      <div class="card" style="max-width:560px;width:100%;max-height:calc(100vh - 48px);overflow-y:auto">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px">
           <h2 style="margin:0">Prezență &ndash; ${prenume}</h2>
           <button type="button" class="btn ap-ca-trecuta" onclick="aparateCaDataTrecuta('${id}')">Ca data trecută</button>
         </div>
         <div id="ap-mesaj" style="font-size:12px;color:#e08585;margin-bottom:6px"></div>
-        ${htmlAparate()}
+        ${htmlCampuriSedinta('', '')}
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anulează</button>
       </div>
@@ -2171,7 +2155,10 @@ async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
   buton.disabled = true;
   const rezultat = await apel(`/api/programari/${id}/prezent`, {
     method: 'PATCH',
-    body: JSON.stringify({ aparate: aparateColecteaza() })
+    body: JSON.stringify({
+      exercitii: curataTextAparate(document.getElementById('ap-azi').value),
+      plan_viitor: document.getElementById('ap-plan').value.trim()
+    })
   });
   if (rezultat.eroare) {
     document.getElementById('ap-mesaj').textContent = rezultat.eroare;

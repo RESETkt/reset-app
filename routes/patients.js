@@ -130,7 +130,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:id/sedinte', async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT p.id, p.data_ora, p.exercitii, p.observatii, p.plan_viitor, p.aparate, p.abonament_id, u.nume AS kineto_nume
+    `SELECT p.id, p.data_ora, p.exercitii, p.observatii, p.plan_viitor, p.abonament_id, u.nume AS kineto_nume
      FROM programari p
      LEFT JOIN utilizatori u ON u.id = p.kineto_id
      WHERE p.pacient_id = $1 AND p.status = 'prezent'
