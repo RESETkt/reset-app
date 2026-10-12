@@ -1022,7 +1022,7 @@ async function salveazaEditareSedinta(sedintaId, pacientId) {
   const data = document.getElementById('istoric-data').value;
   const peAparate = !!document.getElementById('ap-azi');
   const corp = peAparate
-    ? { exercitii: curataTextAparate(document.getElementById('ap-azi').value), plan_viitor: document.getElementById('ap-plan').value.trim(), data }
+    ? { exercitii: exercitiiDinFormular(), plan_viitor: document.getElementById('ap-plan').value.trim(), data }
     : {
         exercitii: document.getElementById('istoric-exercitii').value.trim(),
         observatii: document.getElementById('istoric-observatii').value.trim(),
@@ -1082,7 +1082,7 @@ async function salveazaSedintaNoua(pacientId) {
   buton.disabled = true;
   const rezultat = await apel('/api/programari/sedinta-trecuta', {
     method: 'POST',
-    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, exercitii: curataTextAparate(document.getElementById('ap-azi').value), plan_viitor: document.getElementById('ap-plan').value.trim() })
+    body: JSON.stringify({ pacient_id: pacientId, kineto_id, data_ora: `${data} 12:00:00`, exercitii: exercitiiDinFormular(), plan_viitor: document.getElementById('ap-plan').value.trim() })
   });
 
   if (rezultat.eroare) {
@@ -2059,9 +2059,11 @@ async function marcheaza(id, status) {
 }
 
 // Sedinta se noteaza intr-un singur camp ("Azi"). Aparatele sunt butoane-scurtatura: la click isi scriu numele
-// in camp, iar butonul ramane colorat cat timp aparatul apare in text. "Respirații" doar se bifeaza (nu are ce scrie).
-const APARATE = ['Respirații', 'Mobilitate', 'Fără aparat', 'Benzi', 'TRX', 'Kettlebell', 'StickMobility', 'RIP', 'Lada', 'Stepper', 'Haltere', 'Altceva'];
-const APARATE_FARA_TEXT = ['Respirații'];
+// in camp, iar butonul ramane colorat cat timp aparatul apare in text. "Respirații" doar se bifeaza: nu scrie nimic
+// in camp (nu are ce completa), se salveaza ca primul rand al textului si se scoate din camp la editare.
+const APARATE = ['Respirații', 'Mobilitate', 'Stabilitate', 'Benzi', 'TRX', 'Kettlebell', 'StickMobility', 'RIP', 'Lada', 'Stepper', 'Agilitate', 'Haltere', 'Altceva'];
+const RESPIRATII = 'Respirații';
+let respiratiiBifat = false;
 
 function scapaAtribut(s) {
   return scapaHtml(s).replace(/"/g, '&quot;');
@@ -2072,22 +2074,36 @@ function aparatInLinie(n, linie) {
   return l === n || l.startsWith(n + ':');
 }
 
+// Scoate randul "Respirații" din text si intoarce restul + daca a fost bifat
+function extrageRespiratii(text) {
+  const linii = (text || '').split('\n');
+  const idx = linii.findIndex(l => l.trim() === RESPIRATII);
+  if (idx < 0) return { text: text || '', bifat: false };
+  linii.splice(idx, 1);
+  return { text: linii.join('\n'), bifat: true };
+}
+
 function aparateActualizeaza() {
   const linii = document.getElementById('ap-azi').value.split('\n');
   document.querySelectorAll('.ap-chip').forEach(b => {
-    b.classList.toggle('on', linii.some(l => aparatInLinie(b.dataset.n, l)));
+    const n = b.dataset.n;
+    b.classList.toggle('on', n === RESPIRATII ? respiratiiBifat : linii.some(l => aparatInLinie(n, l)));
   });
 }
 
 function aparateApasa(i) {
   const n = APARATE[i];
+  if (n === RESPIRATII) {
+    respiratiiBifat = !respiratiiBifat;
+    aparateActualizeaza();
+    return;
+  }
   const ta = document.getElementById('ap-azi');
   const linii = ta.value.split('\n');
   const idx = linii.findIndex(l => aparatInLinie(n, l));
-  const faraText = APARATE_FARA_TEXT.includes(n);
   if (idx >= 0) {
     // al doilea click scoate aparatul doar daca nu are nimic scris; altfel te duce la scris
-    if (faraText || linii[idx].trim() === n + ':') {
+    if (linii[idx].trim() === n + ':') {
       linii.splice(idx, 1);
       ta.value = linii.join('\n');
     } else {
@@ -2098,7 +2114,7 @@ function aparateApasa(i) {
   }
   let v = ta.value;
   if (v && !v.endsWith('\n')) v += '\n';
-  ta.value = v + (faraText ? n + '\n' : n + ': ');
+  ta.value = v + n + ': ';
   ta.focus();
   ta.setSelectionRange(ta.value.length, ta.value.length);
   aparateActualizeaza();
@@ -2109,11 +2125,19 @@ function curataTextAparate(v) {
   return v.split('\n').filter(l => !APARATE.some(n => l.trim() === n + ':')).join('\n').trim();
 }
 
+// Textul salvat la "exercitii": Respirații (daca e bifat) pe primul rand, apoi ce s-a scris in camp
+function exercitiiDinFormular() {
+  const text = curataTextAparate(document.getElementById('ap-azi').value);
+  return [respiratiiBifat ? RESPIRATII : '', text].filter(Boolean).join('\n');
+}
+
 function htmlCampuriSedinta(azi, plan) {
+  const extras = extrageRespiratii(azi);
+  respiratiiBifat = extras.bifat;
   return `
-    <div class="ap-chips">${APARATE.map((n, i) => `<button type="button" class="ap-chip" data-n="${scapaAtribut(n)}" onclick="aparateApasa(${i})">${scapaHtml(n)}</button>`).join('')}</div>
+    <div class="ap-chips">${APARATE.map((n, i) => `<button type="button" class="ap-chip ${n === RESPIRATII && respiratiiBifat ? 'on' : ''}" data-n="${scapaAtribut(n)}" onclick="aparateApasa(${i})">${scapaHtml(n)}</button>`).join('')}</div>
     <label class="ap-eticheta">Azi</label>
-    <textarea class="ap-camp" id="ap-azi" rows="4" oninput="aparateActualizeaza()">${scapaHtml(azi || '')}</textarea>
+    <textarea class="ap-camp" id="ap-azi" rows="4" oninput="aparateActualizeaza()">${scapaHtml(extras.text)}</textarea>
     <label class="ap-eticheta viitor">Data viitoare</label>
     <textarea class="ap-camp viitor" id="ap-plan" rows="2">${scapaHtml(plan || '')}</textarea>`;
 }
@@ -2127,8 +2151,12 @@ async function aparateCaDataTrecuta(programareId) {
     mesajEl.textContent = r.eroare || 'Nu exista o sedinta anterioara notata.';
     return;
   }
+  const extras = extrageRespiratii(r.exercitii);
+  if (extras.bifat) respiratiiBifat = true;
   const ta = document.getElementById('ap-azi');
-  ta.value = ta.value.trim() ? ta.value.replace(/\n*$/, '\n') + r.exercitii : r.exercitii;
+  if (extras.text.trim()) {
+    ta.value = ta.value.trim() ? ta.value.replace(/\n*$/, '\n') + extras.text : extras.text;
+  }
   aparateActualizeaza();
 }
 
@@ -2156,7 +2184,7 @@ async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
   const rezultat = await apel(`/api/programari/${id}/prezent`, {
     method: 'PATCH',
     body: JSON.stringify({
-      exercitii: curataTextAparate(document.getElementById('ap-azi').value),
+      exercitii: exercitiiDinFormular(),
       plan_viitor: document.getElementById('ap-plan').value.trim()
     })
   });
