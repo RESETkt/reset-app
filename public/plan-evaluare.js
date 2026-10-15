@@ -531,6 +531,7 @@ function evpDeseneazaAzi() {
       <div class="evp-n"><span>${evpEsc(r.pacient.nume + ' ' + r.pacient.prenume)}</span><small>${r.ora}${r.status === 'prezent' ? ' · prezent' : ''}</small></div>
       <div class="evp-d">${evpEsc(r.pacient.diagnostic || 'fără diagnostic')}</div>
       ${r.evaluare ? evpChipsHtml(r.itemi, 5) : '<div class="evp-chips"><span class="x0">Nicio evaluare încă</span></div>'}
+      ${r.ultima && r.ultima.plan_viitor ? `<div class="evp-viitor"><div class="evp-viitor-t">De lucrat data viitoare</div>${evpEsc(r.ultima.plan_viitor)}</div>` : ''}
     </div>`).join('');
 }
 

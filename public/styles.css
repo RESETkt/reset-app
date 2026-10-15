@@ -465,6 +465,8 @@ textarea.ev-input { width: 100%; min-height: 50px; font-size: 13px; }
 .evp-chips .g { background: rgba(224, 176, 48, 0.18); border-color: #e0b030; }
 .evp-chips .x { background: transparent; border: 2px solid #e5594d; }
 .evp-chips .mai, .evp-chips .x0 { border-color: #55544f; color: #9a988e; }
+.evp-viitor { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(127, 119, 221, 0.12); border: 1px solid rgba(127, 119, 221, 0.35); font-size: 14px; line-height: 1.45; white-space: pre-line; color: #ece9e2; }
+.evp-viitor-t { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: #a79ded; font-weight: 700; margin-bottom: 2px; }
 .evp-chips-rand { margin: 0 0 6px; }
 .evp-chips-rand .evp-chips { margin-top: 0; }
 .evp-sus { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
