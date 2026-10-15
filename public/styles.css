@@ -396,6 +396,58 @@ textarea.ev-input { width: 100%; min-height: 50px; font-size: 13px; }
   .ev-rand { align-items: flex-start; }
 }
 
+/* completat / pe jumatate, banda cu cele 12 teste */
+.ev-test.ev-gata { border-color: #4d9de0; background: rgba(77, 157, 224, 0.09); }
+.ev-test.ev-gata .ev-nr { color: #4d9de0; font-weight: 700; }
+.ev-test.ev-partial { border-color: rgba(77, 157, 224, 0.55); border-style: dashed; }
+.ev-test.durere.ev-gata, .ev-test.durere.ev-partial { border-color: #b8433a; }
+.ev-banda { position: sticky; top: 0; z-index: 40; display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 2px 10px; margin-bottom: 8px; background: #1a1a19; }
+.ev-banda-nr { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #55544f; background: transparent; color: #9a988e; font-size: 13px; font-weight: 700; cursor: pointer; padding: 0; font-family: inherit; }
+.ev-banda-nr.gata { background: #4d9de0; border-color: #4d9de0; color: #fff; }
+.ev-banda-nr.partial { border-color: #4d9de0; color: #4d9de0; background: linear-gradient(90deg, rgba(77, 157, 224, 0.4) 50%, transparent 50%); }
+.ev-pastila { font-size: 12.5px; color: #c9c7bd; border: 1px solid #55544f; border-radius: 999px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+.ev-pastila:hover { border-color: #9a988e; color: #ece9e2; }
+.ev-rand { flex-wrap: wrap; }
+.ev-actiuni { flex-wrap: wrap; }
+
+/* plan de lucru (plan-evaluare.js) */
+#plan-lucru-ecran { padding-bottom: 30px; }
+.evp-cap { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.evp-siluete { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.evp-fig { flex: 1 1 400px; max-width: 560px; text-align: center; }
+.evp-fc { font-size: 11.5px; color: #706e66; }
+.evp-fig svg { width: 100%; height: auto; display: block; }
+.evp-sd { font-size: 13px; fill: #8a887f; font-weight: 700; text-anchor: middle; }
+.evp-lb { font-size: 17px; font-weight: 600; fill: #ece9e2; }
+.evp-lbs { font-size: 13.5px; fill: #9a988e; }
+.evp-leg { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; font-size: 12px; color: #9a988e; margin-top: 6px; }
+.evp-leg i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.evp-leg i.inel { background: transparent; border: 2.5px solid #e5594d; width: 12px; height: 12px; }
+.evp-grup { margin-top: 18px; }
+.evp-gt { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; }
+.evp-gt i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+.evp-gt.r { color: #f19a92; } .evp-gt.r i { background: #e5594d; }
+.evp-gt.g { color: #ecc866; } .evp-gt.g i { background: #e0b030; }
+.evp-gt.x { color: #f19a92; } .evp-gt.x i { background: transparent; border: 2.5px solid #e5594d; width: 12px; height: 12px; }
+.evp-it { background: #262624; border: 1px solid #3a3937; border-left-width: 4px; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+.evp-it.r { border-left-color: #e5594d; } .evp-it.g { border-left-color: #e0b030; } .evp-it.x { border-left-color: #e5594d; }
+.evp-it-cap { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.evp-it-titlu { font-size: 17px; font-weight: 600; }
+.evp-cat { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: #9a988e; }
+.evp-sub { font-size: 12px; color: #706e66; margin-top: 2px; }
+.evp-corp { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.evp-tag { font-size: 13px; padding: 4px 10px; border-radius: 8px; background: #1e1e1d; border: 1px solid #45443f; color: #ece9e2; }
+.evp-tag.dur { background: rgba(229, 89, 77, 0.18); border-color: #e5594d; font-weight: 600; }
+.evp-nota { flex-basis: 100%; font-size: 13px; color: #b5b2a8; line-height: 1.45; }
+.evp-corp textarea { flex-basis: 100%; }
+.evp-act { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.evp-cul { display: flex; gap: 6px; }
+.evp-cb { border: 1px solid #45443f; background: #1e1e1d; color: #c9c7bd; border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.evp-cb.r.on { border-color: #e5594d; background: rgba(229, 89, 77, 0.2); color: #fff; }
+.evp-cb.g.on { border-color: #e0b030; background: rgba(224, 176, 48, 0.2); color: #fff; }
+.evp-ascunse { margin-top: 16px; }
+.evp-info { font-size: 12px; color: #706e66; margin-top: 18px; }
+
 /* foaia alba pentru client: raportul si comparatia */
 #ev-foaie { position: fixed; inset: 0; z-index: 1000; overflow-y: auto; background: #f4f2ed; color: #1f1f1d; }
 .ev-foaie-in { max-width: 720px; margin: 16px auto; background: #fff; border-radius: 14px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }

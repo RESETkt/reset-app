@@ -12,7 +12,7 @@ const EV_TESTE = [
     crit: [['v', 'nimic vizibil'], ['g', '1-2 abateri ușoare'], ['r', 'abateri clare sau mai multe']],
     comp: ['capul înainte', 'umerii în față', 'un umăr mai sus', 'bazinul înclinat', 'genunchi în hiperextensie', 'piciorul rotit în afară'],
     dom: ['postura'], prob: 'Postura în repaus' },
-  { id: 2, nume: 'Genuflexiunea completă cu brațele sus',
+  { id: 2, nume: 'Deep squat cu brațele sus',
     randuri: [{ k: 'a' }],
     cum: 'Picioarele la lățimea umerilor, vârfurile înainte, bățul ținut sus cu brațele întinse. Coboară cât de jos poate, cu călcâiele pe sol, și revine. 3 repetări, privești din față și din lateral.',
     crit: [['v', 'coapsele sub orizontală, călcâiele jos, brațele în linie cu trunchiul'], ['g', 'ajunge jos cu compensări ușoare'], ['r', 'nu coboară la orizontală sau compensări mari']],
@@ -114,7 +114,17 @@ function evNormalizeaza(date) {
     st.durere = !!st.durere;
     st.nota = st.nota || '';
   });
-  return { teste };
+  // planul de lucru (plan-evaluare.js) tine editarile kinetoterapeutului aici; nu trebuie pierdute la salvare
+  return { teste, plan: (date && date.plan) || {} };
+}
+
+// Cat de completat e un test: 'gata' (toate casutele au culoare), 'partial' sau 'gol'
+function evStareTest(t, teste) {
+  const st = teste[t.id];
+  let total = 0, colorate = 0;
+  t.randuri.forEach(rd => Object.values(st.r[rd.k]).forEach(c => { total++; if (c.c) colorate++; }));
+  if (colorate === total) return 'gata';
+  return colorate || st.durere ? 'partial' : 'gol';
 }
 
 function evCuloareTest(t, teste) {
@@ -251,8 +261,9 @@ async function incarcaEvaluariFisa(pacientId) {
             + (completate < EV_TESTE.length ? ` · ${completate} din ${EV_TESTE.length} teste` : ''))),
         evPuncte(culDom)),
       evEl('div', { class: 'ev-actiuni' },
-        evEl('span', { class: 'ev-link', onclick: () => deschideEvaluare(e.id) }, 'Deschide'),
-        evEl('span', { class: 'ev-link', onclick: () => arataRaportEvaluare(e.id) }, 'Raport'))));
+        evEl('span', { class: 'ev-pastila', onclick: () => deschideEvaluare(e.id) }, 'Evaluare'),
+        evEl('span', { class: 'ev-pastila', onclick: () => arataPlanLucru(e.id) }, 'Plan de lucru'),
+        evEl('span', { class: 'ev-pastila', onclick: () => arataRaportEvaluare(e.id) }, 'Raport'))));
   });
   if (lista.length > 1) {
     box.append(evEl('div', { style: 'margin-top:10px' },
@@ -346,6 +357,14 @@ function randeazaEvaluare() {
       evEl('div', { style: 'font-size:16px;font-weight:600' }, 'Evaluare functionala'),
       evEl('div', { class: 'ev-antet-rand' }, dataInp,
         evEl('span', { class: 'ev-link ev-sterge', onclick: stergeEvaluare }, 'Sterge evaluarea'))),
+    evEl('div', { class: 'ev-banda', id: 'ev-banda' }, EV_TESTE.map(t => {
+      const b = evEl('button', { class: 'ev-banda-nr', 'data-t': t.id, title: t.nume }, t.id);
+      b.onclick = () => {
+        const card = document.getElementById('ev-test-' + t.id);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+      return b;
+    })),
     EV_TESTE.map(t => evCardTest(t)),
     evEl('div', { class: 'ev-bara' },
       evEl('span', { id: 'ev-progres', class: 'ev-progres' }),
@@ -360,11 +379,24 @@ function evActualizeazaProgres() {
   if (!el || !evCurenta) return;
   const gata = EV_TESTE.filter(t => evCuloareTest(t, evCurenta.date.teste)).length;
   el.textContent = `${gata} din ${EV_TESTE.length} teste`;
+  // cardurile si banda de sus: albastru = completat, punctat = pe jumatate
+  EV_TESTE.forEach(t => {
+    const stare = evStareTest(t, evCurenta.date.teste);
+    const card = document.getElementById('ev-test-' + t.id);
+    if (card) {
+      card.classList.toggle('ev-gata', stare === 'gata');
+      card.classList.toggle('ev-partial', stare === 'partial');
+      const nr = card.querySelector('.ev-nr');
+      if (nr) nr.textContent = stare === 'gata' ? '✓' : t.id;
+    }
+    const b = document.querySelector(`#ev-banda [data-t="${t.id}"]`);
+    if (b) { b.className = 'ev-banda-nr ' + stare; b.textContent = stare === 'gata' ? '✓' : t.id; }
+  });
 }
 
 function evCardTest(t) {
   const st = evCurenta.date.teste[t.id];
-  const card = evEl('div', { class: 'card ev-test' + (st.durere ? ' durere' : '') });
+  const card = evEl('div', { class: 'card ev-test' + (st.durere ? ' durere' : ''), id: 'ev-test-' + t.id });
   const semafoare = []; // [cel, element] - le actualizam pe loc, fara sa redesenam cardul
 
   const actualizeaza = () => {
