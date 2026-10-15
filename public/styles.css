@@ -493,19 +493,6 @@ textarea.ev-input { width: 100%; min-height: 50px; font-size: 13px; }
   .evp-tag { font-size: 14px; padding: 5px 10px; }
   .evp-nota { font-size: 14px; }
 
-  /* butoane mari la formularul de prezenta */
-  .ap-chip, .pl-chip { min-height: 46px; padding: 0 16px; font-size: 16px; }
-  .pl-lat button { min-height: 46px; min-width: 56px; font-size: 16px; }
-  #modal-container .card > .btn { min-height: 52px; font-size: 17px; }
-
-  /* programarile zilei: pacientul si meniul lui, usor de atins */
-  .day-view-row { padding: 12px; }
-  .day-view .pacient-chip { padding: 4px 10px !important; border-radius: 8px !important; }
-  .day-view .pacient-chip > span[onclick*="toggleMeniuStatus"] { font-size: 17px !important; max-width: 170px !important; padding: 8px 4px; }
-  .day-view .pacient-chip > span[onclick*="aratatMeniuProgramare"] { font-size: 20px !important; padding: 8px 8px !important; }
-  [id^="status-meniu-"] { min-width: 190px !important; }
-  [id^="status-meniu-"] > div:not(.plan-sedinta) { padding: 16px 20px !important; font-size: 17px !important; }
-  .day-view-add { font-size: 14px; padding: 8px 12px; }
 }
 
 /* foaia alba pentru client: raportul si comparatia */
