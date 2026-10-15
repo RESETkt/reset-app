@@ -105,7 +105,7 @@ const EVP_CAUTA = [
   ['glezna', /\bglezn\w*/],
 ];
 const EVP_PROBLEMA = [
-  ['Durere', /\b(durere|dureri|doare|dor)\b/],
+  ['Durere', /\b(durere|dureri|dureros\w*|dureroas\w*|doare|dor)\b/],
   ['Tensiune', /\b(tensiune|tensionat\w*)\b/],
   ['Jenă', /\b(jena)\b/],
   ['Blocaj', /\b(blocaj|blocat\w*)\b/],
@@ -124,6 +124,7 @@ function evpExtra(teste) {
       const txt = evpFaraDiacritice(brut);
       if (EVP_NEGAT.test(txt)) return;
       const prob = EVP_PROBLEMA.find(([, re]) => re.test(txt));
+      if (!prob) return;   // fara cuvant de problema (durere, doare, tensiune...) nu e semn de atentie
       const dr = /\b(d(?!-)|drept|dreapta|dreptul)\b/.test(txt), st = /\b(s(?!-)|stang|stanga|stangul)\b/.test(txt);
       const ambele = (dr && st) || /\b(ambii|ambele|bilateral)\b/.test(txt);
       const interomoplat = /intre omoplat/.test(txt);
@@ -132,18 +133,16 @@ function evpExtra(teste) {
         if (z === 'omoplat' && interomoplat) return;
         const lat = EVP_ZONA_LATERALA.has(z);
         const parti = !lat ? [null] : ambele ? ['D', 'S'] : dr ? ['D'] : st ? ['S'] : [];
-        // pe silueta: zona laterala doar cu partea scrisa; zona de pe linia mijlocie doar cu un cuvant de problema.
-        // Fara parte, dar cu problema, apare doar in lista.
-        const arataPeSilueta = lat ? parti.length > 0 : !!prob;
-        if (!arataPeSilueta && !prob) return;
+        // pe silueta: zona laterala doar cu partea scrisa. Fara parte, dar cu problema, apare doar in lista.
+        const arataPeSilueta = lat ? parti.length > 0 : true;
         (parti.length ? parti : [null]).forEach(p => {
           const cheie = 'x' + z + (p || '');
           const e = gasite.get(cheie) || {
             key: cheie, tip: 'extra', z, p, c: 'r', cat: '', sub: '', durere: false, tags: [], nota: '', test: t.id,
-            titlu: (prob ? prob[0] + ' ' : '') + EVP_ZONA_NUME[z].toLowerCase() + (p ? ' ' + p : ''),
+            titlu: prob[0] + ' ' + EVP_ZONA_NUME[z].toLowerCase() + (p ? ' ' + p : ''),
             zone: arataPeSilueta ? [{ z, p: p || undefined, c: null, ring: true }] : [], clauze: [],
           };
-          if (!e.titlu.startsWith('Durere') && prob && prob[0] === 'Durere') e.titlu = 'Durere ' + EVP_ZONA_NUME[z].toLowerCase() + (p ? ' ' + p : '');
+          if (!e.titlu.startsWith('Durere') && prob[0] === 'Durere') e.titlu = 'Durere ' + EVP_ZONA_NUME[z].toLowerCase() + (p ? ' ' + p : '');
           if (!e.clauze.includes(brut)) e.clauze.push(brut);
           e.nota = e.clauze.join(', ');
           e.titlu = e.titlu.charAt(0).toUpperCase() + e.titlu.slice(1);
