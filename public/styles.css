@@ -448,6 +448,66 @@ textarea.ev-input { width: 100%; min-height: 50px; font-size: 13px; }
 .evp-ascunse { margin-top: 16px; }
 .evp-info { font-size: 12px; color: #706e66; margin-top: 18px; }
 
+/* butonul "Plan": lista cu pacientii de azi si planul pacientului (gandit pentru telefon) */
+.evp-lista, #panel-plan #plan-lucru-ecran { max-width: 640px; margin: 0 auto; }
+.evp-h { font-size: 22px; margin: 6px 0 12px; }
+.evp-cauta { width: 100%; height: 50px; font-size: 16px; border-radius: 12px; padding: 0 14px; margin-bottom: 8px; }
+.evp-sect { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: #706e66; margin: 16px 0 8px; font-weight: 700; }
+.evp-gol { color: #706e66; font-size: 15px; padding: 18px 4px; }
+.evp-pac { background: #262624; border: 1px solid #3a3937; border-radius: 14px; padding: 14px; margin-bottom: 10px; cursor: pointer; }
+.evp-pac:active { background: #2e2e2b; }
+.evp-n { font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.evp-n small { font-weight: 500; color: #9a988e; font-size: 14px; white-space: nowrap; }
+.evp-d { font-size: 14px; color: #9a988e; margin-top: 2px; }
+.evp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.evp-chips span { font-size: 13px; padding: 4px 10px; border-radius: 8px; border: 1px solid; color: #ece9e2; }
+.evp-chips .r { background: rgba(229, 89, 77, 0.2); border-color: #e5594d; }
+.evp-chips .g { background: rgba(224, 176, 48, 0.18); border-color: #e0b030; }
+.evp-chips .x { background: transparent; border: 2px solid #e5594d; }
+.evp-chips .mai, .evp-chips .x0 { border-color: #55544f; color: #9a988e; }
+.evp-chips-rand { margin: 0 0 6px; }
+.evp-chips-rand .evp-chips { margin-top: 0; }
+.evp-sus { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.evp-sag { display: flex; gap: 8px; align-items: center; font-size: 13px; color: #9a988e; }
+.evp-b { min-height: 46px; min-width: 46px; border-radius: 12px; border: 1px solid #55544f; background: #262624; color: #ece9e2; font-size: 17px; font-family: inherit; cursor: pointer; padding: 0 14px; }
+.evp-b:disabled { opacity: .3; cursor: default; }
+.evp-nm { font-size: 24px; font-weight: 800; }
+.evp-dg { font-size: 14px; color: #9a988e; margin: 2px 0 10px; }
+.evp-ultima { background: #262624; border: 1px solid #3a3937; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+.evp-ultima-t { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: #a79ded; margin-bottom: 4px; font-weight: 700; }
+.evp-ultima-x, .evp-ultima-ex { font-size: 15px; line-height: 1.45; white-space: pre-line; }
+.evp-ultima-ex { color: #9a988e; margin-top: 6px; }
+.evp-ultima-ex b { color: #b5b2a8; font-weight: 600; }
+.evp-ultima-g { font-size: 14px; color: #706e66; }
+.evp-ref { background: #1e1e1d; border: 1px solid #3a3937; border-radius: 10px; padding: 10px 12px; margin-bottom: 4px; }
+.evp-ref-t { font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: #a79ded; font-weight: 700; margin-bottom: 2px; }
+.evp-ref-g { font-size: 13px; color: #706e66; }
+.evp-ref .evp-chips { margin: 6px 0; }
+.evp-ref .ev-link { font-size: 13px; }
+
+@media (max-width: 768px) {
+  .evp-sd { font-size: 14px; }
+  .evp-lb { font-size: 21px; }
+  .evp-lbs { font-size: 16px; }
+  .evp-it-titlu { font-size: 18px; }
+  .evp-tag { font-size: 14px; padding: 5px 10px; }
+  .evp-nota { font-size: 14px; }
+
+  /* butoane mari la formularul de prezenta */
+  .ap-chip, .pl-chip { min-height: 46px; padding: 0 16px; font-size: 16px; }
+  .pl-lat button { min-height: 46px; min-width: 56px; font-size: 16px; }
+  #modal-container .card > .btn { min-height: 52px; font-size: 17px; }
+
+  /* programarile zilei: pacientul si meniul lui, usor de atins */
+  .day-view-row { padding: 12px; }
+  .day-view .pacient-chip { padding: 4px 10px !important; border-radius: 8px !important; }
+  .day-view .pacient-chip > span[onclick*="toggleMeniuStatus"] { font-size: 17px !important; max-width: 170px !important; padding: 8px 4px; }
+  .day-view .pacient-chip > span[onclick*="aratatMeniuProgramare"] { font-size: 20px !important; padding: 8px 8px !important; }
+  [id^="status-meniu-"] { min-width: 190px !important; }
+  [id^="status-meniu-"] > div:not(.plan-sedinta) { padding: 16px 20px !important; font-size: 17px !important; }
+  .day-view-add { font-size: 14px; padding: 8px 12px; }
+}
+
 /* foaia alba pentru client: raportul si comparatia */
 #ev-foaie { position: fixed; inset: 0; z-index: 1000; overflow-y: auto; background: #f4f2ed; color: #1f1f1d; }
 .ev-foaie-in { max-width: 720px; margin: 16px auto; background: #fff; border-radius: 14px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }

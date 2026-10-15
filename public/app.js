@@ -48,7 +48,9 @@ function ajusteazaInaltimeTopbar() {
 function aratatApp() {
   document.getElementById('login').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
-  aratapanel(sessionStorage.getItem('tabActiv') || 'calendar');
+  // Echipa nu mai are buton pe telefon: acolo nu ramanem pe ea dintr-o sesiune veche
+  const tabSalvat = sessionStorage.getItem('tabActiv') || 'calendar';
+  aratapanel(tabSalvat === 'echipa' && window.innerWidth <= 768 ? 'calendar' : tabSalvat);
   actualizeazaNotificari();
   initLive();
   initPush();
@@ -130,6 +132,7 @@ function reimprospateazaDupaSchimbare() {
   if (tabActiv === 'calendar') incarcaCalendarSaptamana();
   if (tabActiv === 'echipa') incarcaEchipa();
   if (tabActiv === 'statistici') incarcaStatistici();
+  if (tabActiv === 'plan') evpReimprospateaza(); // din plan-evaluare.js
   if (tabActiv === 'fisa') {
     if (document.getElementById('cautare')) cautaPacienti(document.getElementById('cautare').value || '');
     else if (document.getElementById('nou-nume')) { /* formular de pacient nou deschis - nu il suprascriem */ }
@@ -416,7 +419,7 @@ function marcheazaActiv(nume) {
 
 function aratapanel(nume) {
   sessionStorage.setItem('tabActiv', nume);
-  ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
+  ['fisa', 'calendar', 'echipa', 'statistici', 'plan'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
   });
   marcheazaActiv(nume);
@@ -425,6 +428,7 @@ function aratapanel(nume) {
   if (nume === 'echipa') incarcaEchipa();
   if (nume === 'statistici') incarcaStatistici();
   if (nume === 'fisa') aratatListaPacienti();
+  if (nume === 'plan') evpLaDeschidere(); // din plan-evaluare.js
 }
 
 function aratatListaPacienti() {
@@ -544,7 +548,7 @@ function citesteCumAAflat(idSelect, idLiber) {
 let discutieConvertitaId = null;
 
 function aratatFormularPacientNou(prenumePresetat, telefonPresetat, discutieId) {
-  ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
+  ['fisa', 'calendar', 'echipa', 'statistici', 'plan'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
   marcheazaActiv('fisa');
@@ -636,7 +640,7 @@ function inapoiDinFisa() {
 async function deschideFisa(id) {
   if (typeof evParasesteEvaluarea === 'function') evParasesteEvaluarea(); // din evaluare.js
   pacientCurent = id;
-  ['fisa', 'calendar', 'echipa', 'statistici'].forEach(p => {
+  ['fisa', 'calendar', 'echipa', 'statistici', 'plan'].forEach(p => {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
   marcheazaActiv('fisa');
@@ -2139,7 +2143,6 @@ const PLAN_PROG = ['Creștem', 'La fel', 'Scădem', 'Reevaluare'];
 const PLAN_ZONE_CU_PARTE = ['Genunchi', 'Umăr'];
 const PLAN_GRUPE = [
   { cheie: 'z', titlu: 'Atenție la', prefix: 'Atenție la:', lista: PLAN_ZONE },
-  { cheie: 'l', titlu: 'De lucrat', prefix: 'De lucrat:', lista: PLAN_LUCRU },
   { cheie: 'p', titlu: 'Progresie', prefix: 'Progresie:', lista: PLAN_PROG }
 ];
 
@@ -2293,6 +2296,7 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
           <button type="button" class="btn ap-ca-trecuta" onclick="aparateCaDataTrecuta('${id}')">Ca data trecută</button>
         </div>
         <div id="ap-mesaj" style="font-size:12px;color:#e08585;margin-bottom:6px"></div>
+        <div id="ap-plan-ref"></div>
         ${htmlCampuriSedinta('', '', id)}
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anulează</button>
@@ -2300,6 +2304,7 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
     </div>
   `;
   document.getElementById('modal-container').innerHTML = html;
+  evpIncarcaReferinta(id); // din plan-evaluare.js
 }
 
 async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {

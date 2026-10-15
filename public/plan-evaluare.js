@@ -288,15 +288,18 @@ function evpSvg(iteme, fata) {
   return `<svg viewBox="0 0 500 430" role="img" aria-label="${fata ? 'din față' : 'din spate'}"><g transform="translate(${FX},0)">${evpCorp(fata)}${umple}${inele}</g>${txt}</svg>`;
 }
 
-// ---------- ecranul "Plan de lucru" ----------
+// ---------- ecranele "Plan de lucru" ----------
+// Doua intrari: de pe fisa pacientului (sursa 'fisa') si din butonul "Plan" (sursa 'plan': lista cu pacientii
+// de azi, apoi planul unuia, gandit pentru telefon). Doar adminul poate edita planul.
 
-let evpCurent = null;   // { id, pacientId, pacient, data, date }
+let evpCurent = null;   // { id, pacientId, pacient, data, date, sursa, ultima, idx, arataAscunse }
+const evpPoateEdita = () => typeof rolCurent === 'function' && rolCurent() === 'admin';
 
 async function arataPlanLucru(id) {
   const e = await apel(`/api/evaluari/${id}`);
   if (!e || !e.id) return;
   const fisa = await apel(`/api/pacienti/${e.pacient_id}`);
-  evpCurent = { id: e.id, pacientId: e.pacient_id, pacient: fisa.pacient, data: evDataIso(e.data), date: evNormalizeaza(e.date), arataAscunse: false };
+  evpCurent = { id: e.id, pacientId: e.pacient_id, pacient: fisa.pacient, data: evDataIso(e.data), date: evNormalizeaza(e.date), sursa: 'fisa', ultima: null, idx: -1, arataAscunse: false };
   pacientCurent = e.pacient_id;
   evpRandeaza();
 }
@@ -331,30 +334,25 @@ function evpCard(it, ascuns) {
   if (it.tip === 'test' && it.sub) card.append(evEl('div', { class: 'evp-sub' }, it.sub));
 
   const corp = evEl('div', { class: 'evp-corp' });
-  const deseneazaCorp = () => {
-    corp.innerHTML = '';
-    if (ed.text != null && ed.text !== '') {
-      corp.append(evEl('div', { class: 'evp-nota' }, ed.text));
-      return;
-    }
+  if (ed.text != null && ed.text !== '') {
+    corp.append(evEl('div', { class: 'evp-nota' }, ed.text));
+  } else {
     if (it.durere) corp.append(evEl('span', { class: 'evp-tag dur' }, 'durere'));
     it.tags.forEach(t => corp.append(evEl('span', { class: 'evp-tag' }, t)));
     if (it.nota) corp.append(evEl('div', { class: 'evp-nota' }, it.nota));
-  };
-  deseneazaCorp();
+  }
   card.append(corp);
 
-  const actiuni = evEl('div', { class: 'evp-act' });
-  if (ascuns) {
-    actiuni.append(evEl('span', { class: 'ev-link', onclick: () => evpEditeaza(it.key, { ascuns: false }) }, 'Pune la loc'));
-  } else {
-    actiuni.append(evEl('span', { class: 'ev-link', onclick: () => evpEditor(it, card, corp, actiuni) }, 'Editează'));
+  if (evpPoateEdita()) {
+    const actiuni = evEl('div', { class: 'evp-act' });
+    if (ascuns) actiuni.append(evEl('span', { class: 'ev-link', onclick: () => evpEditeaza(it.key, { ascuns: false }) }, 'Pune la loc'));
+    else actiuni.append(evEl('span', { class: 'ev-link', onclick: () => evpEditor(it, corp, actiuni) }, 'Editează'));
+    card.append(actiuni);
   }
-  card.append(actiuni);
   return card;
 }
 
-function evpEditor(it, card, corp, actiuni) {
+function evpEditor(it, corp, actiuni) {
   const ed = it.ed || {};
   const ta = evEl('textarea', { class: 'ev-input' });
   ta.value = ed.text != null && ed.text !== '' ? ed.text : evpTextImplicit(it);
@@ -375,7 +373,9 @@ function evpEditor(it, card, corp, actiuni) {
       evpEditeaza(it.key, { text: nou === evpTextImplicit(it) ? undefined : nou, c: culoare !== (it.tip === 'test' ? evpCuloareAuto(it) : it.c) ? culoare : undefined });
     } }, 'Salvează'),
     evEl('button', { class: 'btn secundar', onclick: () => evpRandeaza() }, 'Renunță'),
-    evEl('span', { class: 'ev-link', onclick: () => { if (confirm('Scoți punctul din plan?')) evpEditeaza(it.key, { ascuns: true }); } }, 'Șterge'),
+    evEl('span', { class: 'ev-link', onclick: () => aratatPopupConfirmare(
+      { titlu: 'Scoți punctul din plan?', mesaj: 'Îl poți pune la loc oricând.', textConfirma: 'Scoate', periculos: true },
+      () => evpEditeaza(it.key, { ascuns: true })) }, 'Șterge'),
     (ed.text || ed.c) ? evEl('span', { class: 'ev-link', onclick: () => evpEditeaza(it.key, { text: null, c: null }) }, 'Revino la textul automat') : null);
   ta.focus();
 }
@@ -386,47 +386,224 @@ function evpCuloareAuto(it) {
   return evCuloareTest(t, evpCurent.date.teste) === 'r' ? 'r' : 'g';
 }
 
+function evpZiLuna(iso) {
+  return new Date(String(iso).slice(0, 10) + 'T00:00:00').toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' });
+}
+
+// Zonele de lucrat, ca etichete scurte: cele din inel primele, apoi prioritare, apoi de lucrat
+function evpChipsHtml(items, max) {
+  if (!items.length) return '';
+  const ord = it => it.tip === 'extra' ? 0 : it.c === 'r' ? 1 : 2;
+  const lista = items.slice().sort((a, b) => ord(a) - ord(b));
+  const n = max || 99;
+  return '<div class="evp-chips">' + lista.slice(0, n).map(i => `<span class="${i.tip === 'extra' ? 'x' : i.c}">${evpEsc(i.titlu)}</span>`).join('')
+    + (lista.length > n ? `<span class="mai">+${lista.length - n}</span>` : '') + '</div>';
+}
+
+function evpUltimaCard(u) {
+  const c = evEl('div', { class: 'evp-ultima' },
+    evEl('div', { class: 'evp-ultima-t' }, u ? 'De la ultima ședință · ' + evpZiLuna(u.data) : 'De la ultima ședință'));
+  if (!u) c.append(evEl('div', { class: 'evp-ultima-g' }, 'Nicio ședință anterioară.'));
+  else if (!u.plan_viitor && !u.exercitii) c.append(evEl('div', { class: 'evp-ultima-g' }, 'Nimic notat la ultima ședință.'));
+  else {
+    if (u.plan_viitor) c.append(evEl('div', { class: 'evp-ultima-x' }, u.plan_viitor));
+    if (u.exercitii) c.append(evEl('div', { class: 'evp-ultima-ex' }, evEl('b', {}, 'Am lucrat: '), u.exercitii));
+  }
+  return c;
+}
+
 function evpRandeaza() {
-  const p = evpCurent, pac = p.pacient;
-  const panel = document.getElementById('panel-fisa');
+  const p = evpCurent, pac = p.pacient, dinPlan = p.sursa === 'plan';
+  const panel = document.getElementById(dinPlan ? 'panel-plan' : 'panel-fisa');
   panel.innerHTML = '';
-  const { vizibile, ascunse } = evpIteme(p.date);
+  const { vizibile, ascunse } = p.date ? evpIteme(p.date) : { vizibile: [], ascunse: [] };
   const extra = vizibile.filter(i => i.tip === 'extra');
   const rosii = vizibile.filter(i => i.tip === 'test' && i.c === 'r');
   const galbene = vizibile.filter(i => i.tip === 'test' && i.c === 'g');
+  const poate = evpPoateEdita();
 
   const grup = (clasa, titlu, lista) => lista.length ? evEl('div', { class: 'evp-grup' },
     evEl('div', { class: 'evp-gt ' + clasa }, evEl('i'), titlu), lista.map(i => evpCard(i))) : null;
 
-  const completate = EV_TESTE.filter(t => evCuloareTest(t, p.date.teste)).length;
+  const completate = p.date ? EV_TESTE.filter(t => evCuloareTest(t, p.date.teste)).length : 0;
   const gol = !vizibile.length;
+  const mesajGol = !p.date ? 'Nicio evaluare încă.' : completate ? 'Nimic de lucrat: niciun test galben sau roșu.' : 'Evaluarea nu e completată încă.';
 
   const siluete = evEl('div', { class: 'evp-siluete' });
   siluete.innerHTML = `<div class="evp-fig"><div class="evp-fc">din față</div>${evpSvg(vizibile, true)}</div>`
     + `<div class="evp-fig"><div class="evp-fc">din spate</div>${evpSvg(vizibile, false)}</div>`;
+  const legenda = evEl('div', { class: 'evp-leg' },
+    evEl('span', {}, evEl('i', { style: 'background:' + EVP_R }), 'Prioritar'),
+    evEl('span', {}, evEl('i', { style: 'background:' + EVP_Y }), 'De lucrat'),
+    evEl('span', {}, evEl('i', { class: 'inel' }), 'Durere / atenție'));
 
-  panel.append(evEl('div', { id: 'plan-lucru-ecran' },
-    evEl('div', { class: 'ev-sus' },
+  let sus, antet;
+  if (dinPlan) {
+    const exista = j => !!evpAzi[j];
+    sus = evEl('div', { class: 'evp-sus' },
+      evEl('button', { class: 'evp-b', onclick: () => incarcaPlanAzi() }, '← Plan'),
+      p.idx >= 0 ? evEl('div', { class: 'evp-sag' },
+        evEl('button', { class: 'evp-b', disabled: !exista(p.idx - 1), onclick: () => evpUrmatorul(-1) }, '‹'),
+        evEl('span', {}, `${p.idx + 1} din ${evpAzi.length}`),
+        evEl('button', { class: 'evp-b', disabled: !exista(p.idx + 1), onclick: () => evpUrmatorul(1) }, '›')) : null);
+    antet = [
+      evEl('div', { class: 'evp-nm' }, `${pac.nume} ${pac.prenume}`),
+      evEl('div', { class: 'evp-dg' }, 'Diagnostic: ' + (pac.diagnostic || '-') + (p.data ? ' · evaluare ' + evpZiLuna(p.data) : '')),
+      evpUltimaCard(p.ultima),
+    ];
+  } else {
+    sus = evEl('div', { class: 'ev-sus' },
       evEl('button', { class: 'btn secundar', onclick: () => deschideFisa(p.pacientId) }, `← ${pac.nume} ${pac.prenume}`),
-      evEl('span', { class: 'ev-stare' }, evDataRo(p.data))),
-    evEl('div', { class: 'card' },
-      evEl('div', { class: 'evp-cap' },
-        evEl('div', { style: 'font-size:16px;font-weight:600' }, 'Plan de lucru'),
-        evEl('button', { class: 'btn secundar', onclick: () => deschideEvaluare(p.id) }, 'Evaluare')),
-      gol
-        ? evEl('div', { class: 'ev-gol' }, completate ? 'Nimic de lucrat: niciun test galben sau roșu.' : 'Evaluarea nu e completată încă.')
-        : [siluete,
-          evEl('div', { class: 'evp-leg' },
-            evEl('span', {}, evEl('i', { style: 'background:' + EVP_R }), 'Prioritar'),
-            evEl('span', {}, evEl('i', { style: 'background:' + EVP_Y }), 'De lucrat'),
-            evEl('span', {}, evEl('i', { class: 'inel' }), 'Durere / atenție'))]),
+      evEl('span', { class: 'ev-stare' }, evDataRo(p.data)));
+    antet = [];
+  }
+
+  const chipsDiv = dinPlan && !gol ? evEl('div', { class: 'evp-chips-rand' }) : null;
+  if (chipsDiv) chipsDiv.innerHTML = evpChipsHtml(vizibile);
+
+  const corpPlan = gol
+    ? [evEl('div', { class: 'ev-gol' }, mesajGol)]
+    : [siluete, legenda];
+
+  panel.append(evEl('div', { id: 'plan-lucru-ecran' }, sus, antet,
+    chipsDiv,
+    dinPlan
+      ? evEl('div', { class: 'evp-fara-card' }, corpPlan)
+      : evEl('div', { class: 'card' },
+          evEl('div', { class: 'evp-cap' },
+            evEl('div', { style: 'font-size:16px;font-weight:600' }, 'Plan de lucru'),
+            poate ? evEl('button', { class: 'btn secundar', onclick: () => deschideEvaluare(p.id) }, 'Evaluare') : null),
+          corpPlan),
     grup('x', 'Atenție la', extra),
     grup('r', 'Prioritar', rosii),
     grup('g', 'De lucrat', galbene),
-    ascunse.length ? evEl('div', { class: 'evp-ascunse' },
+    poate && ascunse.length ? evEl('div', { class: 'evp-ascunse' },
       evEl('span', { class: 'ev-link', onclick: () => { p.arataAscunse = !p.arataAscunse; evpRandeaza(); } },
         (p.arataAscunse ? 'Ascunde' : 'Arată') + ` ${ascunse.length} puncte scoase din plan`),
       p.arataAscunse ? ascunse.map(i => evpCard(i, true)) : null) : null,
-    evEl('div', { class: 'evp-info' }, 'Planul se face singur din evaluare. Ce modifici aici rămâne, chiar dacă evaluarea se schimbă.')));
+    poate ? evEl('div', { class: 'evp-info' }, 'Planul se face singur din evaluare. Ce modifici aici rămâne, chiar dacă evaluarea se schimbă.') : null));
   window.scrollTo(0, 0);
+}
+
+// ---------- butonul "Plan": pacientii de azi si cautare ----------
+
+let evpAzi = [];            // pacientii programati azi, cu planul lor
+let evpSaltPeste = false;   // cand deschidem direct planul unui pacient, aratapanel('plan') nu mai incarca lista
+let evpCautareTimer = null, evpCautareToken = 0;
+
+function evpLaDeschidere() {
+  if (evpSaltPeste) { evpSaltPeste = false; return; }
+  incarcaPlanAzi();
+}
+
+function evpPregateste(r) {
+  r.itemi = r.evaluare ? evpIteme(evNormalizeaza(r.evaluare.date)).vizibile : [];
+  return r;
+}
+
+async function incarcaPlanAzi() {
+  const panou = document.getElementById('panel-plan');
+  if (!panou) return;
+  if (!document.getElementById('evp-azi')) {
+    panou.innerHTML = `<div class="evp-lista">
+      <h2 class="evp-h">Plan de lucru</h2>
+      <input id="evp-cauta" class="evp-cauta" type="search" placeholder="Cauta pacient" autocomplete="off" oninput="evpCautaDebounced(this.value)">
+      <div id="evp-rez"></div>
+      <div id="evp-azi"><div class="evp-gol">Se încarcă...</div></div>
+    </div>`;
+  }
+  const rows = await apel('/api/evaluari/plan/azi?data=' + dataLocala(new Date()));
+  const el = document.getElementById('evp-azi');
+  if (!el) return;
+  if (!Array.isArray(rows)) { el.innerHTML = '<div class="evp-gol">Nu am putut încărca programările.</div>'; return; }
+  evpAzi = rows.map(evpPregateste);
+  evpDeseneazaAzi();
+}
+
+function evpDeseneazaAzi() {
+  const el = document.getElementById('evp-azi');
+  if (!el) return;
+  const cautare = (document.getElementById('evp-cauta')?.value || '').trim();
+  el.style.display = cautare ? 'none' : 'block';
+  if (!evpAzi.length) { el.innerHTML = '<div class="evp-gol">Nicio programare azi.</div>'; return; }
+  el.innerHTML = '<div class="evp-sect">Azi</div>' + evpAzi.map((r, i) => `
+    <div class="evp-pac" onclick="evpDeschideAzi(${i})">
+      <div class="evp-n"><span>${evpEsc(r.pacient.nume + ' ' + r.pacient.prenume)}</span><small>${r.ora}${r.status === 'prezent' ? ' · prezent' : ''}</small></div>
+      <div class="evp-d">${evpEsc(r.pacient.diagnostic || 'fără diagnostic')}</div>
+      ${r.evaluare ? evpChipsHtml(r.itemi, 5) : '<div class="evp-chips"><span class="x0">Nicio evaluare încă</span></div>'}
+    </div>`).join('');
+}
+
+function evpCautaDebounced(q) {
+  clearTimeout(evpCautareTimer);
+  evpCautareTimer = setTimeout(() => evpCauta(q), 150);
+}
+
+async function evpCauta(q) {
+  const rez = document.getElementById('evp-rez');
+  if (!rez) return;
+  const text = (q || '').trim();
+  const id = ++evpCautareToken;
+  if (!text) { rez.innerHTML = ''; evpDeseneazaAzi(); return; }
+  const rows = await apel('/api/pacienti?q=' + encodeURIComponent(text));
+  if (id !== evpCautareToken || !document.getElementById('evp-rez')) return;
+  const azi = document.getElementById('evp-azi');
+  if (azi) azi.style.display = 'none';
+  rez.innerHTML = Array.isArray(rows) && rows.length
+    ? rows.slice(0, 10).map(p => `<div class="evp-pac" onclick="evpDeschideCautat('${p.id}')">
+        <div class="evp-n"><span>${evpEsc(p.nume + ' ' + p.prenume)}</span></div>
+        <div class="evp-d">${evpEsc(p.diagnostic || 'fără diagnostic')}</div></div>`).join('')
+    : '<div class="evp-gol">Niciun pacient găsit.</div>';
+}
+
+function evpArataPacient(r, idx) {
+  evpCurent = {
+    id: r.evaluare ? r.evaluare.id : null, pacientId: r.pacient.id, pacient: r.pacient,
+    data: r.evaluare ? r.evaluare.data : null, date: r.evaluare ? evNormalizeaza(r.evaluare.date) : null,
+    sursa: 'plan', ultima: r.ultima, idx, arataAscunse: false,
+  };
+  pacientCurent = r.pacient.id;
+  evpRandeaza();
+}
+
+function evpDeschideAzi(i) { evpArataPacient(evpAzi[i], i); }
+
+async function evpDeschideCautat(id) {
+  const r = await apel('/api/evaluari/plan/pacient/' + id);
+  if (!r || !r.pacient) return;
+  evpArataPacient(evpPregateste(r), -1);
+}
+
+function evpUrmatorul(d) {
+  const j = evpCurent.idx + d;
+  if (evpAzi[j]) evpArataPacient(evpAzi[j], j);
+}
+
+// Reimprospatare cand se schimba ceva (SSE): doar lista, nu pacientul deschis
+function evpReimprospateaza() {
+  if (document.getElementById('evp-azi') && !(document.getElementById('evp-cauta')?.value || '').trim()) incarcaPlanAzi();
+}
+
+// ---------- referinta in formularul de prezenta ----------
+
+let evpRef = null;
+
+async function evpIncarcaReferinta(programareId) {
+  if (!document.getElementById('ap-plan-ref')) return;
+  const r = await apel('/api/evaluari/plan/programare/' + programareId);
+  const el = document.getElementById('ap-plan-ref');
+  if (!el || !r || !r.pacient) return;
+  evpRef = evpPregateste(r);
+  let continut;
+  if (!r.evaluare) continut = '<div class="evp-ref-g">Nicio evaluare încă.</div>';
+  else if (!evpRef.itemi.length) continut = '<div class="evp-ref-g">Niciun test galben sau roșu.</div>';
+  else continut = evpChipsHtml(evpRef.itemi, 6) + '<span class="ev-link" onclick="evpDeschideReferinta()">Vezi planul complet</span>';
+  el.innerHTML = `<div class="evp-ref"><div class="evp-ref-t">Plan de lucru</div>${continut}</div>`;
+}
+
+function evpDeschideReferinta() {
+  inchideModalProgramare();
+  evpSaltPeste = true;
+  aratapanel('plan');
+  evpArataPacient(evpRef, -1);
 }
