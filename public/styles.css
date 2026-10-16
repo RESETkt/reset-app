@@ -465,6 +465,15 @@ textarea.ev-input { width: 100%; min-height: 50px; font-size: 13px; }
 .evp-chips .g { background: rgba(224, 176, 48, 0.18); border-color: #e0b030; }
 .evp-chips .x { background: transparent; border: 2px solid #e5594d; }
 .evp-chips .mai, .evp-chips .x0 { border-color: #55544f; color: #9a988e; }
+/* apasare pe o zona de pe silueta: cardul cu detaliile ei */
+.evp-zona { cursor: pointer; }
+.evp-zona.sel { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.95)); }
+.evp-zona-card { background: #262624; border: 1px solid #3a3937; border-radius: 14px; padding: 12px 14px; margin-top: 10px; font-size: 14px; color: #706e66; }
+.evp-zona-card.deschis { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); color: #ece9e2; border-color: #706e66; max-height: 45vh; overflow-y: auto; padding-right: 44px; box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.45); z-index: 20; }
+.evp-zona-card .evp-it { background: #1e1e1d; margin: 0 0 8px; }
+.evp-zona-card .evp-it:last-child { margin-bottom: 0; }
+.evp-zona-x { position: absolute; top: 6px; right: 8px; width: 34px; height: 34px; border-radius: 10px; border: 1px solid #55544f; background: #262624; color: #c9c7bd; font-size: 20px; line-height: 1; cursor: pointer; padding: 0; font-family: inherit; }
+@media (max-width: 768px) { .evp-zona-card.deschis { bottom: calc(66px + env(safe-area-inset-bottom)); } }
 .evp-viitor { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(127, 119, 221, 0.12); border: 1px solid rgba(127, 119, 221, 0.35); font-size: 14px; line-height: 1.45; white-space: pre-line; color: #ece9e2; }
 .evp-viitor-t { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: #a79ded; font-weight: 700; margin-bottom: 2px; }
 .evp-chips-rand { margin: 0 0 6px; }

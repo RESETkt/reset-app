@@ -250,11 +250,14 @@ function evpSvg(iteme, fata) {
   const adauga = (z, p, c, ring, text, sub) => {
     const g = evpGeom(z, p, fata);
     if (!g) return;
-    if (c) umple += g.fill(c === 'r' ? EVP_R : EVP_Y);
-    if (ring && g.ring) inele += `<ellipse cx="${g.ring[0]}" cy="${g.ring[1]}" rx="${g.ring[2]}" ry="${g.ring[3]}" fill="none" stroke="${EVP_R}" stroke-width="3.5"/>`;
+    // zona si eticheta ei sunt apasabile: arata detaliile punctelor din zona (evpArataZona)
+    const k = z + (p || '');
+    const apasa = `class="evp-zona" data-k="${k}" onclick="evpArataZona('${k}')"`;
+    if (c) umple += `<g ${apasa}>${g.fill(c === 'r' ? EVP_R : EVP_Y)}</g>`;
+    if (ring && g.ring) inele += `<g ${apasa}><ellipse cx="${g.ring[0]}" cy="${g.ring[1]}" rx="${g.ring[2]}" ry="${g.ring[3]}" fill="transparent" stroke="${EVP_R}" stroke-width="3.5"/></g>`;
     const lat = EVP_ZONA_LATERALA.has(z);
     const stanga = lat ? g.tint[0] < 100 : !fata;       // mijloc: fata -> dreapta imaginii, spate -> stanga
-    if (text) etichete.push({ col: stanga ? 'L' : 'R', tx: g.tint[0], ty: g.tint[1], text, sub, c: c || 'r' });
+    if (text) etichete.push({ col: stanga ? 'L' : 'R', tx: g.tint[0], ty: g.tint[1], text, sub, c: c || 'r', k });
   };
   zone.forEach(zn => {
     const nume = EVP_ZONA_NUME[zn.z] + (zn.p ? ' ' + zn.p : '');
@@ -279,10 +282,13 @@ function evpSvg(iteme, fata) {
       const left = col === 'L', ax = left ? 'end' : 'start', lx = FX + (left ? 6 : 194);
       const cul = e.c === 'g' ? EVP_Y : EVP_R;
       const yl = y + 11;
-      txt += `<line x1="${FX + (left ? 10 : 190)}" y1="${yl}" x2="${FX + e.tx}" y2="${e.ty}" stroke="${cul}" stroke-width="2"/>`
+      txt += `<g class="evp-zona" data-k="${e.k}" onclick="evpArataZona('${e.k}')">`
+        + `<line x1="${FX + (left ? 10 : 190)}" y1="${yl}" x2="${FX + e.tx}" y2="${e.ty}" stroke="${cul}" stroke-width="2"/>`
         + `<circle cx="${FX + e.tx}" cy="${e.ty}" r="3.5" fill="${cul}"/>`
+        + `<rect x="${left ? lx - 135 : lx}" y="${y}" width="135" height="${inalt}" fill="transparent"/>`
         + linii.map((l, i) => `<text class="evp-lb" x="${lx}" y="${y + 16 + i * 20}" text-anchor="${ax}">${evpEsc(l)}</text>`).join('')
-        + (e.sub ? `<text class="evp-lbs" x="${lx}" y="${y + 16 + linii.length * 20}" text-anchor="${ax}">${evpEsc(e.sub)}</text>` : '');
+        + (e.sub ? `<text class="evp-lbs" x="${lx}" y="${y + 16 + linii.length * 20}" text-anchor="${ax}">${evpEsc(e.sub)}</text>` : '')
+        + '</g>';
     });
   });
   return `<svg viewBox="0 0 500 430" role="img" aria-label="${fata ? 'din față' : 'din spate'}"><g transform="translate(${FX},0)">${evpCorp(fata)}${umple}${inele}</g>${txt}</svg>`;
@@ -325,7 +331,7 @@ function evpTextImplicit(it) {
   return [t ? t.charAt(0).toUpperCase() + t.slice(1) + '.' : '', it.nota].filter(Boolean).join(' ');
 }
 
-function evpCard(it, ascuns) {
+function evpCard(it, ascuns, faraActiuni) {
   const ed = it.ed || {};
   const cap = evEl('div', { class: 'evp-it-cap' },
     evEl('b', { class: 'evp-it-titlu' }, it.titlu),
@@ -343,7 +349,7 @@ function evpCard(it, ascuns) {
   }
   card.append(corp);
 
-  if (evpPoateEdita()) {
+  if (evpPoateEdita() && !faraActiuni) {
     const actiuni = evEl('div', { class: 'evp-act' });
     if (ascuns) actiuni.append(evEl('span', { class: 'ev-link', onclick: () => evpEditeaza(it.key, { ascuns: false }) }, 'Pune la loc'));
     else actiuni.append(evEl('span', { class: 'ev-link', onclick: () => evpEditor(it, corp, actiuni) }, 'Editează'));
@@ -412,6 +418,28 @@ function evpUltimaCard(u) {
   return c;
 }
 
+let evpZoneMap = {};   // cheia zonei -> punctele din plan care o ating
+let evpZonaSel = null;
+
+// Apasare pe o zona (sau pe eticheta ei): cardul de sub siluete arata textul punctelor din zona
+function evpArataZona(k) {
+  const card = document.getElementById('evp-zona-card');
+  if (!card) return;
+  if (evpZonaSel === k) k = null;   // a doua apasare inchide
+  evpZonaSel = k;
+  document.querySelectorAll('.evp-zona').forEach(g => g.classList.toggle('sel', g.dataset.k === k));
+  card.innerHTML = '';
+  if (!k || !evpZoneMap[k]) {
+    evpZonaSel = null;
+    card.className = 'evp-zona-card gol';
+    card.textContent = 'Apasă pe o zonă ca să vezi detaliile.';
+    return;
+  }
+  card.className = 'evp-zona-card deschis';
+  card.append(evEl('button', { class: 'evp-zona-x', onclick: () => evpArataZona(k), 'aria-label': 'Închide' }, '×'),
+    ...evpZoneMap[k].map(it => evpCard(it, false, true)));
+}
+
 function evpRandeaza() {
   const p = evpCurent, pac = p.pacient, dinPlan = p.sursa === 'plan';
   const panel = document.getElementById(dinPlan ? 'panel-plan' : 'panel-fisa');
@@ -421,6 +449,15 @@ function evpRandeaza() {
   const rosii = vizibile.filter(i => i.tip === 'test' && i.c === 'r');
   const galbene = vizibile.filter(i => i.tip === 'test' && i.c === 'g');
   const poate = evpPoateEdita();
+
+  // punctele fiecarei zone de pe siluete, pentru cardul care se deschide la apasare
+  evpZoneMap = {};
+  evpZonaSel = null;
+  vizibile.forEach(it => it.zone.forEach(zn => {
+    const k = zn.z + (zn.p || '');
+    const l = evpZoneMap[k] = evpZoneMap[k] || [];
+    if (!l.includes(it)) l.push(it);
+  }));
 
   const grup = (clasa, titlu, lista) => lista.length ? evEl('div', { class: 'evp-grup' },
     evEl('div', { class: 'evp-gt ' + clasa }, evEl('i'), titlu), lista.map(i => evpCard(i))) : null;
@@ -463,7 +500,8 @@ function evpRandeaza() {
 
   const corpPlan = gol
     ? [evEl('div', { class: 'ev-gol' }, mesajGol)]
-    : [siluete, legenda];
+    : [evEl('div', { class: 'evp-wrap-sil' }, siluete, legenda,
+        evEl('div', { id: 'evp-zona-card', class: 'evp-zona-card gol' }, 'Apasă pe o zonă ca să vezi detaliile.'))];
 
   panel.append(evEl('div', { id: 'plan-lucru-ecran' }, sus, antet,
     chipsDiv,
