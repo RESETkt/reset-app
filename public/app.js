@@ -552,6 +552,8 @@ function aratatFormularPacientNou(prenumePresetat, telefonPresetat, discutieId) 
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
   marcheazaActiv('fisa');
+  // fisa trebuie sa deruleze: pagina-fara-scroll ramasese de la calendar cand se intra in fisa direct de acolo
+  document.body.classList.remove('pagina-fara-scroll');
   discutieConvertitaId = discutieId || null;
 
   document.getElementById('panel-fisa').innerHTML = `
@@ -644,6 +646,8 @@ async function deschideFisa(id) {
     document.getElementById(`panel-${p}`).style.display = p === 'fisa' ? 'block' : 'none';
   });
   marcheazaActiv('fisa');
+  // fisa trebuie sa deruleze: pagina-fara-scroll ramasese de la calendar cand se intra in fisa direct de acolo
+  document.body.classList.remove('pagina-fara-scroll');
 
   const data = await apel(`/api/pacienti/${id}`);
   const p = data.pacient;
