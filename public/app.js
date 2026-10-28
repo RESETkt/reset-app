@@ -54,6 +54,7 @@ function aratatApp() {
   actualizeazaNotificari();
   initLive();
   initPush();
+  ciornaCuratenie();
   ajusteazaInaltimeTopbar();
   window.addEventListener('resize', ajusteazaInaltimeTopbar);
   document.addEventListener('visibilitychange', () => {
@@ -1706,6 +1707,7 @@ function randPacientRand(p) {
   return `
     <div class="pacient-chip" style="display:inline-flex;align-items:center;gap:2px;border:1px solid ${culoare.border};border-radius:4px;padding:1px 5px;background:${culoare.bg}">
       ${ramase === 1 ? '<span style="width:6px;height:6px;border-radius:50%;background:#e0b85e;flex-shrink:0" title="Ultima sedinta din abonament"></span>' : ''}
+      ${p.status !== 'prezent' && ciornaExista(p.id) ? '<span style="width:6px;height:6px;border-radius:50%;background:#7f77dd;flex-shrink:0" title="Ciorna salvata: formular de prezenta nefinalizat"></span>' : ''}
       <span style="font-size:12px;cursor:pointer;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${culoare.text};font-weight:600" onclick="toggleMeniuStatus('${p.id}', event)">${p.prenume}</span>
       <span style="font-size:11px;cursor:pointer;color:#9a988e;padding:0 2px" onclick="aratatMeniuProgramare('${p.id}','${p.prenume}')" title="Editeaza programarea">&#9998;</span>
       <div id="status-meniu-${p.id}" style="display:none;position:absolute;top:100%;left:0;z-index:60;background:#ffffff;border:1px solid #d8d6cd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:90px;overflow:hidden">
@@ -1973,6 +1975,7 @@ function selecteazaPacientProgramare(id, nume) {
 }
 
 function inchideModalProgramare() {
+  ciornaProgramareId = null; // ciorna ramane salvata; doar se opreste salvarea cat nu e deschis formularul
   document.getElementById('modal-container').innerHTML = '';
 }
 
@@ -2073,6 +2076,64 @@ const APARATE = ['Respirații', 'Mobilitate', 'Stabilitate', 'Benzi', 'TRX', 'Ke
 const RESPIRATII = 'Respirații';
 let respiratiiBifat = false;
 
+// Ciorna: ce scrii in formularul de prezenta se salveaza singur in browser, pe programare. Daca inchizi aplicatia sau
+// pleci sa faci o programare, la redeschidere gasesti totul la loc. Se sterge cand prezenta se salveaza (sau dupa 7 zile).
+const CIORNA_PREFIX = 'reset_ciorna_prezenta_';
+let ciornaProgramareId = null;
+
+function ciornaSalveaza() {
+  const ta = document.getElementById('ap-azi');
+  if (!ciornaProgramareId || !ta || ta.dataset.ciorna !== ciornaProgramareId) return;
+  try {
+    const gol = !ta.value.trim() && !respiratiiBifat && !planDinFormular().trim();
+    if (gol) localStorage.removeItem(CIORNA_PREFIX + ciornaProgramareId);
+    else localStorage.setItem(CIORNA_PREFIX + ciornaProgramareId, JSON.stringify({ azi: ta.value, respiratii: respiratiiBifat, plan: planStare, t: Date.now() }));
+  } catch { /* browser fara stocare: formularul merge ca pana acum */ }
+}
+
+function ciornaExista(id) {
+  try { return !!localStorage.getItem(CIORNA_PREFIX + id); } catch { return false; }
+}
+
+function ciornaSterge(id) {
+  try { localStorage.removeItem(CIORNA_PREFIX + id); } catch { /* nimic de sters */ }
+}
+
+// Sterge ciornele mai vechi de 7 zile (programari la care nu s-a mai revenit)
+function ciornaCuratenie() {
+  try {
+    Object.keys(localStorage).filter(k => k.startsWith(CIORNA_PREFIX)).forEach(k => {
+      const c = JSON.parse(localStorage.getItem(k) || 'null');
+      if (!c || !c.t || Date.now() - c.t > 7 * 24 * 3600 * 1000) localStorage.removeItem(k);
+    });
+  } catch { /* nimic */ }
+}
+
+// Pune ciorna (daca exista) in formularul deschis; intoarce ora la care a fost salvata
+function ciornaRestaureaza(id) {
+  let c = null;
+  try { c = JSON.parse(localStorage.getItem(CIORNA_PREFIX + id) || 'null'); } catch { c = null; }
+  if (!c) return null;
+  document.getElementById('ap-azi').value = c.azi || '';
+  respiratiiBifat = !!c.respiratii;
+  if (c.plan) planStare = Object.assign(planGol(), c.plan);
+  document.getElementById('ap-plan-text').value = planStare.text || '';
+  planRandeaza();
+  aparateActualizeaza();
+  return new Date(c.t).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+}
+
+function ciornaArunca(id) {
+  ciornaSterge(id);
+  document.getElementById('ap-azi').value = '';
+  respiratiiBifat = false;
+  planStare = planGol();
+  document.getElementById('ap-plan-text').value = '';
+  planRandeaza();
+  aparateActualizeaza();
+  document.getElementById('ap-ciorna').innerHTML = '';
+}
+
 function scapaAtribut(s) {
   return scapaHtml(s).replace(/"/g, '&quot;');
 }
@@ -2097,6 +2158,7 @@ function aparateActualizeaza() {
     const n = b.dataset.n;
     b.classList.toggle('on', n === RESPIRATII ? respiratiiBifat : linii.some(l => aparatInLinie(n, l)));
   });
+  ciornaSalveaza();
 }
 
 function aparateApasa(i) {
@@ -2220,6 +2282,7 @@ function planChipsHtml() {
 
 function planRandeaza() {
   document.getElementById('ap-plan-chips').innerHTML = planChipsHtml();
+  ciornaSalveaza();
 }
 
 function planApasa(cheie, i) {
@@ -2270,7 +2333,7 @@ function htmlCampuriSedinta(azi, plan, idProgramare) {
     <div id="ap-plan-mesaj" style="font-size:12px;color:#e08585"></div>
     <div id="ap-plan-chips">${planChipsHtml()}</div>
     <label class="ap-eticheta">Alte detalii</label>
-    <textarea class="ap-camp viitor" id="ap-plan-text" rows="2" oninput="planStare.text=this.value">${scapaHtml(planStare.text)}</textarea>`;
+    <textarea class="ap-camp viitor" id="ap-plan-text" rows="2" oninput="planStare.text=this.value; ciornaSalveaza()">${scapaHtml(planStare.text)}</textarea>`;
 }
 
 // Adauga sub ce e deja scris textul de la ultima sedinta a pacientului
@@ -2300,6 +2363,7 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
           <button type="button" class="btn ap-ca-trecuta" onclick="aparateCaDataTrecuta('${id}')">Ca data trecută</button>
         </div>
         <div id="ap-mesaj" style="font-size:12px;color:#e08585;margin-bottom:6px"></div>
+        <div id="ap-ciorna" style="font-size:12px;color:#a79ded;margin-bottom:6px"></div>
         <div id="ap-plan-ref"></div>
         ${htmlCampuriSedinta('', '', id)}
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
@@ -2309,6 +2373,12 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
   `;
   document.getElementById('modal-container').innerHTML = html;
   evpIncarcaReferinta(id); // din plan-evaluare.js
+  ciornaProgramareId = id;
+  document.getElementById('ap-azi').dataset.ciorna = id;
+  const oraCiorna = ciornaRestaureaza(id);
+  if (oraCiorna) {
+    document.getElementById('ap-ciorna').innerHTML = `Ciornă restaurată (salvată la ${oraCiorna}). <span style="text-decoration:underline;cursor:pointer" onclick="ciornaArunca('${id}')">Șterge ciorna</span>`;
+  }
 }
 
 async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, statusCurent) {
@@ -2326,6 +2396,8 @@ async function confirmaPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
     buton.disabled = false;
     return;
   }
+  ciornaSterge(id);
+  ciornaProgramareId = null;
 
   const areMaiPutinDe3 = statusCurent !== 'prezent' && totalSedinte != null && sedinteEfectuate != null
     && totalSedinte - (sedinteEfectuate + 1) === 2;
