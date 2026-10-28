@@ -185,6 +185,81 @@ router.get('/:id/ultima-sedinta', async (req, res) => {
   }
 });
 
+// ---------- Formularul de prezenta: programul de mobilitate al pacientului + exercitiile de forta des folosite ----------
+
+// Variantele de scriere ale aceluiasi exercitiu se aduna sub un singur nume (cum le scriu colegii: squat/squats/genuflexiuni...)
+const FORTA_CANON = [
+  [/pall?\s*o?f+\s*press|pallof/, 'Pallof press'],
+  [/rever?s\w*\s*clamshell|clamshell/, 'Reverse clamshell'],
+  [/ridicari\s*(de\s*)?bazin|bridges?/, 'Ridicări bazin'],
+  [/fandar/, 'Fandări'],
+  [/goblet/, 'Goblet squat'],
+  [/squat|genuflex/, 'Squat'],
+  [/low\s*row/, 'Low row'],
+  [/high\s*row/, 'High row'],
+  [/face\s*pull/, 'Face pull'],
+  [/dead\s*bug/, 'Dead bug'],
+  [/plank/, 'Plank'],
+  [/hip\s*hinge/, 'Hip hinge'],
+  [/deadlift/, 'Deadlift'],
+  [/abductii/, 'Abducții'],
+  [/flotar/, 'Flotări'],
+  [/step\s*up/, 'Step up'],
+];
+const APARATE_FORMULAR = ['respiratii', 'stabilitate', 'benzi', 'trx', 'kettlebell', 'stickmobility', 'rip', 'lada', 'stepper', 'agilitate', 'haltere', 'altceva'];
+const DE_SARIT = /stick mobility|respiratii|lotus|frog|deschidere torace|detensionare|rulat|toate ca de obicei|cu exceptia|protocol/;
+let fortaCache = { t: 0, v: [] };
+
+function faraDiacritice(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+// Cele mai folosite exercitii de stabilitate si forta din ultimele 6 luni; cele din ultimele 60 de zile conteaza dublu,
+// deci lista se schimba singura: ce nu se mai foloseste dispare, ce apare des se adauga.
+async function fortaFrecvente() {
+  if (Date.now() - fortaCache.t < 10 * 60 * 1000) return fortaCache.v;
+  const { rows } = await pool.query(
+    `SELECT exercitii, (data_ora > now() - interval '60 days') AS recent FROM programari
+     WHERE status = 'prezent' AND exercitii IS NOT NULL AND exercitii <> '' AND data_ora > now() - interval '180 days'`
+  );
+  const scor = new Map();
+  rows.forEach(r => String(r.exercitii).split('\n').forEach(linie => {
+    let rest = linie.trim();
+    if (!rest) return;
+    const m = rest.match(/^([^:]{1,30}):\s*(.*)$/);
+    if (m) {
+      const p = faraDiacritice(m[1]);
+      if (p === 'mobilitate' || p.startsWith('respiratii')) return;
+      if (APARATE_FORMULAR.includes(p) || /^stabilitate\s*&\s*forta$/.test(p)) rest = m[2];
+    }
+    if (DE_SARIT.test(faraDiacritice(rest))) return;
+    rest.split(/[,;]|\s\+\s|\ssi\s|\sși\s/i).forEach(bucata => {
+      const curat = bucata.replace(/\b\d+\s*[x×]\s*\d+\b/gi, ' ').replace(/\b\d+([.,]\d+)?\s*(kg|rep|repetari|ture|sec|min)?\b/gi, ' ').replace(/\s+/g, ' ').trim();
+      const k = faraDiacritice(curat);
+      if (k.length < 3 || k.length > 40) return;
+      const canon = FORTA_CANON.find(([re]) => re.test(k));
+      const nume = canon ? canon[1] : curat.charAt(0).toUpperCase() + curat.slice(1).toLowerCase();
+      const c = scor.get(nume) || { text: nume, scor: 0 };
+      c.scor += r.recent ? 2 : 1;
+      scor.set(nume, c);
+    });
+  }));
+  const v = [...scor.values()].filter(x => x.scor >= 4).sort((a, b) => b.scor - a.scor).slice(0, 18).map(x => x.text);
+  fortaCache = { t: Date.now(), v };
+  return v;
+}
+
+router.get('/:id/date-formular', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT pac.id AS pacient_id, pac.program_mobilitate FROM programari p JOIN pacienti pac ON pac.id = p.pacient_id WHERE p.id = $1`,
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ eroare: 'Programare inexistenta' });
+    res.json({ pacient_id: rows[0].pacient_id, program_mobilitate: rows[0].program_mobilitate || { scoase: [], extra: [] }, forta: await fortaFrecvente() });
+  } catch (e) {
+    res.status(500).json({ eroare: e.message });
+  }
+});
+
 // Marcheaza absent: daca sedinta fusese deja marcata prezenta din greseala,
 // anuleaza si sedinta contorizata in abonament (ca sa nu ramana consumata pe nedrept)
 router.patch('/:id/absent', async (req, res) => {

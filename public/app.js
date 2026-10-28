@@ -2159,6 +2159,7 @@ function aparateActualizeaza() {
     b.classList.toggle('on', n === RESPIRATII ? respiratiiBifat : linii.some(l => aparatInLinie(n, l)));
   });
   ciornaSalveaza();
+  mobFortaRandeaza(); // blocurile de mobilitate si forta citesc din acelasi camp
 }
 
 function aparateApasa(i) {
@@ -2199,6 +2200,141 @@ function curataTextAparate(v) {
 function exercitiiDinFormular() {
   const text = curataTextAparate(document.getElementById('ap-azi').value);
   return [respiratiiBifat ? RESPIRATII : '', text].filter(Boolean).join('\n');
+}
+
+// ---- Mobilitate si forta: butoane care scriu in campul "Azi", in stilul notelor de pana acum ----
+// Mobilitate: un buton "ca de obicei" + se apasa ce NU s-a facut. Programul fiecarui pacient (ce nu poate face, ce se
+// face in plus) se seteaza o data. Forta: butoane cu ce se foloseste des, din notele vechi; lista se schimba singura.
+const PIESE_MOB = ['Stick mobility', 'Respirații diafragmatice', 'Lotus', 'Frog stretch', 'Deschidere torace', 'Detensionare anterior', 'Detensionare posterior', 'Rulat'];
+const FORTA_IMPLICIT = ['Reverse clamshell', 'Ridicări bazin', 'Fandări', 'Squat', 'Goblet squat', 'Pallof press', 'Low row', 'High row', 'Dead bug', 'Plank', 'Deadlift', 'Hip hinge', 'Abducții', 'Flotări'];
+const LINIE_MOB = /^mobilitate\s*:\s*toate ca de obicei\s*(?:,\s*cu excep[țţt]ia\s*:\s*(.*))?$/i;
+const LINIE_FORTA = /^stabilitate\s*&\s*for[țţt][ăa]\s*:\s*(.*)$/i;
+let mobCtx = null;            // { pacientId, program: { scoase, extra }, forta: [nume] }
+let mobProgramDeschis = false;
+
+function aziLinii() { return document.getElementById('ap-azi').value.split('\n'); }
+
+function aziSeteaza(linii) {
+  document.getElementById('ap-azi').value = linii.join('\n');
+  aparateActualizeaza(); // salveaza ciorna si redeseneaza butoanele
+}
+
+function mobPiese() {
+  const p = mobCtx.program;
+  return PIESE_MOB.filter(x => !p.scoase.includes(x)).concat(p.extra);
+}
+
+function mobSalveazaProgram() {
+  apel(`/api/pacienti/${mobCtx.pacientId}/program-mobilitate`, { method: 'PATCH', body: JSON.stringify(mobCtx.program) });
+}
+
+function mobFortaRandeaza() {
+  const elM = document.getElementById('ap-mob');
+  const elF = document.getElementById('ap-forta');
+  if (!elM || !elF || !mobCtx) return;
+  const linii = aziLinii().map(l => l.trim());
+
+  // mobilitate
+  const iMob = linii.findIndex(l => LINIE_MOB.test(l));
+  const bifat = iMob >= 0;
+  const exceptii = bifat ? (linii[iMob].match(LINIE_MOB)[1] || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
+  const piese = mobPiese();
+  let h = `<button type="button" class="ap-mare ${bifat ? 'on' : ''}" onclick="mobApasa()">Mobilitate, ca de obicei</button>`;
+  if (bifat) {
+    h += `<div class="ap-ajut"><b>Azi NU am făcut</b> (apasă pe ce ai sărit):</div>
+      <div class="ap-chips">${piese.map((p, i) => `<button type="button" class="ap-chip ap-exc ${exceptii.includes(p.toLowerCase()) ? 'on' : ''}" onclick="mobExceptie(${i})">${scapaHtml(p)}</button>`).join('')}</div>`;
+  }
+  h += `<span class="ap-link" onclick="mobProgramDeschis=!mobProgramDeschis; mobFortaRandeaza()">${mobProgramDeschis ? 'Închide programul pacientului' : 'Programul pacientului (ce nu poate face, ce se face în plus)'}</span>`;
+  if (mobProgramDeschis) {
+    h += `<div class="ap-prog"><div class="ap-ajut" style="margin-top:0">Ce intră în programul lui. Scoate ce nu poate face. Se păstrează pentru toate ședințele.</div>
+      <div class="ap-chips">${PIESE_MOB.map((p, i) => `<button type="button" class="ap-chip ${mobCtx.program.scoase.includes(p) ? 'ap-scos' : 'on'}" onclick="mobPiesa(${i})">${scapaHtml(p)}</button>`).join('')}</div>
+      <div class="ap-ajut">În plus, pentru el (de exemplu „mobilitate șold (mai mult)"):</div>
+      ${mobCtx.program.extra.length ? `<div class="ap-chips" style="margin-bottom:8px">${mobCtx.program.extra.map((e, i) => `<button type="button" class="ap-chip on" onclick="mobExtraSterge(${i})">${scapaHtml(e)} &times;</button>`).join('')}</div>` : ''}
+      <div style="display:flex;gap:8px"><input id="ap-mob-extra" class="ap-camp" style="min-height:44px;height:44px;resize:none" placeholder="ce faceți în plus"><button type="button" class="ap-chip" onclick="mobExtraAdauga()">Adaugă</button></div></div>`;
+  }
+  elM.innerHTML = h;
+
+  // stabilitate si forta
+  const iF = linii.findIndex(l => LINIE_FORTA.test(l));
+  const alese = iF >= 0 ? linii[iF].match(LINIE_FORTA)[1].split(',').map(s => s.trim()).filter(Boolean) : [];
+  const lista = [...mobCtx.forta];
+  alese.forEach(a => { if (!lista.some(x => x.toLowerCase() === a.toLowerCase())) lista.push(a); });
+  elF.innerHTML = `<div class="ap-chips">${lista.map((n, i) => `<button type="button" class="ap-chip ${alese.some(a => a.toLowerCase() === n.toLowerCase()) ? 'on' : ''}" onclick="fortaApasa(${i})">${scapaHtml(n)}</button>`).join('')}</div>`;
+  mobCtx.listaForta = lista;
+}
+
+function mobApasa() {
+  const linii = aziLinii();
+  const i = linii.findIndex(l => LINIE_MOB.test(l.trim()));
+  if (i >= 0) linii.splice(i, 1);
+  else linii.unshift('Mobilitate: toate ca de obicei');
+  aziSeteaza(linii.filter((l, k) => l.trim() || k < linii.length - 1));
+}
+
+function mobExceptie(i) {
+  const piesa = mobPiese()[i].toLowerCase();
+  const linii = aziLinii();
+  const k = linii.findIndex(l => LINIE_MOB.test(l.trim()));
+  if (k < 0) return;
+  const ex = (linii[k].trim().match(LINIE_MOB)[1] || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const j = ex.indexOf(piesa);
+  if (j >= 0) ex.splice(j, 1); else ex.push(piesa);
+  linii[k] = 'Mobilitate: toate ca de obicei' + (ex.length ? ', cu excepția: ' + ex.join(', ') : '');
+  aziSeteaza(linii);
+}
+
+function mobPiesa(i) {
+  const p = PIESE_MOB[i];
+  const s = mobCtx.program.scoase;
+  const j = s.indexOf(p);
+  if (j >= 0) s.splice(j, 1); else s.push(p);
+  mobSalveazaProgram();
+  mobFortaRandeaza();
+}
+
+function mobExtraAdauga() {
+  const inp = document.getElementById('ap-mob-extra');
+  const v = inp.value.replace(/,/g, ' ').replace(/\s+/g, ' ').trim(); // fara virgule: virgula separa piesele in nota
+  if (!v) return;
+  mobCtx.program.extra.push(v);
+  mobSalveazaProgram();
+  mobFortaRandeaza();
+}
+
+function mobExtraSterge(i) {
+  mobCtx.program.extra.splice(i, 1);
+  mobSalveazaProgram();
+  mobFortaRandeaza();
+}
+
+function fortaApasa(i) {
+  const nume = mobCtx.listaForta[i];
+  const linii = aziLinii();
+  const k = linii.findIndex(l => LINIE_FORTA.test(l.trim()));
+  const ex = k >= 0 ? linii[k].trim().match(LINIE_FORTA)[1].split(',').map(s => s.trim()).filter(Boolean) : [];
+  const j = ex.findIndex(x => x.toLowerCase() === nume.toLowerCase());
+  if (j >= 0) ex.splice(j, 1); else ex.push(nume.toLowerCase());
+  const linie = ex.length ? 'Stabilitate & forță: ' + ex.join(', ') : null;
+  if (k >= 0) { if (linie) linii[k] = linie; else linii.splice(k, 1); }
+  else if (linie) linii.push(linie);
+  aziSeteaza(linii);
+}
+
+// Aduce programul pacientului si lista de exercitii de forta; apoi deseneaza butoanele
+async function mobFortaIncarca(programareId) {
+  mobCtx = null;
+  mobProgramDeschis = false;
+  const r = await apel(`/api/programari/${programareId}/date-formular`);
+  if (!document.getElementById('ap-mob')) return; // formularul s-a inchis intre timp
+  const p = (r && r.program_mobilitate) || {};
+  const forta = r && Array.isArray(r.forta) && r.forta.length >= 6 ? r.forta : FORTA_IMPLICIT;
+  mobCtx = {
+    pacientId: r && r.pacient_id,
+    program: { scoase: Array.isArray(p.scoase) ? p.scoase : [], extra: Array.isArray(p.extra) ? p.extra : [] },
+    forta
+  };
+  document.querySelectorAll('.ap-chip[data-n="Mobilitate"]').forEach(b => { b.style.display = 'none'; }); // il inlocuieste blocul de mobilitate
+  mobFortaRandeaza();
 }
 
 // "Data viitoare" se noteaza cu butoane: Atenție la (zone), De lucrat, Progresie, plus un camp pentru restul.
@@ -2365,6 +2501,10 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
         <div id="ap-mesaj" style="font-size:12px;color:#e08585;margin-bottom:6px"></div>
         <div id="ap-ciorna" style="font-size:12px;color:#a79ded;margin-bottom:6px"></div>
         <div id="ap-plan-ref"></div>
+        <label class="ap-eticheta">Mobilitate</label>
+        <div id="ap-mob"></div>
+        <label class="ap-eticheta">Stabilitate și forță</label>
+        <div id="ap-forta"></div>
         ${htmlCampuriSedinta('', '', id)}
         <button class="btn" style="width:100%;margin-top:16px" onclick="confirmaPrezenta('${id}','${prenume}',${totalSedinte ?? 'null'},${sedinteEfectuate ?? 'null'},'${statusCurent}')">Salvează</button>
         <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Anulează</button>
@@ -2376,6 +2516,7 @@ function aratatFormularPrezenta(id, prenume, totalSedinte, sedinteEfectuate, sta
   ciornaProgramareId = id;
   document.getElementById('ap-azi').dataset.ciorna = id;
   const oraCiorna = ciornaRestaureaza(id);
+  mobFortaIncarca(id);
   if (oraCiorna) {
     document.getElementById('ap-ciorna').innerHTML = `Ciornă restaurată (salvată la ${oraCiorna}). <span style="text-decoration:underline;cursor:pointer" onclick="ciornaArunca('${id}')">Șterge ciorna</span>`;
   }

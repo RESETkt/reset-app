@@ -187,3 +187,7 @@ CREATE TABLE IF NOT EXISTS evaluari (
 );
 
 CREATE INDEX IF NOT EXISTS idx_evaluari_pacient ON evaluari(pacient_id, data);
+
+-- Programul de mobilitate al pacientului: piese standard scoase (nu le poate face) si ce se face in plus.
+-- {"scoase": ["Lotus"], "extra": ["mobilitate sold, mai mult"]}
+ALTER TABLE pacienti ADD COLUMN IF NOT EXISTS program_mobilitate jsonb;

@@ -74,6 +74,15 @@ router.post('/:id/evaluari', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
+// Programul de mobilitate al pacientului: ce piese standard nu le poate face si ce se face in plus
+router.patch('/:id/program-mobilitate', async (req, res) => {
+  const lista = v => Array.isArray(v) ? v.filter(x => typeof x === 'string').map(x => x.replace(/,/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80)).filter(Boolean).slice(0, 30) : [];
+  const program = { scoase: lista(req.body.scoase), extra: lista(req.body.extra) };
+  const { rows } = await pool.query('UPDATE pacienti SET program_mobilitate = $1::jsonb WHERE id = $2 RETURNING id', [JSON.stringify(program), req.params.id]);
+  if (!rows[0]) return res.status(404).json({ eroare: 'Pacient inexistent' });
+  res.json(program);
+});
+
 // Adauga o plata noua pentru un pacient - abonament nou, sedinta, sau orice suma
 router.post('/:id/plati', async (req, res) => {
   const { suma, metoda, tip_plata, motiv, data_plata } = req.body;
