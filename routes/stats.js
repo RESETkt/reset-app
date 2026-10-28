@@ -1,7 +1,7 @@
 const express = require('express');
 const PDFDocument = require('pdfkit');
 const pool = require('../db/pool');
-const { ceareAutentificare } = require('../services/auth');
+const { ceareAutentificare, ceareAdmin } = require('../services/auth');
 const { PAROLA_SUME } = require('../services/parolaSume');
 
 const router = express.Router();
@@ -12,6 +12,54 @@ const LUNI_RO = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', '
 function dataISO(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+
+// Ce scriu kinetoterapeutii la "exercitii": cele mai folosite expresii si cuvinte din sedintele vechi, ca sa putem
+// construi biblioteca de miscari din ce se foloseste de fapt (doar admin).
+const APARATE_CUVINTE = ['Respirații', 'Mobilitate', 'Stabilitate', 'Benzi', 'TRX', 'Kettlebell', 'StickMobility', 'RIP', 'Lada', 'Stepper', 'Agilitate', 'Haltere', 'Altceva'];
+const OPRITE = new Set(['de', 'cu', 'la', 'pe', 'si', 'in', 'din', 'a', 'un', 'o', 'sau', 'pentru', 'ca', 'se', 'sa', 'al', 'ale', 'mai', 'doar', 'fara', 'x']);
+
+function fara(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+router.get('/exercitii-cuvinte', ceareAdmin, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT exercitii FROM programari WHERE status = 'prezent' AND exercitii IS NOT NULL AND exercitii <> ''`
+  );
+  const aparateNorm = new Map(APARATE_CUVINTE.map(a => [fara(a), a]));
+  const aparate = {}, fraze = new Map(), cuvinte = new Map();
+  const numara = (mapa, cheie, afisat) => {
+    const c = mapa.get(cheie) || { text: afisat, nr: 0 };
+    c.nr++;
+    mapa.set(cheie, c);
+  };
+  const adaugaAparat = nume => { aparate[nume] = (aparate[nume] || 0) + 1; };
+  rows.forEach(rand => String(rand.exercitii).split('\n').forEach(linie => {
+    let rest = linie.trim();
+    if (!rest) return;
+    const m = rest.match(/^([^:]{1,30}):\s*(.*)$/);
+    if (m && aparateNorm.has(fara(m[1]))) {
+      adaugaAparat(aparateNorm.get(fara(m[1])));
+      rest = m[2];
+    } else if (aparateNorm.has(fara(rest))) {
+      adaugaAparat(aparateNorm.get(fara(rest)));
+      return;
+    }
+    rest.split(/[,;]|\s\+\s|\ssi\s|\sși\s/i).forEach(bucata => {
+      // fara dozaje ("3x10", "2 x 12", "15 kg")
+      const curat = bucata.replace(/\b\d+\s*[x×]\s*\d+\b/gi, ' ').replace(/\b\d+([.,]\d+)?\s*(kg|rep|repetari|ture|sec|min)?\b/gi, ' ').replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+      const k = fara(curat);
+      if (k.length < 3 || k.length > 60) return;
+      numara(fraze, k, curat.toLowerCase());
+      k.split(' ').filter(w => w.length > 2 && !OPRITE.has(w) && !/^\d/.test(w)).forEach(w => numara(cuvinte, w, w));
+    });
+  }));
+  const top = (mapa, n) => [...mapa.values()].sort((a, b) => b.nr - a.nr).slice(0, n);
+  res.json({
+    sedinte_cu_text: rows.length,
+    aparate: Object.entries(aparate).map(([nume, nr]) => ({ nume, nr })).sort((a, b) => b.nr - a.nr),
+    fraze: top(fraze, 120),
+    cuvinte: top(cuvinte, 80),
+  });
+});
 
 // Numarul de pacienti dintr-o saptamana la alegere (offset in saptamani fata de cea curenta,
 // 0 = saptamana asta, -1 = saptamana trecuta etc) - fara nicio suma, ca sa poata fi vazut de

@@ -2575,12 +2575,12 @@ async function incarcaStatistici() {
       <div id="grafic-reinnoiri-luna" style="margin-top:10px"></div>
     </div>
 
-    ${rolCurent() === 'admin' ? '<div id="statistici-card-cheltuieli"></div>' : ''}
+    ${rolCurent() === 'admin' ? '<div id="statistici-card-cheltuieli"></div><div id="statistici-card-exercitii"></div>' : ''}
   `;
   deseneazaGraficBare('grafic-pacienti-saptamana', s.pacienti_pe_saptamana, '#7F77DD', s.pacienti_pe_saptamana.length - 1, null, true);
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
-  if (rolCurent() === 'admin') incarcaCheltuieli();
+  if (rolCurent() === 'admin') { incarcaCheltuieli(); incarcaCuvinteExercitii(); }
   randSaptamanaStats();
 }
 
@@ -2752,6 +2752,30 @@ function randCardCheltuieli(rez) {
       </div>
     </div>
   `;
+}
+
+// Ce scrieti la "exercitii": cele mai folosite expresii, ca sa facem biblioteca de miscari din ce se foloseste de fapt
+async function incarcaCuvinteExercitii() {
+  const el = document.getElementById('statistici-card-exercitii');
+  if (!el) return;
+  const d = await apel('/api/statistici/exercitii-cuvinte');
+  if (!d || d.eroare || !d.fraze) { el.innerHTML = ''; return; }
+  window.__textExercitii = [
+    `Sedinte cu text: ${d.sedinte_cu_text}`,
+    'Aparate: ' + d.aparate.map(x => `${x.nume} ${x.nr}`).join(', '),
+    'Expresii: ' + d.fraze.map(x => `${x.text} (${x.nr})`).join('; '),
+    'Cuvinte: ' + d.cuvinte.map(x => `${x.text} (${x.nr})`).join(', ')
+  ].join('\n\n');
+  el.innerHTML = `
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin:0 0 2px">Ce scrieti la exercitii</h2>
+      <div style="font-size:11.5px;color:#6f6d64;margin-bottom:10px">Doar admin &middot; din ${d.sedinte_cu_text} sedinte. Cele mai folosite expresii.</div>
+      <div style="font-size:12px;color:#9a988e;margin-bottom:8px">${d.aparate.map(x => `${scapaHtml(x.nume)} <b style="color:#ece9e2">${x.nr}</b>`).join(' &middot; ') || 'Niciun aparat notat.'}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;max-height:320px;overflow-y:auto">
+        ${d.fraze.map(x => `<span style="font-size:12.5px;padding:3px 9px;border:1px solid #45443f;border-radius:8px;background:#1e1e1d">${scapaHtml(x.text)} <b style="color:#7fd9a8">${x.nr}</b></span>`).join('')}
+      </div>
+      <button class="btn secundar" style="margin-top:12px" onclick="navigator.clipboard.writeText(window.__textExercitii).then(() => { this.textContent = 'Copiat'; })">Copiaza lista</button>
+    </div>`;
 }
 
 async function incarcaCheltuieli() {
