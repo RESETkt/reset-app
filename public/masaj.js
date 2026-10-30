@@ -46,7 +46,64 @@ function masajDeschideData() {
   if (i && i.showPicker) i.showPicker(); else if (i) i.focus();
 }
 
+// Telefon: ziua. Calculator: saptamana.
 async function incarcaCalendarMasaj() {
+  if (esteMobil()) return incarcaMasajZi();
+  return incarcaMasajSaptamana();
+}
+
+let masajSapt = luniAlSaptamanii(dataLocala(new Date()));   // luni din saptamana afisata (calculator)
+
+function schimbaSaptamanaMasaj(dir) { masajSapt = adaugaZile(masajSapt, dir * 7); incarcaCalendarMasaj(); }
+function masajSaptamanaAceasta() { masajSapt = luniAlSaptamanii(dataLocala(new Date())); incarcaCalendarMasaj(); }
+
+async function incarcaMasajSaptamana() {
+  document.body.classList.remove('pagina-fara-scroll');
+  const panou = document.getElementById('panel-calendar');
+  const zile = [0, 1, 2, 3, 4].map(i => adaugaZile(masajSapt, i));
+  const astazi = dataLocala(new Date());
+  masajZi = zile.includes(astazi) ? astazi : zile[0];   // ziua implicita pentru "+ Masaj"
+  const rows = await apel(`/api/masaj?de_la=${zile[0]}&pana_la=${zile[4]}`);
+  masajRez = Array.isArray(rows) ? rows : [];
+  const nrRanduri = (MJ_INCHIDE - MJ_DESCHIDE) / MJ_PAS;
+  const luna = new Date(masajSapt + 'T00:00:00');
+  let ore = '';
+  for (let i = 0; i < nrRanduri; i++) ore += `<div class="mj-rand"><span class="mj-o">${mjOra(MJ_DESCHIDE + i * MJ_PAS)}</span></div>`;
+  const coloane = zile.map(z => {
+    let randuri = '';
+    for (let i = 0; i < nrRanduri; i++) randuri += `<div class="mj-rand"><div class="mj-gol" onclick="masajFormNou(${MJ_DESCHIDE + i * MJ_PAS}, null, '${z}')"></div></div>`;
+    const blocuri = masajRez.filter(r => r.data === z).map(r => {
+      const top = (r.minute - MJ_DESCHIDE) / MJ_PAS * MJ_INALT + 3;
+      const inalt = r.durata_min / MJ_PAS * MJ_INALT - 6;
+      return `<div class="mj-rez ${r.status}" style="top:${top}px;height:${inalt}px" onclick="masajDetalii('${r.id}')">
+        <div class="mj-etichete">${r.pachet_id ? '<span>pachet</span>' : ''}${r.plata_metoda ? '<span class="ok">plătit</span>' : ''}</div>
+        <b>${scapaHtml(r.nume + ' ' + r.prenume)}</b><small>${mjOra(r.minute)} - ${mjOra(r.minute + r.durata_min)} · ${r.durata_min} min</small></div>`;
+    }).join('');
+    return `<div class="mj-col ${z === astazi ? 'azi' : ''}">${randuri}<div class="mj-straturi">${blocuri}</div></div>`;
+  }).join('');
+  panou.innerHTML = `<div class="mj-wrap lat">
+    ${tabsCalendarHtml('masaj')}
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="font-size:13px;color:#9a988e">${LUNI_RO[luna.getMonth()]} ${luna.getFullYear()}</div>
+      <div style="display:flex;justify-content:center">
+        <div class="week-nav">
+          <button class="week-nav-btn" onclick="schimbaSaptamanaMasaj(-1)">&larr; Saptamana trecuta</button>
+          <button class="week-nav-btn azi" onclick="masajSaptamanaAceasta()">Azi</button>
+          <button class="week-nav-btn" onclick="schimbaSaptamanaMasaj(1)">Saptamana urmatoare &rarr;</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end"><button class="btn mj-btn" onclick="masajFormNou(null)">+ Masaj</button></div>
+    </div>
+    <div class="mj-sapt">
+      <div class="mj-cap"></div>
+      ${zile.map((z, i) => `<div class="mj-cap ${z === astazi ? 'azi' : ''}">${ZILE_SAPTAMANA[i]}<small>${new Date(z + 'T00:00:00').toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}</small></div>`).join('')}
+      <div class="mj-ore-col">${ore}</div>
+      ${coloane}
+    </div>
+  </div>`;
+}
+
+async function incarcaMasajZi() {
   document.body.classList.remove('pagina-fara-scroll');   // ziua de masaj e mai lunga decat ecranul: trebuie sa deruleze
   const panou = document.getElementById('panel-calendar');
   const rows = await apel(`/api/masaj?de_la=${masajZi}&pana_la=${masajZi}`);
@@ -92,9 +149,9 @@ function mjLiber(start, dur) {
   return !MJ.rez.some(r => r.status !== 'absent' && start < r.minute + r.durata_min && r.minute < start + dur);
 }
 
-async function masajFormNou(minute, pacient) {
-  MJ.data = masajZi;
-  MJ.rez = masajRez;
+async function masajFormNou(minute, pacient, data) {
+  MJ.data = data || masajZi;
+  MJ.rez = masajRez.filter(r => r.data === MJ.data);
   MJ.p = pacient || null;
   MJ.pachete = [];
   MJ.dur = null;
@@ -204,6 +261,7 @@ async function masajProgrameaza() {
   if (r && r.eroare) { MJ.eroare = r.eroare; mjDeseneazaForm(); return; }
   inchideModalProgramare();
   masajZi = MJ.data;
+  masajSapt = luniAlSaptamanii(MJ.data);   // calendarul sare la saptamana masajului nou
   if (document.getElementById('masaj-fisa')) incarcaMasajFisa(MJ.p.id);
   if (document.querySelector('.mj-wrap')) incarcaCalendarMasaj();
 }

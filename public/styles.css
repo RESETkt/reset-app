@@ -565,15 +565,15 @@ table.ev-cmp td.c { white-space: nowrap; }
 }
 
 /* ---- Masaj (masaj.js): tab separat in Programari, culoare proprie (albastru) ---- */
-:root { --mj: #4d9de0; --mj-rgb: 77, 157, 224; --mj-lumina: #8cc2f0; }
+:root { --mj: #e0788f; --mj-rgb: 224, 120, 143; --mj-lumina: #f2a6b6; }
 .mj-wrap { max-width: 680px; margin: 0 auto; }
 .mj-tabs { display: flex; background: #262624; border: 1px solid #3a3937; border-radius: 12px; padding: 3px; margin-bottom: 12px; max-width: 360px; }
 .mj-tabs button { flex: 1; border: 0; background: none; color: #9a988e; font-size: 15px; font-weight: 600; padding: 10px 0; border-radius: 9px; cursor: pointer; font-family: inherit; }
 .mj-tabs button.t { background: #1f8a7a; color: #fff; }
-.mj-tabs button.m { background: var(--mj); color: #08131f; }
-.btn.mj-btn { background: var(--mj); border-color: var(--mj); color: #08131f; font-weight: 700; }
+.mj-tabs button.m { background: var(--mj); color: #2a0d14; }
+.btn.mj-btn { background: var(--mj); border-color: var(--mj); color: #2a0d14; font-weight: 700; }
 .btn.mj-btn:disabled { background: #2a2a28; border-color: #2a2a28; color: #706e66; }
-.mj-add { width: 100%; min-height: 46px; border-radius: 12px; border: 0; background: var(--mj); color: #08131f; font-size: 16px; font-weight: 700; font-family: inherit; margin: 6px 0 14px; cursor: pointer; }
+.mj-add { width: 100%; min-height: 46px; border-radius: 12px; border: 0; background: var(--mj); color: #2a0d14; font-size: 16px; font-weight: 700; font-family: inherit; margin: 6px 0 14px; cursor: pointer; }
 .mj-grila { position: relative; margin-left: 52px; margin-bottom: 30px; }
 .mj-rand { height: 56px; border-top: 1px solid #2c2b28; position: relative; }
 .mj-rand .mj-o { position: absolute; left: -52px; top: -9px; width: 46px; font-size: 12px; color: #706e66; text-align: right; background: #1e1e1d; padding-right: 2px; }
@@ -607,3 +607,20 @@ table.ev-cmp td.c { white-space: nowrap; }
 .mj-rezumat { margin-top: 12px; background: #1e1e1d; border-radius: 8px; padding: 10px 12px; font-size: 14px; line-height: 1.5; }
 .mj-pachet { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #3a3937; font-size: 14px; }
 .mj-tag { font-size: 11px; border: 1px solid rgba(var(--mj-rgb), 0.6); border-radius: 6px; padding: 1px 6px; color: var(--mj-lumina); }
+.mj-wrap.lat { max-width: none; }
+.mj-sapt { display: grid; grid-template-columns: 52px repeat(5, 1fr); border: 1px solid #3a3937; border-radius: 12px; overflow: hidden; background: #1e1e1d; margin-bottom: 30px; }
+.mj-cap { padding: 10px 8px; font-size: 13px; font-weight: 600; background: #262624; border-bottom: 1px solid #3a3937; border-left: 1px solid #322f2b; color: #c9c7bd; }
+.mj-cap small { display: block; font-size: 11px; font-weight: 400; color: #9a988e; }
+.mj-cap.azi { background: var(--mj); color: #2a0d14; }
+.mj-cap.azi small { color: #2a0d14; }
+.mj-ore-col .mj-rand, .mj-col .mj-rand { height: 56px; }
+.mj-ore-col { position: relative; padding-top: 9px; }
+.mj-ore-col .mj-rand { border-top: 0; }
+.mj-ore-col .mj-o { left: 0; top: -9px; width: 44px; background: none; }
+.mj-col { position: relative; border-left: 1px solid #322f2b; }
+.mj-col.azi { background: rgba(var(--mj-rgb), 0.05); }
+.mj-col .mj-rand { border-top: 1px solid #2c2b28; }
+.mj-sapt .mj-rez { left: 3px; right: 3px; padding: 4px 6px; font-size: 12px; }
+.mj-sapt .mj-rez b { font-size: 13px; }
+.mj-sapt .mj-rez small { font-size: 11px; }
+.mj-sapt .mj-etichete { float: none; margin-top: 2px; }
