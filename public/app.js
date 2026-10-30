@@ -424,7 +424,7 @@ function aratapanel(nume) {
     document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
   });
   marcheazaActiv(nume);
-  document.body.classList.toggle('pagina-fara-scroll', nume === 'calendar' || nume === 'echipa');
+  document.body.classList.toggle('pagina-fara-scroll', (nume === 'calendar' && modCalendar() !== 'masaj') || nume === 'echipa');
   if (nume === 'calendar') incarcaCalendarSaptamana();
   if (nume === 'echipa') incarcaEchipa();
   if (nume === 'statistici') incarcaStatistici();
@@ -704,6 +704,8 @@ async function deschideFisa(id) {
 
     <div class="card" id="evaluari-fisa"></div>
 
+    <div class="card" id="masaj-fisa" data-nume="${scapaAtribut(p.nume)}" data-prenume="${scapaAtribut(p.prenume)}"></div>
+
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <h2 style="margin:0">Plati</h2>
@@ -724,6 +726,7 @@ async function deschideFisa(id) {
     </div>
   `;
   incarcaEvaluariFisa(id);
+  incarcaMasajFisa(id); // din masaj.js
 }
 
 let sedinteIstoricCache = [];
@@ -1517,6 +1520,7 @@ function esteMobil() {
 }
 
 async function incarcaCalendarSaptamana() {
+  if (modCalendar() === 'masaj') return incarcaCalendarMasaj(); // din masaj.js
   if (esteMobil()) return incarcaCalendarZi();
   const astazi = dataLocala(new Date());
   const zile = [0, 1, 2, 3, 4].map(i => adaugaZile(saptamanaCurenta, i));
@@ -1545,6 +1549,7 @@ async function incarcaCalendarSaptamana() {
   const dataCurenta = new Date(saptamanaCurenta + 'T00:00:00');
 
   let html = `
+    ${tabsCalendarHtml()}
     <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9a988e">
         <span style="cursor:pointer;padding:4px 6px" onclick="schimbaLuna(-1)" title="Luna anterioara">&larr;</span>
@@ -1631,6 +1636,7 @@ function deschideCalendarZi() {
 }
 
 async function incarcaCalendarZi() {
+  if (modCalendar() === 'masaj') return incarcaCalendarMasaj();
   const astazi = dataLocala(new Date());
   const d = new Date(ziuaMobilCurenta + 'T00:00:00');
   const ziSaptamanii = d.getDay();
@@ -1655,6 +1661,7 @@ async function incarcaCalendarZi() {
   });
 
   const html = `
+    ${tabsCalendarHtml()}
     <div class="day-nav">
       <button class="btn day-nav-arrow" onclick="schimbaZiuaMobil(-1)">&larr;</button>
       <div class="day-nav-info" onclick="deschideCalendarZi()">

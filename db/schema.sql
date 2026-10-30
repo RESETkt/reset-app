@@ -191,3 +191,30 @@ CREATE INDEX IF NOT EXISTS idx_evaluari_pacient ON evaluari(pacient_id, data);
 -- Programul de mobilitate al pacientului: piese standard scoase (nu le poate face) si ce se face in plus.
 -- {"scoase": ["Lotus"], "extra": ["mobilitate sold, mai mult"]}
 ALTER TABLE pacienti ADD COLUMN IF NOT EXISTS program_mobilitate jsonb;
+
+-- Masaj: programari separate de terapie (alte ore, alte durate, alta plata), ca sa nu atinga abonamentele si statisticile de terapie.
+-- Pachet de masaj: 4 masaje de 30 sau 50 min, 1 pe saptamana; poate fi inclus intr-un abonament de terapie (Recuperare completa).
+CREATE TABLE IF NOT EXISTS masaj_pachete (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pacient_id uuid REFERENCES pacienti(id) ON DELETE CASCADE,
+  durata_min int NOT NULL CHECK (durata_min IN (30, 50)),
+  total int NOT NULL DEFAULT 4,
+  inclus boolean NOT NULL DEFAULT false,
+  valabil_pana date,
+  plata_id uuid REFERENCES plati(id) ON DELETE SET NULL,
+  creat_la timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS masaje (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pacient_id uuid REFERENCES pacienti(id) ON DELETE CASCADE,
+  data_ora timestamptz NOT NULL,
+  durata_min int NOT NULL CHECK (durata_min IN (30, 50)),
+  status text NOT NULL DEFAULT 'programat' CHECK (status IN ('programat', 'prezent', 'absent')),
+  pachet_id uuid REFERENCES masaj_pachete(id) ON DELETE SET NULL,
+  plata_metoda text CHECK (plata_metoda IN ('cash', 'card')),
+  plata_id uuid REFERENCES plati(id) ON DELETE SET NULL,
+  creat_de uuid REFERENCES utilizatori(id) ON DELETE SET NULL,
+  creat_la timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_masaje_data ON masaje(data_ora);

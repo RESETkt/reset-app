@@ -20,6 +20,7 @@ const pushRoutes = require('./routes/push');
 const expensesRoutes = require('./routes/expenses');
 const discutiiRoutes = require('./routes/discutii');
 const evaluariRoutes = require('./routes/evaluari');
+const masajRoutes = require('./routes/masaj');
 const { porneteReminderele } = require('./services/reminders');
 const { porneteCheltuieliRecurente } = require('./services/cheltuieliRecurente');
 const { porneteVerificareSedinteUitate } = require('./services/sedinteUitate');
@@ -76,6 +77,7 @@ app.use('/api/push', pushRoutes);
 app.use('/api/cheltuieli', expensesRoutes);
 app.use('/api/discutii', discutiiRoutes);
 app.use('/api/evaluari', evaluariRoutes);
+app.use('/api/masaj', masajRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

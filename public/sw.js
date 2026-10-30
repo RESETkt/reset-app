@@ -1,5 +1,5 @@
 const CACHE = 'reset-shell-v3';
-const SHELL = ['/index.html', '/styles.css', '/app.js', '/evaluare.js', '/plan-evaluare.js', '/logo-icon.png', '/favicon-v2.png'];
+const SHELL = ['/index.html', '/styles.css', '/app.js', '/evaluare.js', '/plan-evaluare.js', '/masaj.js','/logo-icon.png', '/favicon-v2.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
