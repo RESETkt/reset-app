@@ -3341,7 +3341,12 @@ window.addEventListener('resize', () => {
   }, 250);
 });
 
-if (token) aratatApp();
+// Pornim abia dupa ce s-au incarcat TOATE scripturile (evaluare.js, plan-evaluare.js, masaj.js sunt incarcate dupa app.js
+// si definesc functii folosite chiar de la deschidere, ex. modCalendar). Altfel calendarul ramanea gol pana la un click.
+if (token) {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aratatApp);
+  else aratatApp();
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
