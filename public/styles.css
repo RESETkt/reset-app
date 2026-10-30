@@ -567,7 +567,7 @@ table.ev-cmp td.c { white-space: nowrap; }
 /* ---- Masaj (masaj.js): tab separat in Programari, culoare proprie (albastru) ---- */
 :root { --mj: #e0788f; --mj-rgb: 224, 120, 143; --mj-lumina: #f2a6b6; }
 .mj-wrap { max-width: 680px; margin: 0 auto; }
-.mj-tabs { display: flex; background: #262624; border: 1px solid #3a3937; border-radius: 12px; padding: 3px; margin-bottom: 12px; max-width: 360px; }
+.mj-tabs { display: flex; background: #262624; border: 1px solid #3a3937; border-radius: 12px; padding: 3px; margin: 4px 0 12px; max-width: 300px; }
 .mj-tabs button { flex: 1; border: 0; background: none; color: #9a988e; font-size: 15px; font-weight: 600; padding: 10px 0; border-radius: 9px; cursor: pointer; font-family: inherit; }
 .mj-tabs button.t { background: #1f8a7a; color: #fff; }
 .mj-tabs button.m { background: var(--mj); color: #2a0d14; }

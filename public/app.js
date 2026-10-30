@@ -57,6 +57,12 @@ function aratatApp() {
   ciornaCuratenie();
   ajusteazaInaltimeTopbar();
   window.addEventListener('resize', ajusteazaInaltimeTopbar);
+  // bara de sus isi poate schimba inaltimea si dupa pornire (insigna de notificari, randuri care se rup): continutul
+  // trebuie sa ramana mereu sub ea, altfel prima linie din calendar apare taiata
+  if (window.ResizeObserver) {
+    const observator = new ResizeObserver(ajusteazaInaltimeTopbar);
+    document.querySelectorAll('.desktop-topbar, .mobile-topbar').forEach(el => observator.observe(el, { box: 'border-box' }));
+  }
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     actualizeazaNotificari();
