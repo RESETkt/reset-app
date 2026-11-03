@@ -61,6 +61,22 @@ router.get('/exercitii-cuvinte', ceareAdmin, async (req, res) => {
   });
 });
 
+// Starea reminderelor automate (SMS/email prin Brevo): doar citeste, ca adminul sa vada daca se trimite ceva si cu ce rezultat.
+// Nu expune cheia, doar daca exista.
+router.get('/remindere-stare', ceareAdmin, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT canal, CASE WHEN status = 'trimis' THEN 'trimis' ELSE 'eroare' END AS rezultat, COUNT(*)::int AS nr,
+            MIN(trimis_la) AS prima, MAX(trimis_la) AS ultima,
+            (array_agg(status ORDER BY trimis_la DESC))[1] AS ultim_status
+     FROM log_remindere GROUP BY 1, 2 ORDER BY 1, 2`
+  );
+  res.json({
+    cheie_brevo_setata: !!process.env.BREVO_API_KEY,
+    expeditor_email_setat: !!process.env.BREVO_EMAIL_SENDER,
+    grupuri: rows,
+  });
+});
+
 // Numarul de pacienti dintr-o saptamana la alegere (offset in saptamani fata de cea curenta,
 // 0 = saptamana asta, -1 = saptamana trecuta etc) - fara nicio suma, ca sa poata fi vazut de
 // oricine e logat, nu doar de admin cu parola de sume.

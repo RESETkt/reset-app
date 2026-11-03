@@ -2746,12 +2746,12 @@ async function incarcaStatistici() {
       <div id="grafic-reinnoiri-luna" style="margin-top:10px"></div>
     </div>
 
-    ${rolCurent() === 'admin' ? '<div id="statistici-card-cheltuieli"></div><div id="statistici-card-exercitii"></div>' : ''}
+    ${rolCurent() === 'admin' ? '<div id="statistici-card-cheltuieli"></div><div id="statistici-card-exercitii"></div><div id="statistici-card-remindere"></div>' : ''}
   `;
   deseneazaGraficBare('grafic-pacienti-saptamana', s.pacienti_pe_saptamana, '#7F77DD', s.pacienti_pe_saptamana.length - 1, null, true);
   deseneazaGraficBare('grafic-sedinte-luna', s.sedinte_pe_luna, '#1FA1AB', acum.getMonth());
   deseneazaGraficBare('grafic-reinnoiri-luna', s.reinnoiri_pe_luna, '#E9B44C', acum.getMonth(), formatRata);
-  if (rolCurent() === 'admin') { incarcaCheltuieli(); incarcaCuvinteExercitii(); }
+  if (rolCurent() === 'admin') { incarcaCheltuieli(); incarcaCuvinteExercitii(); incarcaStareRemindere(); }
   randSaptamanaStats();
 }
 
@@ -2923,6 +2923,28 @@ function randCardCheltuieli(rez) {
       </div>
     </div>
   `;
+}
+
+// Remindere automate (SMS/email prin Brevo): se vede daca e configurat si ce s-a trimis, doar pentru admin
+async function incarcaStareRemindere() {
+  const el = document.getElementById('statistici-card-remindere');
+  if (!el) return;
+  const d = await apel('/api/statistici/remindere-stare');
+  if (!d || d.eroare || !Array.isArray(d.grupuri)) { el.innerHTML = ''; return; }
+  const zi = x => x ? new Date(x).toLocaleDateString('ro-RO') : '-';
+  el.innerHTML = `
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin:0 0 2px">Remindere automate</h2>
+      <div style="font-size:11.5px;color:#6f6d64;margin-bottom:10px">Doar admin &middot; SMS si email prin Brevo, zilnic la 18:00</div>
+      <div style="font-size:13px;margin-bottom:8px">Cheie Brevo setata: <b style="color:${d.cheie_brevo_setata ? '#7fd9a8' : '#e08585'}">${d.cheie_brevo_setata ? 'da' : 'nu'}</b>
+        &middot; Email expeditor setat: <b>${d.expeditor_email_setat ? 'da' : 'nu'}</b></div>
+      ${d.grupuri.length ? d.grupuri.map(g => `
+        <div style="font-size:12.5px;padding:6px 0;border-top:1px solid #3a3937">
+          <b>${scapaHtml(g.canal)}</b> &middot; ${g.rezultat === 'trimis' ? 'trimise' : 'erori'}: <b>${g.nr}</b>
+          <span style="color:#9a988e"> (${zi(g.prima)} - ${zi(g.ultima)})</span>
+          ${g.rezultat === 'eroare' ? `<div style="color:#9a988e;font-size:11.5px">ultima eroare: ${scapaHtml(g.ultim_status)}</div>` : ''}
+        </div>`).join('') : '<div style="font-size:12.5px;color:#9a988e;border-top:1px solid #3a3937;padding-top:6px">Niciun reminder nu a fost incercat vreodata (jurnalul e gol).</div>'}
+    </div>`;
 }
 
 // Ce scrieti la "exercitii": cele mai folosite expresii, ca sa facem biblioteca de miscari din ce se foloseste de fapt
