@@ -62,7 +62,11 @@ function aratatApp() {
   if (window.ResizeObserver) {
     const observator = new ResizeObserver(ajusteazaInaltimeTopbar);
     document.querySelectorAll('.desktop-topbar, .mobile-topbar').forEach(el => observator.observe(el, { box: 'border-box' }));
+    // continutul se schimba dupa ce sosesc datele: reverificam daca incape pe ecran (blocarea derularii)
+    const observatorContinut = new ResizeObserver(() => actualizeazaBlocareScroll());
+    document.querySelectorAll('.main > div').forEach(panou => observatorContinut.observe(panou));
   }
+  window.addEventListener('resize', actualizeazaBlocareScroll);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     actualizeazaNotificari();
@@ -420,6 +424,17 @@ document.addEventListener('click', (event) => {
   });
 });
 
+// Pe telefon, Programarile si Echipa blocheaza derularea paginii (altfel pagina "joaca" cand continutul abia incape).
+// Blocam DOAR cand tot continutul incape pe ecran; daca e mai lung (ex. zi cu multe programari, taburile Terapie/Masaj
+// adaugate deasupra), pagina trebuie sa deruleze normal.
+function actualizeazaBlocareScroll() {
+  const tab = sessionStorage.getItem('tabActiv') || 'calendar';
+  const candidat = (tab === 'calendar' && modCalendar() !== 'masaj') || tab === 'echipa';
+  document.body.classList.remove('pagina-fara-scroll'); // masuram continutul fara blocare
+  if (!candidat || !esteMobil()) return;
+  if (document.documentElement.scrollHeight <= window.innerHeight + 2) document.body.classList.add('pagina-fara-scroll');
+}
+
 function marcheazaActiv(nume) {
   document.querySelectorAll('.top-nav-btn, .bottom-nav-btn').forEach(b => b.classList.toggle('activ', b.dataset.panel === nume));
 }
@@ -430,7 +445,7 @@ function aratapanel(nume) {
     document.getElementById(`panel-${p}`).style.display = p === nume ? 'block' : 'none';
   });
   marcheazaActiv(nume);
-  document.body.classList.toggle('pagina-fara-scroll', (nume === 'calendar' && modCalendar() !== 'masaj') || nume === 'echipa');
+  actualizeazaBlocareScroll();
   if (nume === 'calendar') incarcaCalendarSaptamana();
   if (nume === 'echipa') incarcaEchipa();
   if (nume === 'statistici') incarcaStatistici();
@@ -1605,6 +1620,7 @@ async function incarcaCalendarSaptamana() {
   `;
 
   document.getElementById('panel-calendar').innerHTML = html;
+  actualizeazaBlocareScroll();
 }
 
 let ziuaMobilCurenta = dataLocala(new Date());
@@ -1701,6 +1717,7 @@ async function incarcaCalendarZi() {
   `;
 
   document.getElementById('panel-calendar').innerHTML = html;
+  actualizeazaBlocareScroll(); // ziua poate avea multe programari: daca nu incape pe ecran, pagina trebuie sa deruleze
 }
 
 // Eticheta colorata (fundal + text) - programat ramane gri neutru (fara nicio nuanta de

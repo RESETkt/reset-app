@@ -17,7 +17,7 @@ function modCalendar() {
 
 function schimbaModCalendar(mod) {
   try { sessionStorage.setItem('modCalendar', mod); } catch { /* fara stocare: ramane doar pe sesiunea asta */ }
-  document.body.classList.toggle('pagina-fara-scroll', mod !== 'masaj' && esteMobil());
+  actualizeazaBlocareScroll();
   incarcaCalendarSaptamana();
 }
 
