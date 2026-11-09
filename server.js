@@ -38,7 +38,9 @@ process.on('uncaughtException', (eroare) => {
 });
 
 const app = express();
-app.use(cors());
+// CORS deschis pentru restul API-ului (cum era); /api/public are propria regula, doar de pe movebetter.ro (vezi routes/public.js)
+const corsGeneral = cors();
+app.use((req, res, next) => (req.path.startsWith('/api/public') ? next() : corsGeneral(req, res, next)));
 app.use(express.json({ limit: '5mb' })); // limita mare, semnaturile sunt imagini base64
 
 // Raspunsurile API nu trebuie cache-uite niciodata (nici de browser, nici de un proxy

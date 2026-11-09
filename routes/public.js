@@ -1,10 +1,17 @@
 const express = require('express');
+const cors = require('cors');
 const pool = require('../db/pool');
 const { creeazaNotificare } = require('../services/notificariEchipa');
 
 // Adrese publice, FARA autentificare. Singura de acum: formularul „Lasa numarul, te sunam noi” de pe movebetter.ro.
 // Ajunge ca notificare (cerere_apel) la toata echipa, cu push. Fara email. Date personale: nu se scriu in loguri.
 const router = express.Router();
+
+// Doar paginile site-ului pot trimite formularul din browser (POST + preflight OPTIONS). Scripturile fara browser
+// nu tin cont de CORS; pe ele le opresc antirobotul, limita pe IP si verificarea numarului.
+const ORIGINI_PERMISE = ['https://www.movebetter.ro', 'https://movebetter.ro'];
+const corsSite = cors({ origin: ORIGINI_PERMISE, methods: ['POST', 'OPTIONS'], allowedHeaders: ['Content-Type'], maxAge: 86400 });
+router.use(corsSite);
 
 const MAX_CERERI_PE_ORA = 5;
 const FEREASTRA_MS = 60 * 60 * 1000;
