@@ -1,13 +1,11 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { creeazaNotificare } = require('../services/notificariEchipa');
-const { trimiteEmail } = require('../services/brevo');
 
 // Adrese publice, FARA autentificare. Singura de acum: formularul „Lasa numarul, te sunam noi” de pe movebetter.ro.
-// Ajunge ca notificare (cerere_apel) la toata echipa, cu push, plus un email de rezerva. Date personale: nu se scriu in loguri.
+// Ajunge ca notificare (cerere_apel) la toata echipa, cu push. Fara email. Date personale: nu se scriu in loguri.
 const router = express.Router();
 
-const EMAIL_REZERVA = 'resetmovebetter@gmail.com';
 const MAX_CERERI_PE_ORA = 5;
 const FEREASTRA_MS = 60 * 60 * 1000;
 const DURATA_MIN_MS = 2000;        // sub 2 secunde de la incarcarea paginii = robot
@@ -57,8 +55,6 @@ function curataPagina(p) {
   return /^\/[A-Za-z0-9\-_/.]{0,99}$/.test(s) ? s : '';
 }
 
-const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
 router.post('/cerere-apel', async (req, res) => {
   try {
     const { nume, telefon, pagina, website, durata } = req.body || {};
@@ -86,14 +82,8 @@ router.post('/cerere-apel', async (req, res) => {
     const paginaCurata = curataPagina(pagina);
     const text = `Te rog sună: ${numeCurat || 'fără nume'}, ${tel}${paginaCurata ? ` (${paginaCurata})` : ''}`;
 
+    // Doar notificare in aplicatie (cu push catre echipa); fara email
     await creeazaNotificare({ tip: 'cerere_apel', text, pacient_id: null, creat_de: null });
-
-    // Email de rezerva: daca nu merge, cererea ramane salvata si raspunsul tot 200
-    try {
-      await trimiteEmail(EMAIL_REZERVA, 'Cerere de apel de pe movebetter.ro', `<p>${escapeHtml(text)}</p>`);
-    } catch (e) {
-      console.error('Emailul de rezerva pentru cererea de apel nu a putut fi trimis:', e.message);
-    }
 
     res.status(200).json({ ok: true });
   } catch (e) {
