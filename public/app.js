@@ -209,6 +209,7 @@ function iconaNotificare(tip) {
   if (tip === 'reprogramare') return '📅';
   if (tip === 'pacient_nou') return '🆕';
   if (tip === 'sedinta_uitata') return '⚠️';
+  if (tip === 'cerere_apel') return '📞';
   return '📝';
 }
 
@@ -222,16 +223,25 @@ function scapaHtml(s) {
   return d.innerHTML;
 }
 
+// Cererile de apel de pe site: numarul din text devine link tel:, ca sa se sune direct cu un tap
+function textNotificareHtml(n) {
+  const html = scapaHtml(n.text);
+  if (n.tip !== 'cerere_apel') return html;
+  return html.replace(/\b(0[237]\d{8})\b/, '<a href="tel:$1" style="color:#7fd9a8;font-weight:600;text-decoration:underline" onclick="event.stopPropagation()">$1</a>');
+}
+
 function randNotificare(n) {
   const cine = n.rezolvat
     ? `rezolvat de ${n.rezolvat_de_nume || '?'} - ${formateazaCandNotificare(n.rezolvat_la)}`
-    : `adaugat de ${n.creat_de_nume || 'sistem'} - ${formateazaCandNotificare(n.creat_la)}`;
+    : `adaugat de ${n.creat_de_nume || (n.tip === 'cerere_apel' ? 'site' : 'sistem')} - ${formateazaCandNotificare(n.creat_la)}`;
+  const nota = n.nota_rezolvare ? `<div style="font-size:12px;color:#c9c7bd;margin-top:3px">Nota: ${scapaHtml(n.nota_rezolvare)}</div>` : '';
   return `
-    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #3a3937;${n.rezolvat ? 'opacity:0.5' : ''}">
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #3a3937;${n.rezolvat ? 'opacity:0.6' : ''}">
       <input type="checkbox" ${n.rezolvat ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px;flex-shrink:0;cursor:pointer"
-        onchange="this.checked ? rezolvaNotificareItem('${n.id}') : redeschideNotificareItem('${n.id}')">
+        onchange="this.checked ? rezolvaNotificareItem('${n.id}', '${n.tip}') : redeschideNotificareItem('${n.id}')">
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;${n.rezolvat ? 'text-decoration:line-through' : ''}">${iconaNotificare(n.tip)} ${scapaHtml(n.text)}</div>
+        <div style="font-size:13px;${n.rezolvat ? 'text-decoration:line-through' : ''}">${iconaNotificare(n.tip)} ${textNotificareHtml(n)}</div>
+        ${nota}
         <div style="font-size:11px;color:#9a988e;margin-top:2px">${cine}</div>
       </div>
       <svg onclick="stergeNotificareItem('${n.id}')" title="Sterge" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#9a988e;cursor:pointer;flex-shrink:0;margin-top:3px">
@@ -301,8 +311,36 @@ async function adaugaNotificare() {
   actualizeazaNotificari();
 }
 
-async function rezolvaNotificareItem(id) {
+async function rezolvaNotificareItem(id, tip) {
+  // cererile de apel de pe site cer o nota scurta: ce s-a stabilit, sau ca nu a raspuns
+  if (tip === 'cerere_apel') return aratatNotaRezolvare(id);
   await apel(`/api/notificari/${id}/rezolva`, { method: 'PATCH' });
+  await deschideNotificari();
+  actualizeazaNotificari();
+}
+
+function aratatNotaRezolvare(id) {
+  document.getElementById('modal-container').innerHTML = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) deschideNotificari()">
+      <div class="card" style="max-width:380px;width:92%">
+        <h2 style="margin-bottom:4px">Cerere de apel</h2>
+        <div style="font-size:12px;color:#9a988e;margin-bottom:10px">Scrie pe scurt ce s-a stabilit, ca sa vada toata echipa.</div>
+        <textarea id="nota-rezolvare" rows="3" style="width:100%" placeholder="de ex. programat joi la 10:50 / nu a raspuns, reincercam" autofocus></textarea>
+        <div id="nota-rezolvare-eroare" style="color:#e08585;font-size:12px;margin-top:6px"></div>
+        <button class="btn" style="width:100%;margin-top:10px" onclick="salveazaNotaRezolvare('${id}')">Salveaza</button>
+        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="deschideNotificari()">Renunta</button>
+      </div>
+    </div>`;
+  const c = document.getElementById('nota-rezolvare');
+  if (c) c.focus();
+}
+
+async function salveazaNotaRezolvare(id) {
+  const nota = document.getElementById('nota-rezolvare').value.trim();
+  const eroareEl = document.getElementById('nota-rezolvare-eroare');
+  if (!nota) { eroareEl.textContent = 'Scrie o nota scurta.'; return; }
+  const r = await apel(`/api/notificari/${id}/rezolva`, { method: 'PATCH', body: JSON.stringify({ nota }) });
+  if (r && r.eroare) { eroareEl.textContent = r.eroare; return; }
   await deschideNotificari();
   actualizeazaNotificari();
 }

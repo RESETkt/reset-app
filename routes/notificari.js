@@ -38,9 +38,16 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id/rezolva', async (req, res) => {
   try {
+    const existent = await pool.query(`SELECT tip FROM notificari_echipa WHERE id = $1`, [req.params.id]);
+    if (!existent.rows[0]) return res.status(404).json({ eroare: 'Notificarea nu exista.' });
+    const nota = String((req.body && req.body.nota) || '').trim().slice(0, 500);
+    // O cerere de apel de pe site nu se bifeaza fara o nota scurta: ce s-a vorbit, ca sa stie toata echipa
+    if (existent.rows[0].tip === 'cerere_apel' && !nota) {
+      return res.status(400).json({ eroare: 'Scrie o nota scurta (ce s-a stabilit, sau ca nu a raspuns).' });
+    }
     const { rows } = await pool.query(
-      `UPDATE notificari_echipa SET rezolvat = true, rezolvat_de = $1, rezolvat_la = now() WHERE id = $2 RETURNING *`,
-      [req.user.id, req.params.id]
+      `UPDATE notificari_echipa SET rezolvat = true, rezolvat_de = $1, rezolvat_la = now(), nota_rezolvare = $3 WHERE id = $2 RETURNING *`,
+      [req.user.id, req.params.id, nota || null]
     );
     res.json(rows[0]);
   } catch (e) {
@@ -51,7 +58,7 @@ router.patch('/:id/rezolva', async (req, res) => {
 router.patch('/:id/redeschide', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `UPDATE notificari_echipa SET rezolvat = false, rezolvat_de = NULL, rezolvat_la = NULL WHERE id = $1 RETURNING *`,
+      `UPDATE notificari_echipa SET rezolvat = false, rezolvat_de = NULL, rezolvat_la = NULL, nota_rezolvare = NULL WHERE id = $1 RETURNING *`,
       [req.params.id]
     );
     res.json(rows[0]);

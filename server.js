@@ -21,6 +21,8 @@ const expensesRoutes = require('./routes/expenses');
 const discutiiRoutes = require('./routes/discutii');
 const evaluariRoutes = require('./routes/evaluari');
 const masajRoutes = require('./routes/masaj');
+const publicRoutes = require('./routes/public');
+const { porneteCuratenieCereri } = require('./services/curatenieCereri');
 const { porneteReminderele } = require('./services/reminders');
 const { porneteCheltuieliRecurente } = require('./services/cheltuieliRecurente');
 const { porneteVerificareSedinteUitate } = require('./services/sedinteUitate');
@@ -62,6 +64,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/api/public', publicRoutes); // fara autentificare: formularul „Lasa numarul” de pe movebetter.ro
 app.use('/api/auth', authRoutes);
 app.use('/api/pacienti', patientsRoutes);
 app.use('/api/programari', appointmentsRoutes);
@@ -98,5 +101,6 @@ aplicaSchema()
       porneteReminderele();
       porneteCheltuieliRecurente();
       porneteVerificareSedinteUitate();
+      porneteCuratenieCereri();
     });
   });
