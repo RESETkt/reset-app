@@ -575,19 +575,20 @@ table.ev-cmp td.c { white-space: nowrap; }
 .btn.mj-btn:disabled { background: #2a2a28; border-color: #2a2a28; color: #706e66; }
 .mj-add { width: 100%; min-height: 46px; border-radius: 12px; border: 0; background: var(--mj); color: #2a0d14; font-size: 16px; font-weight: 700; font-family: inherit; margin: 6px 0 14px; cursor: pointer; }
 .mj-grila { position: relative; margin-left: 52px; margin-bottom: 30px; }
-.mj-rand { height: 56px; border-top: 1px solid #2c2b28; position: relative; }
-.mj-rand .mj-o { position: absolute; left: -52px; top: -9px; width: 46px; font-size: 12px; color: #706e66; text-align: right; background: #1e1e1d; padding-right: 2px; }
+.mj-rand { height: 34px; border-top: 1px solid #2c2b28; position: relative; }
+.mj-rand .mj-o { position: absolute; left: -52px; top: -8px; width: 46px; font-size: 11px; color: #706e66; text-align: right; background: #1e1e1d; padding-right: 2px; }
 .mj-gol { position: absolute; inset: 3px 0 0 0; border-radius: 8px; cursor: pointer; }
 .mj-gol:hover, .mj-gol:active { background: rgba(var(--mj-rgb), 0.12); }
 .mj-straturi { position: absolute; inset: 0; pointer-events: none; }
-.mj-rez { position: absolute; left: 0; right: 0; border-radius: 10px; border: 1px solid var(--mj); background: rgba(var(--mj-rgb), 0.22); padding: 6px 10px; font-size: 14px; line-height: 1.3; cursor: pointer; overflow: hidden; pointer-events: auto; }
-.mj-rez b { display: block; font-size: 15px; }
-.mj-rez small { color: var(--mj-lumina); font-size: 12px; }
+.mj-rez { position: absolute; left: 0; right: 0; border-radius: 8px; border: 1px solid var(--mj); background: rgba(var(--mj-rgb), 0.22); padding: 4px 8px; font-size: 13px; line-height: 1.25; cursor: pointer; overflow: hidden; pointer-events: auto; }
+.mj-rez b { display: block; font-size: 13.5px; }
+.mj-rez b i { font-style: normal; font-weight: 400; color: var(--mj-lumina); margin-right: 4px; }
+.mj-rez small { display: block; color: var(--mj-lumina); font-size: 11px; }
 .mj-rez.prezent { background: rgba(var(--mj-rgb), 0.5); }
 .mj-rez.absent { background: #232321; border-color: #55544f; color: #8a887f; }
 .mj-rez.absent small { color: #706e66; }
 .mj-etichete { float: right; display: flex; gap: 4px; }
-.mj-etichete span { font-size: 11px; border: 1px solid rgba(var(--mj-rgb), 0.6); border-radius: 6px; padding: 1px 6px; color: var(--mj-lumina); }
+.mj-etichete span { font-size: 10px; white-space: nowrap; border: 1px solid rgba(var(--mj-rgb), 0.6); border-radius: 6px; padding: 0 5px; color: var(--mj-lumina); }
 .mj-etichete span.ok { border-color: rgba(127, 217, 168, 0.5); color: #8fe0b5; background: rgba(127, 217, 168, 0.15); }
 .mj-ales { background: #1e1e1d; border: 1px solid var(--mj); border-radius: 8px; padding: 9px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .mj-ales span { color: var(--mj-lumina); font-size: 12px; text-decoration: underline; cursor: pointer; }
@@ -613,14 +614,47 @@ table.ev-cmp td.c { white-space: nowrap; }
 .mj-cap small { display: block; font-size: 11px; font-weight: 400; color: #9a988e; }
 .mj-cap.azi { background: var(--mj); color: #2a0d14; }
 .mj-cap.azi small { color: #2a0d14; }
-.mj-ore-col .mj-rand, .mj-col .mj-rand { height: 56px; }
-.mj-ore-col { position: relative; padding-top: 9px; }
+.mj-ore-col { position: relative; }
 .mj-ore-col .mj-rand { border-top: 0; }
-.mj-ore-col .mj-o { left: 0; top: -9px; width: 44px; background: none; }
+.mj-ore-col .mj-o { left: 0; top: 1px; width: 44px; background: none; }
 .mj-col { position: relative; border-left: 1px solid #322f2b; }
 .mj-col.azi { background: rgba(var(--mj-rgb), 0.05); }
 .mj-col .mj-rand { border-top: 1px solid #2c2b28; }
 .mj-sapt .mj-rez { left: 3px; right: 3px; padding: 4px 6px; font-size: 12px; }
-.mj-sapt .mj-rez b { font-size: 13px; }
+.mj-sapt .mj-rez b { font-size: 12.5px; }
 .mj-sapt .mj-rez small { font-size: 11px; }
 .mj-sapt .mj-etichete { float: none; margin-top: 2px; }
+.mj-sapt .mj-rez.sc .mj-etichete { margin-top: 0; }
+
+/* masaj compact: 30 min pe o linie, ore libere strane, fereastra Prezent + Cash/Card */
+.mj-rez.sc { display: flex; align-items: center; gap: 6px; padding: 0 8px; }
+.mj-rez.sc b { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mj-rez.sc .mj-etichete { float: none; flex: none; }
+.mj-etichete span.nepl { border-color: rgba(240, 180, 90, 0.6); color: #f0b45a; }
+.mj-fold { height: 30px; padding: 2px 0; cursor: pointer; pointer-events: auto; }
+.mj-fold > div { height: 100%; border: 1px dashed #55544f; border-radius: 8px; color: #9a988e; font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 10px; white-space: nowrap; overflow: hidden; }
+.mj-fold:hover > div { border-color: var(--mj-lumina); color: var(--mj-lumina); }
+.mj-col .mj-fold > div, .mj-ore-col .mj-fold > div { justify-content: center; padding: 0 4px; font-size: 11px; }
+.mj-ore-col .mj-fold > div { border: 0; }
+.mj-vel { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.mj-fer { max-width: 380px; width: 92%; max-height: calc(100vh - 32px); overflow-y: auto; }
+.mj-stare { display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 7px; margin-bottom: 10px; border: 1px solid #45443f; }
+.mj-stare.prezent { border-color: rgba(127, 217, 168, 0.5); color: #8fe0b5; }
+.mj-stare.absent { border-color: rgba(229, 89, 77, 0.5); color: #f19a92; }
+.mj-doi { display: flex; gap: 8px; margin-top: 8px; }
+.mj-mare, .mj-mic { flex: 1; border-radius: 12px; border: 1px solid #45443f; background: #1e1e1d; color: #ece9e2; font-family: inherit; cursor: pointer; line-height: 1.2; }
+.mj-mare { min-height: 56px; font-size: 16px; font-weight: 700; }
+.mj-mare small { display: block; font-size: 12px; font-weight: 500; opacity: 0.85; }
+.mj-fer > .mj-mare { width: 100%; }
+.mj-mare.pr { background: var(--mj); border-color: var(--mj); color: #2a0d14; }
+.mj-mic { min-height: 46px; font-size: 14px; font-weight: 600; color: #c9c7bd; }
+.mj-mic.rosu { color: #f19a92; border-color: rgba(229, 89, 77, 0.5); }
+.mj-mare.on { border-color: #7fd9a8; background: rgba(127, 217, 168, 0.18); }
+.mj-eti { font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--mj-lumina); margin: 4px 0 6px; font-weight: 700; }
+.mj-nota { font-size: 12.5px; color: #8a887f; margin-top: 8px; line-height: 1.45; }
+.mj-link { display: block; text-align: center; margin-top: 12px; font-size: 13px; color: #9a988e; text-decoration: underline; cursor: pointer; }
+.mj-link.rosu { color: #e08585; }
+@media (max-width: 768px) {
+  .mj-vel { align-items: flex-end; }
+  .mj-fer { width: 100%; max-width: none; margin: 0; border-radius: 22px 22px 0 0; padding-bottom: 22px; }
+}

@@ -5,7 +5,8 @@
 const MJ_DESCHIDE = 7 * 60 + 30;
 const MJ_INCHIDE = 19 * 60;
 const MJ_PAS = 30;
-const MJ_INALT = 56;                       // inaltimea unui rand de 30 de minute, in px
+const MJ_INALT = 34;                       // inaltimea unui rand de 30 de minute, in px (trebuie sa fie la fel ca .mj-rand din styles.css)
+const MJ_FOLD = 30;                        // inaltimea liniei punctate care strange orele libere, in px
 const MJ_PRET = { 30: 150, 50: 200 };
 const MJ_PRET_PACHET = { 30: 540, 50: 720 };
 
@@ -52,6 +53,52 @@ async function incarcaCalendarMasaj() {
   return incarcaMasajSaptamana();
 }
 
+// ---------- orele afisate: inceputul si sfarsitul zilei, cat timp sunt libere, se strang intr-o linie punctata ----------
+
+const MJ_DESF = { inceput: false, sfarsit: false };   // true = utilizatorul le-a desfacut
+
+// Segmente in ordine: { a, b, fold, k }. Se afiseaza de la o ora inainte de prima programare pana la o ora dupa ultima;
+// restul (daca sunt cel putin 60 de minute) se strange, pana apasa cineva pe linia punctata.
+function mjSegmente(rez) {
+  let primul = 9 * 60 + 30, ultimul = 16 * 60 + 30;   // fara programari: fereastra implicita 09:00 - 17:00
+  if (rez.length) {
+    primul = Math.min(...rez.map(r => r.minute));
+    ultimul = Math.max(...rez.map(r => r.minute + r.durata_min));
+  }
+  const start = Math.max(MJ_DESCHIDE, Math.floor((primul - MJ_PAS) / MJ_PAS) * MJ_PAS);
+  const sfarsit = Math.min(MJ_INCHIDE, Math.ceil((ultimul + MJ_PAS) / MJ_PAS) * MJ_PAS);
+  const segs = [];
+  if (start > MJ_DESCHIDE) segs.push({ a: MJ_DESCHIDE, b: start, fold: start - MJ_DESCHIDE >= 60 && !MJ_DESF.inceput, k: 'inceput' });
+  segs.push({ a: start, b: sfarsit, fold: false });
+  if (sfarsit < MJ_INCHIDE) segs.push({ a: sfarsit, b: MJ_INCHIDE, fold: MJ_INCHIDE - sfarsit >= 60 && !MJ_DESF.sfarsit, k: 'sfarsit' });
+  return segs;
+}
+
+// pozitia (px de sus) a unei ore, tinand cont de liniile strane
+function mjY(segs, minute) {
+  let y = 0;
+  for (const s of segs) {
+    if (!s.fold && minute >= s.a && minute < s.b) return y + (minute - s.a) / MJ_PAS * MJ_INALT;
+    y += s.fold ? MJ_FOLD : (s.b - s.a) / MJ_PAS * MJ_INALT;
+  }
+  return y;
+}
+
+function mjDesface(k) { MJ_DESF[k] = true; incarcaCalendarMasaj(); }
+
+function mjBloc(r, segs) {
+  const top = mjY(segs, r.minute) + 2;
+  const inalt = r.durata_min / MJ_PAS * MJ_INALT - 3;
+  const nume = scapaHtml(r.nume + ' ' + r.prenume);
+  const et = (r.pachet_id ? '<span>pachet</span>' : '')
+    + (r.plata_metoda ? `<span class="ok">plătit ${r.plata_metoda === 'cash' ? 'cash' : 'card'}</span>` : '')
+    + (r.status === 'prezent' && !r.pachet_id && !r.plata_metoda ? '<span class="nepl">neplătit</span>' : '');
+  const scurt = r.durata_min <= MJ_PAS;
+  return `<div class="mj-rez ${r.status}${scurt ? ' sc' : ''}" style="top:${top}px;height:${inalt}px" onclick="masajDetalii('${r.id}')">${scurt
+    ? `<b><i>${mjOra(r.minute)}</i> ${nume}</b><div class="mj-etichete">${et}</div>`
+    : `<div class="mj-etichete">${et}</div><b>${nume}</b><small>${mjOra(r.minute)} - ${mjOra(r.minute + r.durata_min)} · ${r.durata_min} min</small>`}</div>`;
+}
+
 let masajSapt = luniAlSaptamanii(dataLocala(new Date()));   // luni din saptamana afisata (calculator)
 
 function schimbaSaptamanaMasaj(dir) { masajSapt = adaugaZile(masajSapt, dir * 7); incarcaCalendarMasaj(); }
@@ -65,20 +112,20 @@ async function incarcaMasajSaptamana() {
   masajZi = zile.includes(astazi) ? astazi : zile[0];   // ziua implicita pentru "+ Masaj"
   const rows = await apel(`/api/masaj?de_la=${zile[0]}&pana_la=${zile[4]}`);
   masajRez = Array.isArray(rows) ? rows : [];
-  const nrRanduri = (MJ_INCHIDE - MJ_DESCHIDE) / MJ_PAS;
+  const segs = mjSegmente(masajRez);   // aceeasi axa a orelor pentru toate zilele saptamanii
   const luna = new Date(masajSapt + 'T00:00:00');
   let ore = '';
-  for (let i = 0; i < nrRanduri; i++) ore += `<div class="mj-rand"><span class="mj-o">${mjOra(MJ_DESCHIDE + i * MJ_PAS)}</span></div>`;
+  segs.forEach(s => {
+    if (s.fold) { ore += `<div class="mj-fold" onclick="mjDesface('${s.k}')"><div>▾</div></div>`; return; }
+    for (let m = s.a; m < s.b; m += MJ_PAS) ore += `<div class="mj-rand"><span class="mj-o">${m % 60 === 0 || m === s.a ? mjOra(m) : ''}</span></div>`;
+  });
   const coloane = zile.map(z => {
     let randuri = '';
-    for (let i = 0; i < nrRanduri; i++) randuri += `<div class="mj-rand"><div class="mj-gol" onclick="masajFormNou(${MJ_DESCHIDE + i * MJ_PAS}, null, '${z}')"></div></div>`;
-    const blocuri = masajRez.filter(r => r.data === z).map(r => {
-      const top = (r.minute - MJ_DESCHIDE) / MJ_PAS * MJ_INALT + 3;
-      const inalt = r.durata_min / MJ_PAS * MJ_INALT - 6;
-      return `<div class="mj-rez ${r.status}" style="top:${top}px;height:${inalt}px" onclick="masajDetalii('${r.id}')">
-        <div class="mj-etichete">${r.pachet_id ? '<span>pachet</span>' : ''}${r.plata_metoda ? '<span class="ok">plătit</span>' : ''}</div>
-        <b>${scapaHtml(r.nume + ' ' + r.prenume)}</b><small>${mjOra(r.minute)} - ${mjOra(r.minute + r.durata_min)} · ${r.durata_min} min</small></div>`;
-    }).join('');
+    segs.forEach(s => {
+      if (s.fold) { randuri += `<div class="mj-fold" onclick="mjDesface('${s.k}')"><div>${mjOra(s.a)} - ${mjOra(s.b)} libere ▾</div></div>`; return; }
+      for (let m = s.a; m < s.b; m += MJ_PAS) randuri += `<div class="mj-rand"><div class="mj-gol" onclick="masajFormNou(${m}, null, '${z}')"></div></div>`;
+    });
+    const blocuri = masajRez.filter(r => r.data === z).map(r => mjBloc(r, segs)).join('');
     return `<div class="mj-col ${z === astazi ? 'azi' : ''}">${randuri}<div class="mj-straturi">${blocuri}</div></div>`;
   }).join('');
   panou.innerHTML = `<div class="mj-wrap lat">
@@ -110,19 +157,15 @@ async function incarcaMasajZi() {
   masajRez = Array.isArray(rows) ? rows : [];
   const d = new Date(masajZi + 'T00:00:00');
   const astazi = dataLocala(new Date());
-  const nrRanduri = (MJ_INCHIDE - MJ_DESCHIDE) / MJ_PAS;
+  const segs = mjSegmente(masajRez);
   let grila = '';
-  for (let i = 0; i < nrRanduri; i++) {
-    const m = MJ_DESCHIDE + i * MJ_PAS;
-    grila += `<div class="mj-rand"><span class="mj-o">${mjOra(m)}</span><div class="mj-gol" onclick="masajFormNou(${m})"></div></div>`;
-  }
-  const blocuri = masajRez.map(r => {
-    const top = (r.minute - MJ_DESCHIDE) / MJ_PAS * MJ_INALT + 3;
-    const inalt = r.durata_min / MJ_PAS * MJ_INALT - 6;
-    return `<div class="mj-rez ${r.status}" style="top:${top}px;height:${inalt}px" onclick="masajDetalii('${r.id}')">
-      <div class="mj-etichete">${r.pachet_id ? '<span>pachet</span>' : ''}${r.plata_metoda ? '<span class="ok">plătit</span>' : ''}</div>
-      <b>${scapaHtml(r.nume + ' ' + r.prenume)}</b><small>${mjOra(r.minute)} - ${mjOra(r.minute + r.durata_min)} · ${r.durata_min} min</small></div>`;
-  }).join('');
+  segs.forEach(s => {
+    if (s.fold) { grila += `<div class="mj-fold" onclick="mjDesface('${s.k}')"><div><span>${mjOra(s.a)} - ${mjOra(s.b)} libere</span><span>▾</span></div></div>`; return; }
+    for (let m = s.a; m < s.b; m += MJ_PAS) {
+      grila += `<div class="mj-rand"><span class="mj-o">${m % 60 === 0 || m === s.a ? mjOra(m) : ''}</span><div class="mj-gol" onclick="masajFormNou(${m})"></div></div>`;
+    }
+  });
+  const blocuri = masajRez.map(r => mjBloc(r, segs)).join('');
   panou.innerHTML = `<div class="mj-wrap">
     ${tabsCalendarHtml('masaj')}
     <div class="day-nav">
@@ -271,37 +314,54 @@ async function masajProgrameaza() {
 function masajDetalii(id) {
   const r = masajRez.find(x => x.id === id);
   if (!r) return;
-  const plata = (m, txt) => `<button class="btn ${r.plata_metoda === m ? 'mj-btn' : 'secundar'}" style="flex:1" onclick="masajPlata('${r.id}', ${r.plata_metoda === m ? 'null' : `'${m}'`})">${txt}</button>`;
+  const pret = MJ_PRET[r.durata_min];
+  const pachet = !!r.pachet_id;
+  const q = `'${r.id}'`;
+  const ziTxt = new Date(r.data + 'T00:00:00').toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' });
+  const stare = r.status === 'programat' ? '' : `<span class="mj-stare ${r.status}">${r.status === 'prezent' ? 'Prezent' : 'Absent'}${r.plata_metoda ? ' · plătit ' + (r.plata_metoda === 'cash' ? 'cash' : 'card') : ''}</span>`;
+  const absent = `<button class="mj-mic rosu" onclick="masajMarcheaza(${q}, 'absent')">Absent</button>`;
+  let corp = '';
+  if (r.status === 'programat') {
+    corp = pachet
+      ? `<button class="mj-mare pr" onclick="masajMarcheaza(${q}, 'prezent')">Prezent<small>se scade din pachet</small></button><div class="mj-doi">${absent}</div>`
+      : `<div class="mj-doi"><button class="mj-mare pr" onclick="masajMarcheaza(${q}, 'prezent', 'cash')">Prezent + Cash<small>${pret} lei</small></button><button class="mj-mare pr" onclick="masajMarcheaza(${q}, 'prezent', 'card')">Prezent + Card<small>${pret} lei</small></button></div>
+         <div class="mj-doi"><button class="mj-mic" onclick="masajMarcheaza(${q}, 'prezent')">Doar prezent</button>${absent}</div>`;
+  } else if (r.status === 'prezent') {
+    if (!pachet) {
+      const m = r.plata_metoda;
+      corp = m
+        ? `<div class="mj-doi"><button class="mj-mare on" onclick="masajMarcheaza(${q}, null, null)">${m === 'cash' ? 'Cash' : 'Card'} ✓</button><button class="mj-mare" onclick="masajMarcheaza(${q}, null, '${m === 'cash' ? 'card' : 'cash'}')">${m === 'cash' ? 'Card' : 'Cash'}</button></div>`
+        : `<div class="mj-eti">Adaugă plata · ${pret} lei</div><div class="mj-doi"><button class="mj-mare" onclick="masajMarcheaza(${q}, null, 'cash')">Cash</button><button class="mj-mare" onclick="masajMarcheaza(${q}, null, 'card')">Card</button></div><div class="mj-nota">A fost marcat prezent, dar nu are plată încă.</div>`;
+    }
+    corp += `<span class="mj-link" onclick="masajMarcheaza(${q}, 'programat')">Anulează prezența</span>`;
+  } else {
+    corp = `<span class="mj-link" onclick="masajMarcheaza(${q}, 'programat')">Revino la „programat”</span>`;
+  }
   document.getElementById('modal-container').innerHTML = `
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100" onclick="if(event.target===this) inchideModalProgramare()">
-      <div class="card" style="max-width:380px;width:92%">
+    <div class="mj-vel" onclick="if(event.target===this) inchideModalProgramare()">
+      <div class="card mj-fer">
         <h2 style="margin-bottom:2px">${scapaHtml(r.nume + ' ' + r.prenume)}</h2>
-        <div style="font-size:13px;color:#9a988e;margin-bottom:14px">${mjOra(r.minute)} - ${mjOra(r.minute + r.durata_min)} · ${r.durata_min} min${r.pachet_id ? ' · din pachet' : ' · ' + MJ_PRET[r.durata_min] + ' lei'}</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn ${r.status === 'prezent' ? '' : 'secundar'}" style="flex:1;${r.status === 'prezent' ? '' : 'color:#4fb38a'}" onclick="masajStare('${r.id}','prezent')">Prezent</button>
-          <button class="btn ${r.status === 'absent' ? '' : 'secundar'}" style="flex:1;${r.status === 'absent' ? 'background:#c2504a;border-color:#a13f3a' : 'color:#e08585'}" onclick="masajStare('${r.id}','absent')">Absent</button>
-        </div>
-        ${r.pachet_id
-          ? '<div style="font-size:12px;color:#9a988e;margin-top:14px">Masajul face parte dintr-un pachet, nu are plata separata.</div>'
-          : `<label style="margin-top:14px">Plata · ${MJ_PRET[r.durata_min]} lei</label><div style="display:flex;gap:8px">${plata('cash', 'Cash')}${plata('card', 'Card')}</div>
-             <div style="font-size:12px;color:#9a988e;margin-top:6px">${r.plata_metoda ? 'Platit ' + (r.plata_metoda === 'cash' ? 'cash' : 'cu cardul') + '. Apare la incasari.' : 'Inca neplatit.'}</div>`}
-        <button class="btn secundar" style="width:100%;margin-top:14px;color:#e08585" onclick="masajSterge('${r.id}')">Sterge masajul</button>
-        <button class="btn secundar" style="width:100%;margin-top:8px" onclick="inchideModalProgramare()">Inchide</button>
+        <div style="font-size:13px;color:#9a988e;margin-bottom:12px">${ziTxt} · ${mjOra(r.minute)} - ${mjOra(r.minute + r.durata_min)} · ${r.durata_min} min${pachet ? ' · din pachet' : ' · ' + pret + ' lei'}</div>
+        ${stare}
+        ${corp}
+        <span class="mj-link rosu" onclick="masajSterge(${q})">Șterge masajul</span>
+        <span class="mj-link" onclick="inchideModalProgramare()">Închide</span>
       </div>
     </div>`;
 }
 
-async function masajStare(id, stare) {
+// stare = 'programat' | 'prezent' | 'absent' | null (neschimbata); metoda = 'cash' | 'card' | null (fara plata) | undefined (neschimbata).
+// Plata exista doar cat timp masajul e „prezent”: la „absent” / „programat” se sterge.
+async function masajMarcheaza(id, stare, metoda) {
   const r = masajRez.find(x => x.id === id);
-  await apel(`/api/masaj/${id}`, { method: 'PATCH', body: JSON.stringify({ status: r && r.status === stare ? 'programat' : stare }) });
+  const body = {};
+  if (stare) body.status = stare;
+  if (metoda !== undefined) body.plata_metoda = metoda;
+  else if (stare && stare !== 'prezent' && r && r.plata_metoda) body.plata_metoda = null;
+  await apel(`/api/masaj/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
   inchideModalProgramare();
-  incarcaCalendarMasaj();
-}
-
-async function masajPlata(id, metoda) {
-  await apel(`/api/masaj/${id}`, { method: 'PATCH', body: JSON.stringify({ plata_metoda: metoda }) });
-  inchideModalProgramare();
-  incarcaCalendarMasaj();
+  if (document.querySelector('.mj-wrap')) incarcaCalendarMasaj();
+  if (document.getElementById('masaj-fisa') && r) incarcaMasajFisa(r.pacient_id);
 }
 
 function masajSterge(id) {
